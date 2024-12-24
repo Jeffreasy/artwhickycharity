@@ -1,12 +1,9 @@
 import { Roboto_Slab } from 'next/font/google'
 import { cn } from '@/utils/cn'
 import { Navigation } from '@/globalComponents/ui/Navigation'
-import { LanguageBar } from '@/app/home/components/LanguageBar'
 import './globals.css'
 import { MenuProvider } from '@/contexts/MenuContext'
 import { Footer } from '@/globalComponents/ui/Footer/footer'
-import { MenuBar } from '@/globalComponents/ui/MenuBar'
-import { FullscreenMenu } from '@/globalComponents/ui/FullscreenMenu'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -38,7 +35,6 @@ export default function RootLayout({
       >
         <MenuProvider>
           <Navigation />
-          <LanguageBar />
           {children}
           <Footer />
         </MenuProvider>
