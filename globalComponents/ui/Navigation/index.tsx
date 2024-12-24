@@ -10,7 +10,7 @@ export function Navigation() {
   return (
     <>
       {/* Top Navigation Bar */}
-      <nav className="fixed top-0 left-0 right-0 bg-black z-50">
+      <nav className="fixed top-0 left-0 right-0 bg-black z-[999]">
         <div className="flex h-[80px] border-b border-white/20">
           {/* Logo/Home Link */}
           <div className="flex-none w-[200px] border-r border-white/20">
@@ -35,8 +35,8 @@ export function Navigation() {
       </nav>
 
       {/* Fullscreen Menu */}
-      <div className={`fixed inset-0 bg-black z-40 transition-opacity duration-300 ${
-        isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      <div className={`fixed inset-0 bg-black z-[998] transition-opacity duration-300 ${
+        isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
       }`}>
         <div className="h-full w-full pt-[80px]">
           <div className="container mx-auto px-4 py-12">
