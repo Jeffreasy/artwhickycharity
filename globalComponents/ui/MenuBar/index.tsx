@@ -1,26 +1,37 @@
 'use client'
 
-import React from 'react'
 import { cn } from '@/utils/cn'
 import { useMenu } from '@/contexts/MenuContext'
 
-interface MenuBarProps {
-  className?: string
-}
-
-export function MenuBar({ className }: MenuBarProps) {
-  const { isMenuOpen, setIsMenuOpen } = useMenu()
+export function MenuBar() {
+  const { isOpen, toggleMenu } = useMenu()
 
   return (
     <button
-      onClick={() => setIsMenuOpen(!isMenuOpen)}
+      onClick={toggleMenu}
       className={cn(
-        "flex items-center justify-center text-white text-lg font-medium",
-        "w-full h-full hover:bg-white/5 transition-colors",
-        className
+        "fixed top-4 right-4 z-50",
+        "flex flex-col justify-center items-center",
+        "w-12 h-12 rounded-full",
+        "bg-white/10 backdrop-blur-sm",
+        "transition-all duration-300",
+        isOpen && "bg-white/20"
       )}
     >
-      {isMenuOpen ? 'CLOSE' : 'MENU'}
+      <div className="space-y-2">
+        <span className={cn(
+          "block w-6 h-0.5 bg-white transition-transform",
+          isOpen && "rotate-45 translate-y-2.5"
+        )} />
+        <span className={cn(
+          "block w-6 h-0.5 bg-white transition-opacity",
+          isOpen && "opacity-0"
+        )} />
+        <span className={cn(
+          "block w-6 h-0.5 bg-white transition-transform",
+          isOpen && "-rotate-45 -translate-y-2.5"
+        )} />
+      </div>
     </button>
   )
 } 

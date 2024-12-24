@@ -5,6 +5,8 @@ import { LanguageBar } from '@/app/home/components/LanguageBar'
 import './globals.css'
 import { MenuProvider } from '@/contexts/MenuContext'
 import { Footer } from '@/globalComponents/ui/Footer/footer'
+import { MenuBar } from '@/globalComponents/ui/MenuBar'
+import { FullscreenMenu } from '@/globalComponents/ui/FullscreenMenu'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
