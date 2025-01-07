@@ -37,4 +37,24 @@ export async function getCircleHeroWords(): Promise<string[]> {
   }
 
   return (words as CircleHeroWordRow[]).map(word => word.word)
+}
+
+export async function updateCircleHeroImages(images: CircleHeroImage[]) {
+  const { error } = await supabase
+    .from('circle_hero_images')
+    .upsert(
+      images.map(img => ({
+        id: img.id.toString(),
+        src: img.url,
+        alt: img.alt,
+        cloudinary_id: img.cloudinary_id,
+        cloudinary_version: img.cloudinary_version,
+        order_number: img.id
+      }))
+    )
+
+  if (error) {
+    console.error('Error updating circle hero images:', error)
+    throw new Error('Failed to update circle hero images')
+  }
 } 
