@@ -1,26 +1,20 @@
 export interface CircleHeroImage {
-  id: string
-  cloudinary_id: string
-  alt: string
+  id: number
   url: string
-  order: number
+  alt: string
+  cloudinary_id: string
+  cloudinary_version?: number
 }
 
-export interface CircleHeroWord {
-  id: string
-  word: string
-  order: number
-}
-
-// Database types voor type safety
 export interface CircleHeroImageRow {
   id: string
   created_at: string
-  cloudinary_id: string
-  cloudinary_version?: number
+  src: string
   alt: string
   url: string
   order_number: number
+  cloudinary_id: string
+  cloudinary_version?: number
 }
 
 export interface CircleHeroWordRow {

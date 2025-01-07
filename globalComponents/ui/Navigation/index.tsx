@@ -1,97 +1,50 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { useMenu } from '@/contexts/MenuContext'
+import { FullscreenMenu } from '../FullscreenMenu'
+import { MdEmail } from 'react-icons/md'
+import { FaInstagram } from 'react-icons/fa'
 
 export function Navigation() {
   const { isMenuOpen, setIsMenuOpen } = useMenu()
 
   return (
     <>
-      {/* Top Navigation Bar */}
       <nav className="fixed top-0 left-0 right-0 bg-black z-[999]">
-        <div className="flex h-[80px] border-b border-white/20">
-          {/* Logo/Home Link */}
-          <div className="flex-none w-[200px] border-r border-white/20">
-            <Link href="/" className="flex items-center justify-center h-full text-white hover:bg-white/5">
-              W4C
-            </Link>
+        <div className="flex h-[80px] items-center px-8 border-b border-white/20">
+          {/* Contact Links - Stacked */}
+          <div className="flex flex-col gap-1">
+            <a 
+              href="mailto:info@whisky4charity.com" 
+              className="text-white/80 hover:text-white transition-colors flex items-center"
+              aria-label="Send email"
+            >
+              <MdEmail size={24} />
+            </a>
+            <a 
+              href="https://instagram.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-white/80 hover:text-white transition-colors flex items-center"
+              aria-label="Visit Instagram"
+            >
+              <FaInstagram size={22} />
+            </a>
           </div>
 
-          {/* Center Space */}
           <div className="flex-1" />
 
-          {/* Menu Button */}
-          <div className="flex-none w-[200px] border-l border-white/20">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-full h-full flex items-center justify-center text-white hover:bg-white/5"
-            >
-              {isMenuOpen ? 'CLOSE' : 'MENU'}
-            </button>
-          </div>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="text-white hover:text-white/80 transition-colors"
+          >
+            MENU
+          </button>
         </div>
       </nav>
 
-      {/* Fullscreen Menu */}
-      <div className={`fixed inset-0 bg-black z-[998] transition-opacity duration-300 ${
-        isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-      }`}>
-        <div className="h-full w-full pt-[80px]">
-          <div className="container mx-auto px-4 py-12">
-            <nav className="text-center">
-              <ul className="space-y-8">
-                <li>
-                  <Link 
-                    href="/" 
-                    className="text-4xl font-bold text-white hover:text-gray-300"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    HOME
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/art" 
-                    className="text-4xl font-bold text-white hover:text-gray-300"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    ART
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/whisky" 
-                    className="text-4xl font-bold text-white hover:text-gray-300"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    WHISKY
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/charity" 
-                    className="text-4xl font-bold text-white hover:text-gray-300"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    CHARITY
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/about" 
-                    className="text-4xl font-bold text-white hover:text-gray-300"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    ABOUT
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        </div>
-      </div>
+      <FullscreenMenu />
     </>
   )
 } 

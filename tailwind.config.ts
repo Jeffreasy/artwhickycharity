@@ -3,9 +3,12 @@ import plugin from "tailwindcss/plugin"
 
 const config: Config = {
   content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
-    "./globalComponents/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./globalComponents/**/*.{js,ts,jsx,tsx,mdx}",
+    "./contexts/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}"
   ],
   theme: {
     extend: {
@@ -65,7 +68,7 @@ const config: Config = {
           },
           '66.67%': {
             borderColor: 'rgba(0,0,255,0.8)',
-            boxShadow: '0 0 60px 0px rgba(0,0,255,0.5)'
+            boxShadow: '0 0 60px 0px rgba(0,0,255,0,0.5)'
           },
           '83.33%': {
             borderColor: 'rgba(238,130,238,0.8)',
@@ -149,13 +152,8 @@ const config: Config = {
   },
   plugins: [
     require("@tailwindcss/typography"),
-    require("@tailwindcss/forms"),
-    plugin(({ addVariant }) => {
-      addVariant('nth-2', '&:nth-child(2)')
-      addVariant('nth-3', '&:nth-child(3)')
-      addVariant('nth-4', '&:nth-child(4)')
-    })
-  ],
+    require("@tailwindcss/forms")
+  ]
 }
 
 export default config 
