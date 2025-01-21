@@ -35,7 +35,9 @@ export default function RootLayout({
       >
         <MenuProvider>
           <Navigation />
-          {children}
+          <main className="pt-[120px]">
+            {children}
+          </main>
           <Footer />
         </MenuProvider>
       </body>

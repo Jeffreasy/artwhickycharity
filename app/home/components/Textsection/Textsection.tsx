@@ -1,29 +1,45 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { supabase } from '@/lib/supabase'
+import { TextSection as TextSectionType } from '@/types/text-section'
 
-export function TextSection() {
+interface TextSectionProps {
+  initialSections: TextSectionType[]
+}
+
+export function TextSection({ initialSections }: TextSectionProps) {
+  const [sections, setSections] = useState<TextSectionType[]>(initialSections || [])
   const containerRef = useRef<HTMLDivElement>(null)
-  const mainTextRef = useRef<HTMLDivElement>(null)
-  const impactTextRef = useRef<HTMLDivElement>(null)
-  const purposeTextRef = useRef<HTMLDivElement>(null)
-  const sipTextRef = useRef<HTMLDivElement>(null)
+  const textRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
 
-  const mainText = `Raise a glass, Make a Difference:
-Uniting fine whisky,
-impactful art,
-and meaningful change
---
-all for charity.`
+  // Realtime updates
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('text_sections')
+        .select('*')
+        .order('order_number', { ascending: true })
+      
+      if (error) {
+        console.error('Polling error:', error)
+        return
+      }
+      
+      if (data) {
+        const newSections = data as TextSectionType[]
+        if (JSON.stringify(newSections) !== JSON.stringify(sections)) {
+          setSections(newSections)
+        }
+      }
+    }, 1000)
 
-  const impactText = "A Limited Edition, Unlimited Impact: Experience the harmony of whisky craftsmanship and artistic expression, with every bottle supporting a worthy cause."
+    return () => clearInterval(pollInterval)
+  }, [sections])
 
-  const purposeText = "Where Whisky Meets Purpose: Exceptional spirits, exclusive art, and a commitment to charity, brought together in one bottle."
-
-  const sipText = "Sip for Good, Collect for Change: Discover a unique blend of whisky and art dedicated to making a positive impact worldwide."
-
+  // GSAP animaties (rest van je bestaande animatie code)
   useEffect(() => {
     // Registreer ScrollTrigger alleen aan de client-side
     gsap.registerPlugin(ScrollTrigger)
@@ -141,10 +157,10 @@ all for charity.`
 
     // Hover effecten
     const elements = {
-      main: mainTextRef.current,
-      impact: impactTextRef.current,
-      purpose: purposeTextRef.current,
-      sip: sipTextRef.current
+      main: textRefs.current['main_text'],
+      impact: textRefs.current['impact_text'],
+      purpose: textRefs.current['purpose_text'],
+      sip: textRefs.current['sip_text']
     }
 
     if (elements.main) addLetterHoverEffects(elements.main, true)
@@ -163,90 +179,54 @@ all for charity.`
         })
       })
     }
-  }, [])
+  }, [sections])
 
   return (
     <section ref={containerRef} className="min-h-screen bg-black relative py-24">
       <div className="container mx-auto relative">
-        {/* Hoofdtekst links */}
-        <div className="mb-32">
+        {sections?.map((section) => (
           <div 
-            ref={mainTextRef} 
-            className="max-w-xl ml-24 cursor-default"
+            key={section.id}
+            className={`mb-32 ${
+              section.style_type === 'impact' || section.style_type === 'sip' 
+                ? 'flex justify-end' 
+                : ''
+            }`}
           >
-            {mainText.split('').map((char, index) => (
-              <span 
-                key={index} 
-                className={`main-letter inline-block text-white text-[2.75rem] font-bold tracking-wide
-                  ${char === '\n' ? 'block h-10' : ''}
-                  ${char === ' ' ? 'w-3' : ''}
-                  ${char === '-' ? 'text-gray-500 block h-6' : ''}
-                  ${char === ':' ? 'block h-6' : ''}
-                `}
-              >
-                {char}
-              </span>
-            ))}
+            <div 
+              ref={(el: HTMLDivElement | null) => {
+                textRefs.current[section.section_key] = el
+              }}
+              className={`
+                ${section.style_type === 'main' || section.style_type === 'purpose'
+                  ? 'max-w-xl ml-24'
+                  : 'max-w-md mr-24 text-right'
+                } cursor-default
+              `}
+            >
+              {section.content.split('').map((char, index) => (
+                <span 
+                  key={index} 
+                  className={`
+                    ${section.style_type}-letter 
+                    inline-block 
+                    ${section.style_type === 'main' || section.style_type === 'purpose'
+                      ? 'text-white text-[2.75rem] font-bold'
+                      : 'text-white/80 text-xl font-serif'
+                    } 
+                    tracking-wide
+                    ${char === '\n' ? 'block h-10' : ''}
+                    ${char === ' ' ? 'w-3' : ''}
+                    ${char === '-' ? 'text-gray-500 block h-6' : ''}
+                    ${char === ':' ? 'block h-6' : ''}
+                  `}
+                >
+                  {char}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* Impact tekst rechts */}
-        <div className="flex justify-end mb-32">
-          <div 
-            ref={impactTextRef} 
-            className="max-w-md mr-24 text-right cursor-default"
-          >
-            {impactText.split('').map((char, index) => (
-              <span 
-                key={index} 
-                className={`impact-letter inline-block text-white/80 text-xl font-serif tracking-wide leading-relaxed
-                  ${char === ' ' ? 'w-2.5' : ''}
-                `}
-              >
-                {char}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Purpose tekst links */}
-        <div className="mb-32">
-          <div 
-            ref={purposeTextRef} 
-            className="max-w-xl ml-24 cursor-default"
-          >
-            {purposeText.split('').map((char, index) => (
-              <span 
-                key={index} 
-                className={`purpose-letter inline-block text-white text-[2.75rem] font-bold tracking-wide
-                  ${char === ' ' ? 'w-3' : ''}
-                  ${char === ':' ? 'block h-6' : ''}
-                `}
-              >
-                {char}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Sip tekst rechts */}
-        <div className="flex justify-end mb-24">
-          <div 
-            ref={sipTextRef} 
-            className="max-w-md mr-24 text-right cursor-default"
-          >
-            {sipText.split('').map((char, index) => (
-              <span 
-                key={index} 
-                className={`sip-letter inline-block text-white/80 text-xl font-serif tracking-wide leading-relaxed
-                  ${char === ' ' ? 'w-2.5' : ''}
-                `}
-              >
-                {char}
-              </span>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
     </section>
   )

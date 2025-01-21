@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { gsap } from 'gsap'
 import { cn } from '@/lib/utils'
+import { CircleSection } from '@/types/circle-sections'
 
 interface CircleProps {
   href: string
@@ -149,36 +150,23 @@ const Circle = ({ href, text, glowColor }: CircleProps) => {
   )
 }
 
-export function ThreeCirclesSection() {
+interface ThreeCirclesSectionProps {
+  sections: CircleSection[]
+}
+
+export function ThreeCirclesSection({ sections }: ThreeCirclesSectionProps) {
   return (
-    <section className="flex justify-center items-center min-h-[600px] w-full 
-      [perspective:1000px] bg-black">
+    <section className="flex justify-center items-center min-h-[600px] w-full">
       <div className="container max-w-4xl mx-auto px-4">
         <div className="flex justify-center items-center gap-16">
-          <Circle 
-            href="/art" 
-            text="Art" 
-            glowColor={{
-              background: 'rainbow',
-              shadow: 'rainbow'
-            }}
-          />
-          <Circle 
-            href="/whisky" 
-            text="Whisky" 
-            glowColor={{
-              background: 'rgba(218,165,32,0.1)',
-              shadow: '0 0 40px 0px rgba(218,165,32,0.4)'
-            }}
-          />
-          <Circle 
-            href="/charity" 
-            text="Charity" 
-            glowColor={{
-              background: 'rgba(3,117,255,0.1)',
-              shadow: '0 0 40px 0px rgba(3,117,255,0.4)'
-            }}
-          />
+          {sections.map((section) => (
+            <Circle 
+              key={section.id}
+              href={section.href}
+              text={section.text}
+              glowColor={section.glowColor}
+            />
+          ))}
         </div>
       </div>
     </section>

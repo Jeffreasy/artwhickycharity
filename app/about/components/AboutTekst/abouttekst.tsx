@@ -1,65 +1,181 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { HiOutlineMail } from 'react-icons/hi'
 import Link from 'next/link'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { AboutSection } from '@/types/about-section'
+import { supabase } from '@/lib/supabase'
 
-export function AboutTekst() {
+interface AboutTekstProps {
+  initialSections: AboutSection[]
+}
+
+const renderText = (content: string, isTitle: boolean = false) => {
+  return content.split('').map((char, index) => (
+    <span 
+      key={index} 
+      className={`
+        animate-letter 
+        inline-block
+        ${char === ' ' ? 'w-2' : ''} 
+        ${char === '\n' ? 'block h-6' : ''}
+      `}
+    >
+      {char}
+    </span>
+  ))
+}
+
+export function AboutTekst({ initialSections }: AboutTekstProps) {
+  const [sections, setSections] = useState<AboutSection[]>(initialSections || [])
+  const containerRef = useRef<HTMLDivElement>(null)
+  const textRefs = useRef<{ [key: string]: HTMLElement | null }>({})
+
+  const setTextRef = (el: HTMLElement | null, key: string) => {
+    if (textRefs.current) {
+      textRefs.current[key] = el
+    }
+  }
+
+  // Realtime updates
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('about_sections')
+        .select('*')
+        .order('order_number', { ascending: true })
+      
+      if (error) {
+        console.error('Polling error:', error)
+        return
+      }
+      
+      if (data) {
+        const newSections = data as AboutSection[]
+        if (JSON.stringify(newSections) !== JSON.stringify(sections)) {
+          setSections(newSections)
+        }
+      }
+    }, 1000)
+
+    return () => clearInterval(pollInterval)
+  }, [sections])
+
+  // GSAP animaties
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+    
+    const container = containerRef.current
+    if (!container) return
+
+    // Scroll animaties
+    const animateTextIn = (elements: NodeListOf<Element>, delay: number = 0) => {
+      gsap.set(elements, { 
+        opacity: 0,
+        y: 10,
+        rotateX: 15
+      })
+
+      gsap.to(elements, {
+        opacity: 1,
+        y: 0,
+        rotateX: 0,
+        duration: 0.6,
+        stagger: 0.005,
+        ease: "power2.out",
+        delay,
+        scrollTrigger: {
+          trigger: container,
+          start: "top 70%",
+          end: "bottom 80%",
+        }
+      })
+    }
+
+    // Hover effecten per letter
+    const addLetterHoverEffects = (element: HTMLDivElement, isLargeText: boolean) => {
+      const letters = element.querySelectorAll('span')
+      
+      letters.forEach((letter) => {
+        letter.addEventListener('mouseenter', () => {
+          gsap.to(letter, {
+            scale: isLargeText ? 1.05 : 1.08,
+            textShadow: isLargeText 
+              ? '0 0 15px rgba(255,255,255,0.3)'
+              : '0 0 8px rgba(255,255,255,0.2)',
+            duration: 0.15,
+            ease: "power1.out"
+          })
+        })
+
+        letter.addEventListener('mouseleave', () => {
+          gsap.to(letter, {
+            scale: 1,
+            textShadow: 'none',
+            duration: 0.1,
+            ease: "power1.inOut"
+          })
+        })
+      })
+    }
+
+    // Toepassen van animaties
+    const letters = container.querySelectorAll('.animate-letter')
+    animateTextIn(letters, 0.3)
+
+    // Hover effecten toevoegen aan alle tekst elementen
+    Object.values(textRefs.current).forEach((ref) => {
+      if (ref) addLetterHoverEffects(ref as HTMLDivElement, false)
+    })
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+    }
+  }, [sections])
+
   return (
-    <section className="min-h-screen bg-black text-white py-24">
+    <section ref={containerRef} className="min-h-screen bg-black text-white py-24">
       <div className="container mx-auto px-6">
-        <h1 className="text-5xl font-bold text-center mb-16">ABOUT</h1>
-        
+        {sections
+          .filter(section => section.style_type === 'title')
+          .map(section => (
+            <h1 
+              key={section.id} 
+              ref={(el) => setTextRef(el, section.section_key)}
+              className="text-5xl font-bold text-center mb-16"
+            >
+              {renderText(section.content, true)}
+            </h1>
+          ))}
+
         <div className="max-w-4xl mx-auto space-y-8 text-center">
-          <p className="text-lg leading-relaxed">
-            Whisky for Charity: an exclusive convergence of whisky, art, and goodwill. Welcome to an extraordinary journey where fine whisky, exquisite art, 
-            and genuine charity elegantly intersect. 'Whisky for Charity' combines the rich heritage of whisky with the creative brilliance of renowned artists, 
-            all for the benefit of a charitable cause.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            Each year, 'Whisky for Charity' offers the exclusive opportunity to own a rare piece of artistry. Only 50 numbered bottles of a meticulously crafted 
-            single malt are released, each adorned with distinctive art.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            For the inaugural edition, the Annandale Distillery in Scotland has been selected, where centuries-old expertise ensures that every drop embodies 
-            the essence of tradition and excellence.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            Renowned artist Luuk Bode is currently channeling his creative genius into designing the box and label for our exclusive whisky bottles. Each piece 
-            promises to be a stunning visual ode to the rich flavors it contains.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            What truly makes these bottles extraordinary is their purpose. Every purchase directly contributes to the Refugee Foundation, with all profits 
-            transparently channeled to support their vital work. By purchasing this limited edition whisky, you join a noble cause and help refugees and 
-            displaced persons worldwide. The Refugee Foundation tirelessly works to provide critical assistance to victims of conflict, violence, or natural disasters.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            Each year, Whisky for Charity selects a distillery, artist, and charity.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            This year's limited edition is a true collector's item. This edition is expected in mid-January/beginning of February 2025 for delivery. Are you ready 
-            to own a piece of this exclusive, artistic indulgence that supports a good cause?
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            Feel free to contact us with any questions you may have about this unique blend of whisky, art, and philanthropy. Don't miss this chance to be part 
-            of something truly special.
-          </p>
+          {sections
+            .filter(section => section.style_type === 'paragraph')
+            .map(section => (
+              <p 
+                key={section.id} 
+                ref={(el) => setTextRef(el, section.section_key)}
+                className="text-lg leading-relaxed"
+              >
+                {renderText(section.content)}
+              </p>
+            ))}
 
           <div className="mt-16">
-            <Link 
-              href="mailto:info@whisky4charity.com"
-              className="inline-flex items-center justify-center gap-2 text-xl hover:text-blue-400 transition-colors"
-            >
-              <HiOutlineMail className="w-8 h-8" />
-              <span className="sr-only">Email us</span>
-            </Link>
+            {sections
+              .filter(section => section.style_type === 'email')
+              .map(section => (
+                <Link 
+                  key={section.id}
+                  href={`mailto:${section.content}`}
+                  className="inline-flex items-center justify-center gap-2 text-xl hover:text-blue-400 transition-colors"
+                >
+                  <HiOutlineMail className="w-8 h-8" />
+                  <span className="sr-only">Email us</span>
+                </Link>
+              ))}
           </div>
         </div>
       </div>

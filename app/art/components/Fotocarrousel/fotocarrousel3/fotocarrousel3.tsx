@@ -1,33 +1,45 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay } from 'swiper/modules'
 import { CldImage } from 'next-cloudinary'
 import { useCarouselSync } from '../../../hooks/useCarouselSync'
+import { ArtCarouselImage } from '@/types/art-section'
+import { supabase } from '@/lib/supabase'
 import 'swiper/css'
 
-const images = [
-  {
-    src: "670e5eccdb7101a323d540ce_Portret1MAIN_lujhfv",
-    alt: "Portrait artwork"
-  },
-  {
-    src: "670e5f223570550072137cea_HaarlemMuurMAIN_pqqmom",
-    alt: "Haarlem wall mural"
-  },
-  {
-    src: "670e5f696a868cdfd970d3f3_MarleenMural1MAIN_kopie_2_p0vqjy",
-    alt: "Marleen mural 1"
-  },
-  {
-    src: "670e5fc0cd140baf2571de54_MarleenMural4MAIN_pdwsn7",
-    alt: "Marleen mural 4"
-  }
-]
+interface Fotocarrousel3Props {
+  initialImages: ArtCarouselImage[]
+}
 
-export function Fotocarrousel3() {
+export function Fotocarrousel3({ initialImages }: Fotocarrousel3Props) {
+  const [images, setImages] = useState<ArtCarouselImage[]>(initialImages || [])
   const { onSwiper, autoplayConfig, onSlideChange, onTouchStart } = useCarouselSync('art-carousel')
+
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('art_carousel_images')
+        .select('*')
+        .eq('carousel_number', 3)
+        .order('order_number', { ascending: true })
+      
+      if (error) {
+        console.error('Polling error:', error)
+        return
+      }
+      
+      if (data) {
+        const newImages = data as ArtCarouselImage[]
+        if (JSON.stringify(newImages) !== JSON.stringify(images)) {
+          setImages(newImages)
+        }
+      }
+    }, 1000)
+
+    return () => clearInterval(pollInterval)
+  }, [images])
   
   return (
     <div className="bg-black text-white">
@@ -45,18 +57,18 @@ export function Fotocarrousel3() {
             onTouchStart={onTouchStart}
             className="w-full"
           >
-            {images.map((image, index) => (
-              <SwiperSlide key={index}>
+            {images.map((image) => (
+              <SwiperSlide key={image.id}>
                 <div className="relative w-full h-[600px] border-2 border-black">
                   <div className="absolute inset-0 p-1">
                     <CldImage
-                      src={image.src}
-                      alt={image.alt}
+                      src={image.cloudinary_id}
+                      alt={image.alt_text}
                       width={800}
                       height={600}
                       className="object-cover w-full h-full"
                       sizes="(max-width: 768px) 100vw, 50vw"
-                      priority={index < 2}
+                      priority={image.priority}
                     />
                   </div>
                 </div>

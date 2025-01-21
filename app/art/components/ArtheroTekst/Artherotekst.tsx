@@ -1,14 +1,49 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { CldImage } from 'next-cloudinary'
+import { ArtHeroSection } from '@/types/art-section'
+import { supabase } from '@/lib/supabase'
 
-const ArtheroTekst = () => {
+interface ArtheroTekstProps {
+  initialSections: ArtHeroSection[]
+}
+
+const ArtheroTekst = ({ initialSections }: ArtheroTekstProps) => {
+  const [sections, setSections] = useState<ArtHeroSection[]>(initialSections || [])
+
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('art_hero_sections')
+        .select('*')
+        .order('order_number', { ascending: true })
+      
+      if (error) {
+        console.error('Polling error:', error)
+        return
+      }
+      
+      if (data) {
+        const newSections = data as ArtHeroSection[]
+        if (JSON.stringify(newSections) !== JSON.stringify(sections)) {
+          setSections(newSections)
+        }
+      }
+    }, 1000)
+
+    return () => clearInterval(pollInterval)
+  }, [sections])
+
+  const getContentByType = (type: string) => {
+    return sections.find(section => section.style_type === type)?.content || ''
+  }
+
   return (
-    <section className="relative h-[80vh] w-full">
+    <section className="relative h-[80vh] w-full mt-[120px]">
       {/* Background Image */}
       <CldImage
-        src="670e9cf1f9fe2264baa85f61_background_a1nrcr"
+        src={getContentByType('image')}
         alt="Art background"
         width={1920}
         height={1080}
@@ -22,21 +57,19 @@ const ArtheroTekst = () => {
         <div className="bg-black/70 p-12 md:p-16 max-w-4xl mx-4">
           <div className="text-center text-white">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              ART
+              {getContentByType('title')}
             </h1>
             <h2 className="text-xl md:text-2xl mb-4">
-              Art meets Whisky: Luuk Bode's Symphony of Colors on every bottle
+              {getContentByType('subtitle')}
             </h2>
             <div className="space-y-6">
-              <p className="text-lg">
-                In this exclusive collaboration, the vibrant world of Luuk Bode's art meets the distinguished realm of fine whisky. Luuk Bode, a celebrated artist known for his dynamic and expressive style, brings a burst of creativity to each bottle.
-              </p>
-              <p className="text-lg">
-                Every stroke of Bode's brush tells a story, transforming these limited edition bottles into unique works of art. His use of vivid colors and bold patterns reflects a spirit of innovation and passion, mirroring the meticulous craft of whisky-making.
-              </p>
-              <p className="text-lg">
-                This collaboration is not just about adorning a bottle; it's about creating a narrative that resonates with each holder.
-              </p>
+              {sections
+                .filter(section => section.style_type === 'paragraph')
+                .map(section => (
+                  <p key={section.id} className="text-lg">
+                    {section.content}
+                  </p>
+                ))}
             </div>
           </div>
         </div>

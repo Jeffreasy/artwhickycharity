@@ -1,9 +1,23 @@
 ﻿import { AboutTekst } from './components/AboutTekst/abouttekst'
+import { getAboutSections } from './lib/about-content'
 
-export default function AboutPage() {
-  return (
-    <main>
-      <AboutTekst />
-    </main>
-  )
+export const revalidate = 0 // 0 voor ontwikkeling, hoger voor productie
+
+export default async function AboutPage() {
+  try {
+    const sections = await getAboutSections()
+
+    return (
+      <main>
+        <AboutTekst initialSections={sections} />
+      </main>
+    )
+  } catch (error) {
+    console.error('Error loading about content:', error)
+    return (
+      <main>
+        <AboutTekst initialSections={[]} />
+      </main>
+    )
+  }
 }

@@ -1,15 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      'cdn.prod.website-files.com'
-    ],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'cdn.prod.website-files.com',
         pathname: '**',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '**',
+      }
     ],
   },
   // Voeg deze toe om build errors te voorkomen voor ongebruikte routes

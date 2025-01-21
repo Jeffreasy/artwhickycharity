@@ -1,45 +1,189 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { CharitySection } from '@/types/charity-section'
+import { supabase } from '@/lib/supabase'
 
-export function CharityTekst() {
+interface CharityTekstProps {
+  initialSections: CharitySection[]
+}
+
+const renderText = (content: string, isTitle: boolean = false) => {
+  return content.split('').map((char, index) => (
+    <span 
+      key={index} 
+      className={`
+        animate-letter 
+        inline-block
+        ${char === ' ' ? 'w-2' : ''} 
+        ${char === '\n' ? 'block h-6' : ''}
+      `}
+    >
+      {char}
+    </span>
+  ))
+}
+
+export function CharityTekst({ initialSections }: CharityTekstProps) {
+  const [sections, setSections] = useState<CharitySection[]>(initialSections || [])
+  const containerRef = useRef<HTMLDivElement>(null)
+  const textRefs = useRef<{ [key: string]: HTMLElement | null }>({})
+
+  // Realtime updates
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('charity_sections')
+        .select('*')
+        .order('order_number', { ascending: true })
+      
+      if (error) {
+        console.error('Polling error:', error)
+        return
+      }
+      
+      if (data) {
+        const newSections = data as CharitySection[]
+        if (JSON.stringify(newSections) !== JSON.stringify(sections)) {
+          setSections(newSections)
+        }
+      }
+    }, 1000)
+
+    return () => clearInterval(pollInterval)
+  }, [sections])
+
+  // GSAP animaties
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+    
+    const container = containerRef.current
+    if (!container) return
+
+    const animateTextIn = (elements: NodeListOf<Element>, delay: number = 0) => {
+      gsap.set(elements, { 
+        opacity: 0,
+        y: 10,
+        rotateX: 15
+      })
+
+      gsap.to(elements, {
+        opacity: 1,
+        y: 0,
+        rotateX: 0,
+        duration: 0.6,
+        stagger: 0.005,
+        ease: "power2.out",
+        delay,
+        scrollTrigger: {
+          trigger: container,
+          start: "top 70%",
+          end: "bottom 80%",
+        }
+      })
+    }
+
+    const addLetterHoverEffects = (element: HTMLDivElement, isLargeText: boolean) => {
+      const letters = element.querySelectorAll('span')
+      
+      letters.forEach((letter) => {
+        letter.addEventListener('mouseenter', () => {
+          gsap.to(letter, {
+            scale: isLargeText ? 1.05 : 1.08,
+            textShadow: isLargeText 
+              ? '0 0 15px rgba(255,255,255,0.3)'
+              : '0 0 8px rgba(255,255,255,0.2)',
+            duration: 0.15,
+            ease: "power1.out"
+          })
+        })
+
+        letter.addEventListener('mouseleave', () => {
+          gsap.to(letter, {
+            scale: 1,
+            textShadow: 'none',
+            duration: 0.1,
+            ease: "power1.inOut"
+          })
+        })
+      })
+    }
+
+    const letters = container.querySelectorAll('.animate-letter')
+    animateTextIn(letters, 0.3)
+
+    Object.values(textRefs.current).forEach((ref) => {
+      if (ref) addLetterHoverEffects(ref as HTMLDivElement, false)
+    })
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+    }
+  }, [sections])
+
+  const setTextRef = (el: HTMLElement | null, key: string) => {
+    if (textRefs.current) {
+      textRefs.current[key] = el
+    }
+  }
+
   return (
-    <section className="min-h-screen bg-black text-white py-24">
+    <section ref={containerRef} className="min-h-screen bg-black text-white py-24">
       <div className="container mx-auto px-6">
-        <h1 className="text-5xl font-bold text-center mb-16">CHARITY</h1>
-        
+        {sections
+          .filter(section => section.style_type === 'title')
+          .map(section => (
+            <h1 
+              key={section.id} 
+              ref={(el) => setTextRef(el, section.section_key)}
+              className="text-5xl font-bold text-center mb-16"
+            >
+              {renderText(section.content, true)}
+            </h1>
+          ))}
+
         <div className="max-w-4xl mx-auto space-y-8 text-center">
-          <p className="text-lg leading-relaxed">
-            The Refugee Foundation provides life-saving assistance to people who are victims of conflict, violence or natural disasters. 
-            In line with this, they support communities in finding structural solutions, so that people can improve their future on their own. 
-            Their assistance focuses on refugees, displaced persons and returnees. They provide assistance regardless of religion, political 
-            views, ethnicity, nationality, gender and sexual orientation.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            The Refugee Foundation is an impartial and independent organization that provides emergency aid to refugees and displaced 
-            persons in crisis situations worldwide. It bases its assistance on its own assessment of human needs and available capacity, 
-            with special attention to areas that are difficult to access and underexposed situation.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            The Refugee Foundation places the individual person at the center, with human scale and dignity being paramount. The 
-            organization is characterized by perseverance, creativity and flexibility, which allows it to quickly respond to global needs. 
-            Innovation and support of special initiatives are encouraged, while openness and critical thinking form the basis for continuous 
-            learning and improvement. The foundation guarantees a safe emergency situation, protects against (sexual) exploitation and 
-            abuse, and creates a safe working environment where employees feel heard and treated with integrity.
-          </p>
+          {sections
+            .filter(section => section.style_type === 'paragraph')
+            .map(section => (
+              <p 
+                key={section.id} 
+                ref={(el) => setTextRef(el, section.section_key)}
+                className="text-lg leading-relaxed"
+              >
+                {renderText(section.content)}
+              </p>
+            ))}
 
           <div className="mt-12">
-            <p className="text-lg font-semibold">For more information look at</p>
-            <a 
-              href="https://www.vluchteling.nl" 
-              className="text-blue-400 hover:text-blue-300 transition-colors"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              www.vluchteling.nl
-            </a>
+            {sections
+              .filter(section => section.section_key === 'more_info_text')
+              .map(section => (
+                <p 
+                  key={section.id} 
+                  ref={(el) => setTextRef(el, section.section_key)}
+                  className="text-lg font-semibold"
+                >
+                  {renderText(section.content)}
+                </p>
+              ))}
+            
+            {sections
+              .filter(section => section.style_type === 'link')
+              .map(section => (
+                <a 
+                  key={section.id}
+                  ref={(el) => setTextRef(el, section.section_key)}
+                  href={`https://${section.content}`}
+                  className="text-blue-400 hover:text-blue-300 transition-colors block"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {renderText(section.content)}
+                </a>
+              ))}
           </div>
         </div>
       </div>

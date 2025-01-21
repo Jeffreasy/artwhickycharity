@@ -1,23 +1,15 @@
 export interface CircleHeroImage {
-  id: number
-  url: string
-  alt: string
-  cloudinary_id: string
-  cloudinary_version?: number
+  id: string          // uuid
+  created_at: string  // timestamptz
+  src: string         // text
+  alt: string         // text
+  url: string         // text
+  order_number: number // int4
+  cloudinary_id: string // text
+  cloudinary_version: number // int4
 }
 
-export interface CircleHeroImageRow {
-  id: string
-  created_at: string
-  src: string
-  alt: string
-  url: string
-  order_number: number
-  cloudinary_id: string
-  cloudinary_version?: number
-}
-
-export interface CircleHeroWordRow {
+export interface CircleHeroWord {
   id: string
   created_at: string
   word: string

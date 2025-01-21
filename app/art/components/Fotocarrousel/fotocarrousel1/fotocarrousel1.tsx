@@ -1,33 +1,45 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay } from 'swiper/modules'
 import { CldImage } from 'next-cloudinary'
 import { useCarouselSync } from '../../../hooks/useCarouselSync'
+import { ArtCarouselImage } from '@/types/art-section'
+import { supabase } from '@/lib/supabase'
 import 'swiper/css'
 
-const images = [
-  {
-    src: "670e5cf0c39accaae7d03237_Eindje1MAIN_ev82y2",
-    alt: "Art project image 1"
-  },
-  {
-    src: "670e5d6099aff96b3c142b69_Eindje3MAIN_zjhlq8",
-    alt: "Art project image 2"
-  },
-  {
-    src: "670e5df33b3c0c865013548a_Eindje2MAIN_vksjv4",
-    alt: "Art project image 3"
-  },
-  {
-    src: "670e5e2f377e95ea46536c67_Eindje4MAIN_e5ov4x",
-    alt: "Art project image 4"
-  }
-]
+interface Fotocarrousel1Props {
+  initialImages: ArtCarouselImage[]
+}
 
-export function Fotocarrousel1() {
+export function Fotocarrousel1({ initialImages }: Fotocarrousel1Props) {
+  const [images, setImages] = useState<ArtCarouselImage[]>(initialImages || [])
   const { onSwiper, autoplayConfig, onSlideChange, onTouchStart } = useCarouselSync('art-carousel')
+
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('art_carousel_images')
+        .select('*')
+        .eq('carousel_number', 1)
+        .order('order_number', { ascending: true })
+      
+      if (error) {
+        console.error('Polling error:', error)
+        return
+      }
+      
+      if (data) {
+        const newImages = data as ArtCarouselImage[]
+        if (JSON.stringify(newImages) !== JSON.stringify(images)) {
+          setImages(newImages)
+        }
+      }
+    }, 1000)
+
+    return () => clearInterval(pollInterval)
+  }, [images])
   
   return (
     <div className="w-full bg-black">
@@ -50,17 +62,17 @@ export function Fotocarrousel1() {
             className="w-full"
           >
             {images.map((image, index) => (
-              <SwiperSlide key={index}>
+              <SwiperSlide key={image.id}>
                 <div className="relative w-full h-[600px] border-2 border-black">
                   <div className="absolute inset-0 p-1">
                     <CldImage
-                      src={image.src}
-                      alt={image.alt}
+                      src={image.cloudinary_id}
+                      alt={image.alt_text}
                       width={800}
                       height={600}
                       className="object-cover w-full h-full"
                       sizes="(max-width: 768px) 100vw, 50vw"
-                      priority={index < 2}
+                      priority={image.priority}
                     />
                   </div>
                 </div>

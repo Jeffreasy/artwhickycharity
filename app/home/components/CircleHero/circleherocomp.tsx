@@ -47,7 +47,7 @@ export function CircleHeroComp({ images, words }: CircleHeroCompProps) {
               >
                 <div className="relative w-full h-full">
                   <Image
-                    src={image.url}
+                    src={image.src}
                     alt={image.alt}
                     fill
                     className="object-cover rounded-full"

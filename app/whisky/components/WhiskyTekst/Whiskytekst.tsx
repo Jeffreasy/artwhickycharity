@@ -1,55 +1,197 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { WhiskySection } from '@/types/whisky-section'
+import { supabase } from '@/lib/supabase'
 
-export function WhiskyTekst() {
+interface WhiskyTekstProps {
+  initialSections: WhiskySection[]
+}
+
+const renderText = (content: string, isTitle: boolean = false) => {
+  return content.split('').map((char, index) => (
+    <span 
+      key={index} 
+      className={`
+        animate-letter 
+        inline-block
+        ${char === ' ' ? 'w-2' : ''} 
+        ${char === '\n' ? 'block h-6' : ''}
+      `}
+    >
+      {char}
+    </span>
+  ))
+}
+
+export function WhiskyTekst({ initialSections }: WhiskyTekstProps) {
+  const [sections, setSections] = useState<WhiskySection[]>(initialSections || [])
+  const containerRef = useRef<HTMLDivElement>(null)
+  const textRefs = useRef<{ [key: string]: HTMLElement | null }>({})
+
+  // Realtime updates
+  useEffect(() => {
+    const pollInterval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from('whisky_sections')
+        .select('*')
+        .order('order_number', { ascending: true })
+      
+      if (error) {
+        console.error('Polling error:', error)
+        return
+      }
+      
+      if (data) {
+        const newSections = data as WhiskySection[]
+        if (JSON.stringify(newSections) !== JSON.stringify(sections)) {
+          setSections(newSections)
+        }
+      }
+    }, 1000)
+
+    return () => clearInterval(pollInterval)
+  }, [sections])
+
+  // GSAP animaties
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+    
+    const container = containerRef.current
+    if (!container) return
+
+    // Scroll animaties
+    const animateTextIn = (elements: NodeListOf<Element>, delay: number = 0) => {
+      gsap.set(elements, { 
+        opacity: 0,
+        y: 10,
+        rotateX: 15
+      })
+
+      gsap.to(elements, {
+        opacity: 1,
+        y: 0,
+        rotateX: 0,
+        duration: 0.6,
+        stagger: 0.005,
+        ease: "power2.out",
+        delay,
+        scrollTrigger: {
+          trigger: container,
+          start: "top 70%",
+          end: "bottom 80%",
+        }
+      })
+    }
+
+    // Hover effecten per letter
+    const addLetterHoverEffects = (element: HTMLDivElement, isLargeText: boolean) => {
+      const letters = element.querySelectorAll('span')
+      
+      letters.forEach((letter) => {
+        letter.addEventListener('mouseenter', () => {
+          gsap.to(letter, {
+            scale: isLargeText ? 1.05 : 1.08,
+            textShadow: isLargeText 
+              ? '0 0 15px rgba(255,255,255,0.3)'
+              : '0 0 8px rgba(255,255,255,0.2)',
+            duration: 0.15,
+            ease: "power1.out"
+          })
+        })
+
+        letter.addEventListener('mouseleave', () => {
+          gsap.to(letter, {
+            scale: 1,
+            textShadow: 'none',
+            duration: 0.1,
+            ease: "power1.inOut"
+          })
+        })
+      })
+    }
+
+    // Toepassen van animaties
+    const letters = container.querySelectorAll('.animate-letter')
+    animateTextIn(letters, 0.3)
+
+    // Hover effecten toevoegen aan alle tekst elementen
+    Object.values(textRefs.current).forEach((ref) => {
+      if (ref) addLetterHoverEffects(ref as HTMLDivElement, false)
+    })
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+    }
+  }, [sections])
+
+  const setTextRef = (el: HTMLElement | null, key: string) => {
+    if (textRefs.current) {
+      textRefs.current[key] = el
+    }
+  }
+
   return (
-    <section className="min-h-screen bg-black text-white py-24">
+    <section ref={containerRef} className="min-h-screen bg-black text-white py-24">
       <div className="container mx-auto px-6">
-        <h1 className="text-5xl font-bold text-center mb-16">WHISKY</h1>
-        
-        <div className="max-w-4xl mx-auto space-y-8 text-center">
-          <p className="text-lg leading-relaxed">
-            Annandale Distillery founded in 1836, reborn in 2014, Annandale was one of Scotland's oldest working distilleries. 
-            A legacy carved from Pink Sandstone nestled in a picturesque setting, the Annandale Distillery, established in 1830 
-            by George Donald, is a testament to the art of whisky-making.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            George Donald, a former excise officer from Banff in Aberdeenshire, chose the site for building the distillery as 
-            there was a pre-existing clearing in the woods with a plentiful water source, which is essential for both the 
-            production of whisky and to power the water wheel which would run the internal grain mill for the barley. This all 
-            plays a pivotal role in crafting their unique single malt.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            The iconic pink sandstone, quarried locally, not only lends a distinct character to the distillery's architecture but 
-            also to the spirit it nurtures. The mild, damp climate of the region contributes to the whisky's maturation, offering 
-            a flavor that is as rich and diverse as its history. The abundance of peat in the area meant that George Donald could 
-            fuel the kiln for the malted grain by using locally sourced peat from peat bogs just three miles away.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            Each sip of their limited edition whisky invites you on a journey through time, celebrating a legacy of 
-            craftsmanship and the natural bounty of the Scottish landscape.
-          </p>
-
-          <p className="text-lg leading-relaxed">
-            Indulge in the exquisite taste of single malt whisky. Each bottle of this limited edition series captures the essence 
-            of a storied tradition, matured to perfection. The rich, complex flavors are a tribute to the mastery of whisky-
-            making, offering connoisseurs a sip of history blended with modern excellence.
-          </p>
-
-          <div className="mt-12">
-            <p className="text-lg font-semibold">For more information:</p>
-            <a 
-              href="https://www.annandaledistillery.com" 
-              className="text-blue-400 hover:text-blue-300 transition-colors"
-              target="_blank"
-              rel="noopener noreferrer"
+        {/* Title section */}
+        {sections
+          .filter(section => section.style_type === 'title')
+          .map(section => (
+            <h1 
+              key={section.id} 
+              ref={(el) => setTextRef(el, section.section_key)}
+              className="text-5xl font-bold text-center mb-16"
             >
-              www.annandaledistillery.com
-            </a>
+              {renderText(section.content, true)}
+            </h1>
+          ))}
+
+        {/* Main content container */}
+        <div className="max-w-4xl mx-auto space-y-8 text-center">
+          {/* Paragraphs */}
+          {sections
+            .filter(section => section.style_type === 'paragraph')
+            .map(section => (
+              <p 
+                key={section.id} 
+                ref={(el) => setTextRef(el, section.section_key)}
+                className="text-lg leading-relaxed"
+              >
+                {renderText(section.content)}
+              </p>
+            ))}
+
+          {/* Link section */}
+          <div className="mt-12">
+            {sections
+              .filter(section => section.section_key === 'more_info_text')
+              .map(section => (
+                <p 
+                  key={section.id} 
+                  ref={(el) => setTextRef(el, section.section_key)}
+                  className="text-lg font-semibold"
+                >
+                  {renderText(section.content)}
+                </p>
+              ))}
+            
+            {sections
+              .filter(section => section.style_type === 'link')
+              .map(section => (
+                <a 
+                  key={section.id}
+                  ref={(el) => setTextRef(el, section.section_key)}
+                  href={`https://${section.content}`}
+                  className="text-blue-400 hover:text-blue-300 transition-colors block"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {renderText(section.content)}
+                </a>
+              ))}
           </div>
         </div>
       </div>
