@@ -1,47 +1,61 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import { CircleHeroImage } from '@/types/circle-hero'
-import { CircleHeroComp } from './circleherocomp'
+import { useEffect, useState } from 'react'
+import { CircleHero } from './circleherocomp'
+import { CircleHeroItem } from '@/types/circle-hero'
 import { supabase } from '@/lib/supabase'
 
-interface CircleHeroProps {
-  images: CircleHeroImage[]
-  words: string[]
-}
+export function CircleHeroWrapper() {
+  const [items, setItems] = useState<CircleHeroItem[]>([])
 
-export function CircleHero({ images: initialImages, words: initialWords }: CircleHeroProps) {
-  const [words, setWords] = useState(initialWords)
+  const fetchItems = async () => {
+    console.log('Fetching circle hero items...')
+    const { data, error } = await supabase
+      .from('circle_hero_items')
+      .select('*')
+      .eq('is_active', true)
+      .order('order_number', { ascending: true })
+    
+    if (error) {
+      console.error('Error fetching items:', error)
+      return
+    }
+    
+    if (data) {
+      console.log('Received new items:', data)
+      setItems(data)
+    }
+  }
 
   useEffect(() => {
-    console.log('Setting up polling...')
-    
-    const pollInterval = setInterval(async () => {
-      const { data, error } = await supabase
-        .from('circle_hero_words')
-        .select('*')
-        .order('order_number', { ascending: true })
-      
-      if (error) {
-        console.error('Polling error:', error)
-        return
-      }
-      
-      if (data) {
-        const newWords = data.map(w => w.word)
-        // Alleen updaten als de woorden daadwerkelijk zijn veranderd
-        if (JSON.stringify(newWords) !== JSON.stringify(words)) {
-          console.log('New words found:', newWords)
-          setWords(newWords)
+    console.log('Setting up circle hero subscription...')
+    void fetchItems()
+
+    const channel = supabase.channel('circle_hero_changes')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*',
+          schema: 'public',
+          table: 'circle_hero_items'
+        },
+        (payload) => {
+          console.log('Received change event:', payload)
+          void fetchItems()
         }
-      }
-    }, 1000) // Check elke seconde voor updates
+      )
+      .subscribe((status, err) => {
+        console.log('Subscription status:', status)
+        if (err) console.error('Subscription error:', err)
+      })
 
     return () => {
-      console.log('Cleaning up polling')
-      clearInterval(pollInterval)
+      console.log('Cleaning up circle hero subscription')
+      channel.unsubscribe()
     }
-  }, [words])
+  }, [])
 
-  return <CircleHeroComp images={initialImages} words={words} />
-} 
+  return <CircleHero initialItems={items} />
+}
+
+export { CircleHero } 

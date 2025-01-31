@@ -1,32 +1,18 @@
-import { CircleHero } from '@/app/home/components/CircleHero'
-import { TextSection } from '@/app/home/components/Textsection/Textsection'
-import { getCircleHeroImages, getCircleHeroWords } from '@/app/home/lib/circle-hero'
+import { CircleHeroWrapper } from './CircleHero'
+import { ThreeCirclesWrapper } from './3circlessection'
+import { TextSection } from './Textsection/Textsection'
 import { getTextSections } from '@/app/home/lib/text-section'
 
-export const revalidate = 0 // 0 voor ontwikkeling, gebruik een hoger getal in productie
+export const revalidate = 0
 
 export async function Home() {
-  try {
-    const [images, words, textSections] = await Promise.all([
-      getCircleHeroImages(),
-      getCircleHeroWords(),
-      getTextSections()
-    ])
+  const sections = await getTextSections()
 
-    return (
-      <div>
-        <CircleHero images={images} words={words} />
-        <TextSection initialSections={textSections} />
-      </div>
-    )
-  } catch (error) {
-    console.error('Error loading data:', error)
-    // Geef lege arrays door als fallback
-    return (
-      <div>
-        <CircleHero images={[]} words={[]} />
-        <TextSection initialSections={[]} />
-      </div>
-    )
-  }
-} 
+  return (
+    <div>
+      <CircleHeroWrapper />
+      <ThreeCirclesWrapper />
+      <TextSection initialSections={sections} />
+    </div>
+  )
+}

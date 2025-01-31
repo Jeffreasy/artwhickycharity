@@ -1,10 +1,11 @@
+import { CircleSection, createCircleSection } from '@/types/circle-sections'
 import { supabase } from '@/lib/supabase'
-import { CircleSection } from '@/types/circle-sections'
 
 export async function getCircleSections(): Promise<CircleSection[]> {
-  const { data: words, error } = await supabase
-    .from('circle_hero_words')
+  const { data, error } = await supabase
+    .from('circle_sections')
     .select('*')
+    .eq('is_active', true)
     .order('order_number', { ascending: true })
 
   if (error) {
@@ -12,23 +13,7 @@ export async function getCircleSections(): Promise<CircleSection[]> {
     throw new Error('Failed to fetch circle sections')
   }
 
-  console.log('Raw words from database:', words) // Debug log
-
-  // Map de korte woorden naar de juiste URLs
-  const urlMap: { [key: string]: string } = {
-    'Ar': '/art',
-    'Whisk': '/whisky',
-    'Charit': '/charity'
-  }
-
-  // Transformeert de data naar het juiste formaat voor de cirkels
-  return words.map(word => ({
-    id: word.id,
-    text: word.word,
-    href: urlMap[word.word] || `/${word.word.toLowerCase()}`,
-    order_number: word.order_number,
-    glowColor: getGlowColor(word.word)
-  }))
+  return data.map(section => createCircleSection(section))
 }
 
 function getGlowColor(text: string) {

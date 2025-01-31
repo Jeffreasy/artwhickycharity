@@ -12,50 +12,67 @@ interface TextSectionProps {
 
 export function TextSection({ initialSections }: TextSectionProps) {
   const [sections, setSections] = useState<TextSectionType[]>(initialSections || [])
+  const [isAnimationInitialized, setIsAnimationInitialized] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const textRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
 
-  // Realtime updates
+  // Realtime updates via Supabase
   useEffect(() => {
-    const pollInterval = setInterval(async () => {
-      const { data, error } = await supabase
-        .from('text_sections')
-        .select('*')
-        .order('order_number', { ascending: true })
-      
-      if (error) {
-        console.error('Polling error:', error)
-        return
-      }
-      
-      if (data) {
-        const newSections = data as TextSectionType[]
-        if (JSON.stringify(newSections) !== JSON.stringify(sections)) {
-          setSections(newSections)
+    const channel = supabase
+      .channel('text_sections_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'text_sections'
+      }, async (payload) => {
+        const { data, error } = await supabase
+          .from('text_sections')
+          .select('*')
+          .order('order_number', { ascending: true })
+
+        if (error) {
+          console.error('Error fetching updated sections:', error)
+          return
         }
-      }
-    }, 1000)
 
-    return () => clearInterval(pollInterval)
-  }, [sections])
+        if (data) {
+          setSections(data as TextSectionType[])
+        }
+      })
+      .subscribe()
 
-  // GSAP animaties (rest van je bestaande animatie code)
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [])
+
+  // GSAP setup en initiële animatie
   useEffect(() => {
-    // Registreer ScrollTrigger alleen aan de client-side
     gsap.registerPlugin(ScrollTrigger)
     
+    // Zet alle tekst eerst op opacity 0
+    gsap.set(['.main-letter', '.impact-letter', '.purpose-letter', '.sip-letter'], {
+      opacity: 0,
+      y: 15,
+      rotateX: 20
+    })
+
+    setIsAnimationInitialized(true)
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+    }
+  }, [])
+
+  // Scroll en hover animaties
+  useEffect(() => {
+    if (!isAnimationInitialized) return
+
     const container = containerRef.current
     if (!container) return
 
-    // Verfijnde scroll animaties
     const animateTextIn = (elements: NodeListOf<Element>, delay: number = 0) => {
-      gsap.set(elements, { 
-        opacity: 0,
-        y: 15,
-        rotateX: 20
-      })
-
-      gsap.to(elements, {
+      return gsap.to(elements, {
         opacity: 1,
         y: 0,
         rotateX: 0,
@@ -71,7 +88,7 @@ export function TextSection({ initialSections }: TextSectionProps) {
       })
     }
 
-    // Nog verfijndere hover effecten per letter
+    // Verfijnde scroll animaties
     const addLetterHoverEffects = (element: HTMLDivElement, isLargeText: boolean) => {
       const letters = element.querySelectorAll('span')
       
@@ -141,7 +158,6 @@ export function TextSection({ initialSections }: TextSectionProps) {
       })
     }
 
-    // Toepassen van alle animaties
     const letters = {
       main: container.querySelectorAll('.main-letter'),
       impact: container.querySelectorAll('.impact-letter'),
@@ -149,11 +165,12 @@ export function TextSection({ initialSections }: TextSectionProps) {
       sip: container.querySelectorAll('.sip-letter')
     }
 
-    // Scroll animaties met verschillende delays
-    animateTextIn(letters.main, 0)
-    animateTextIn(letters.impact, 0.3)
-    animateTextIn(letters.purpose, 0.6)
-    animateTextIn(letters.sip, 0.9)
+    const animations = [
+      animateTextIn(letters.main, 0),
+      animateTextIn(letters.impact, 0.3),
+      animateTextIn(letters.purpose, 0.6),
+      animateTextIn(letters.sip, 0.9)
+    ]
 
     // Hover effecten
     const elements = {
@@ -168,22 +185,14 @@ export function TextSection({ initialSections }: TextSectionProps) {
     if (elements.purpose) addLetterHoverEffects(elements.purpose, true)
     if (elements.sip) addLetterHoverEffects(elements.sip, false)
 
-    // Cleanup
     return () => {
-      // Cleanup ScrollTrigger bij unmount
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
-      Object.values(letters).forEach(letterGroup => {
-        letterGroup.forEach(letter => {
-          gsap.killTweensOf(letter)
-          gsap.set(letter, { clearProps: "all" })
-        })
-      })
+      animations.forEach(anim => anim.kill())
     }
-  }, [sections])
+  }, [sections, isAnimationInitialized])
 
   return (
     <section ref={containerRef} className="min-h-screen bg-black relative py-24">
-      <div className="container mx-auto relative">
+      <div className="container mx-auto relative opacity-0" style={{ opacity: isAnimationInitialized ? 1 : 0 }}>
         {sections?.map((section) => (
           <div 
             key={section.id}

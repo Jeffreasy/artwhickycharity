@@ -4,6 +4,9 @@ import { Navigation } from '@/globalComponents/ui/Navigation'
 import './globals.css'
 import { MenuProvider } from '@/contexts/MenuContext'
 import { Footer } from '@/globalComponents/ui/Footer/footer'
+import { LanguageBar } from '@/app/home/components/LanguageBar'
+import { getLanguagePhrases } from '@/app/home/lib/language-bar'
+import { Suspense } from 'react'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -14,6 +17,17 @@ const robotoSlab = Roboto_Slab({
 export const metadata = {
   title: 'Whisky4Charity',
   description: 'Whisky for a good cause',
+}
+
+// Aparte async component voor het laden van de LanguageBar
+async function LanguageBarWithData() {
+  try {
+    const phrases = await getLanguagePhrases()
+    return <LanguageBar initialPhrases={phrases} />
+  } catch (error) {
+    console.error('Error loading language phrases:', error)
+    return null
+  }
 }
 
 export default function RootLayout({
@@ -35,8 +49,21 @@ export default function RootLayout({
       >
         <MenuProvider>
           <Navigation />
-          <main className="pt-[120px]">
-            {children}
+          <main>
+            <div className="pt-[120px]">
+              <Suspense 
+                fallback={
+                  <div className="h-[52px] flex items-center justify-center">
+                    <span className="text-white/50">Loading...</span>
+                  </div>
+                }
+              >
+                <LanguageBarWithData />
+              </Suspense>
+            </div>
+            <div className="pt-6">
+              {children}
+            </div>
           </main>
           <Footer />
         </MenuProvider>
