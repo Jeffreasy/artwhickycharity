@@ -11,6 +11,8 @@ declare module 'next-cloudinary' {
     sizes?: string
     loading?: 'lazy' | 'eager'
     preserveTransformations?: boolean
+    format?: string
+    quality?: string
   }
 
   export const CldImage: FC<CldImageProps>

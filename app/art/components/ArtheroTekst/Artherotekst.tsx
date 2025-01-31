@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { CldImage } from 'next-cloudinary'
 import { ArtHeroSection } from '@/types/art-section'
 import { supabase } from '@/lib/supabase'
+import { getCloudinaryId } from '@/lib/cloudinary'
 
 interface ArtheroTekstProps {
   initialSections: ArtHeroSection[]
@@ -43,10 +44,10 @@ const ArtheroTekst = ({ initialSections }: ArtheroTekstProps) => {
     <section className="relative h-[80vh] w-full mt-[120px]">
       {/* Background Image */}
       <CldImage
-        src={getContentByType('image')}
-        alt="Art background"
+        src={getCloudinaryId(getContentByType('image'))}
         width={1920}
         height={1080}
+        alt={getContentByType('image_alt') || "Art background"}
         className="object-cover absolute inset-0 w-full h-full"
         priority
         sizes="100vw"

@@ -10,13 +10,13 @@ export interface ArtHeroSection {
 
 export interface ArtCarouselImage {
   id: string
-  created_at: string
-  updated_at: string
-  carousel_number: number
   cloudinary_id: string
   alt_text: string
+  carousel_number: number
   order_number: number
   priority: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface ArtVideo {

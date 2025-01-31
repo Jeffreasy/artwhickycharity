@@ -67,10 +67,10 @@ export function Fotocarrousel1({ initialImages }: Fotocarrousel1Props) {
                   <div className="absolute inset-0 p-1">
                     <CldImage
                       src={image.cloudinary_id}
-                      alt={image.alt_text}
                       width={800}
                       height={600}
-                      className="object-cover w-full h-full"
+                      alt={image.alt_text || ""}
+                      className="w-full h-full object-cover"
                       sizes="(max-width: 768px) 100vw, 50vw"
                       priority={image.priority}
                     />
