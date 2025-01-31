@@ -1,27 +1,43 @@
 import { NextResponse } from 'next/server'
+import { getCircleHeroItems } from '@/app/home/lib/circle-hero'
 import { supabase } from '@/lib/supabase'
-import type { CircleHeroImage } from '@/types/circle-hero'
-import { getCircleHeroImages } from '@/app/home/lib/circle-hero'
+import { CircleHeroItem } from '@/types/circle-hero'
 
 export async function GET() {
-  const images = await getCircleHeroImages()
-  return NextResponse.json(images)
+  try {
+    const items = await getCircleHeroItems()
+    return NextResponse.json(items)
+  } catch (error) {
+    console.error('Error in circle-hero API route:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch circle hero items' },
+      { status: 500 }
+    )
+  }
+}
+
+interface CircleHeroImageUpdate {
+  id: string
+  url: string
+  alt: string
+  cloudinary_id: string
+  cloudinary_version: string
 }
 
 export async function PUT(request: Request) {
   try {
-    const images = await request.json() as CircleHeroImage[]
+    const images = await request.json() as CircleHeroImageUpdate[]
     
     const { error } = await supabase
-      .from('circle_hero_images')
+      .from('circle_hero_items')
       .upsert(
         images.map(img => ({
-          id: img.id.toString(),
-          src: img.url,
-          alt: img.alt,
+          id: img.id,
+          image_src: img.url,
+          image_alt: img.alt,
           cloudinary_id: img.cloudinary_id,
-          cloudinary_version: img.cloudinary_version,
-          order_number: img.id
+          version: img.cloudinary_version,
+          order_number: parseInt(img.id, 10)
         }))
       )
 
