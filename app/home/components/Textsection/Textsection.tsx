@@ -191,12 +191,12 @@ export function TextSection({ initialSections }: TextSectionProps) {
   }, [sections, isAnimationInitialized])
 
   return (
-    <section ref={containerRef} className="min-h-screen bg-black relative py-24">
-      <div className="container mx-auto relative opacity-0" style={{ opacity: isAnimationInitialized ? 1 : 0 }}>
+    <section ref={containerRef} className="min-h-screen bg-black relative py-12 sm:py-16 md:py-24">
+      <div className="container mx-auto relative px-4 sm:px-6 md:px-8" style={{ opacity: isAnimationInitialized ? 1 : 0 }}>
         {sections?.map((section) => (
           <div 
             key={section.id}
-            className={`mb-32 ${
+            className={`mb-16 sm:mb-24 md:mb-32 ${
               section.style_type === 'impact' || section.style_type === 'sip' 
                 ? 'flex justify-end' 
                 : ''
@@ -208,8 +208,8 @@ export function TextSection({ initialSections }: TextSectionProps) {
               }}
               className={`
                 ${section.style_type === 'main' || section.style_type === 'purpose'
-                  ? 'max-w-xl ml-24'
-                  : 'max-w-md mr-24 text-right'
+                  ? 'max-w-[280px] sm:max-w-md md:max-w-xl mx-4 sm:ml-12 md:ml-24'
+                  : 'max-w-[240px] sm:max-w-sm md:max-w-md mx-4 sm:mr-12 md:mr-24 text-right'
                 } cursor-default
               `}
             >
@@ -220,14 +220,14 @@ export function TextSection({ initialSections }: TextSectionProps) {
                     ${section.style_type}-letter 
                     inline-block 
                     ${section.style_type === 'main' || section.style_type === 'purpose'
-                      ? 'text-white text-[2.75rem] font-bold'
-                      : 'text-white/80 text-xl font-serif'
+                      ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
+                      : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
                     } 
                     tracking-wide
-                    ${char === '\n' ? 'block h-10' : ''}
-                    ${char === ' ' ? 'w-3' : ''}
-                    ${char === '-' ? 'text-gray-500 block h-6' : ''}
-                    ${char === ':' ? 'block h-6' : ''}
+                    ${char === '\n' ? 'block h-6 sm:h-8 md:h-10' : ''}
+                    ${char === ' ' ? 'w-2 sm:w-2.5 md:w-3' : ''}
+                    ${char === '-' ? 'text-gray-500 block h-4 sm:h-5 md:h-6' : ''}
+                    ${char === ':' ? 'block h-4 sm:h-5 md:h-6' : ''}
                   `}
                 >
                   {char}

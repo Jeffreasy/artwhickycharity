@@ -82,7 +82,7 @@ export function FullscreenMenu() {
       ref={menuRef}
       aria-hidden={!isMenuOpen}
       className={cn(
-        "fixed top-[80px] left-0 right-0 bottom-0",
+        "fixed top-[80px] sm:top-[100px] md:top-[120px] left-0 right-0 bottom-0",
         "z-[998]",
         "bg-black",
         "border-t border-white/20",
@@ -94,9 +94,9 @@ export function FullscreenMenu() {
     >
       <div className="h-full w-full">
         <nav className="relative w-full mx-auto">
-          <div ref={menuItemsRef} className="grid grid-cols-2 grid-rows-2 gap-0 relative">
-            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/20 -translate-x-1/2" />
-            <div className="absolute top-1/2 left-0 right-0 h-px bg-white/20 -translate-y-1/2" />
+          <div ref={menuItemsRef} className="grid grid-cols-1 sm:grid-cols-2 gap-0 relative">
+            <div className="hidden sm:block absolute left-1/2 top-0 bottom-0 w-px bg-white/20 -translate-x-1/2" />
+            <div className="hidden sm:block absolute top-1/2 left-0 right-0 h-px bg-white/20 -translate-y-1/2" />
 
             {/* Menu Items */}
             {[
@@ -105,10 +105,10 @@ export function FullscreenMenu() {
               { href: "/charity", text: "CHARITY" },
               { href: "/about", text: "ABOUT" }
             ].map((item) => (
-              <div key={item.href} className="flex items-center justify-center py-20 px-16">
+              <div key={item.href} className="flex items-center justify-center py-8 sm:py-12 md:py-20 px-4 sm:px-8 md:px-16">
                 <Link 
                   href={item.href}
-                  className="text-[32px] font-bold text-white hover:text-gray-300 transition-colors"
+                  className="text-2xl sm:text-3xl md:text-[32px] font-bold text-white hover:text-gray-300 transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
@@ -120,13 +120,13 @@ export function FullscreenMenu() {
           </div>
 
           {/* HOME section */}
-          <div className="relative pt-20">
+          <div className="relative pt-8 sm:pt-12 md:pt-20">
             <div className="absolute top-0 left-0 right-0 h-px bg-white/20" />
             
             <div ref={homeRef} className="text-center">
               <Link 
                 href="/"
-                className="text-[32px] font-bold text-white hover:text-gray-300 transition-colors"
+                className="text-2xl sm:text-3xl md:text-[32px] font-bold text-white hover:text-gray-300 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
