@@ -6,7 +6,12 @@ import { gsap } from 'gsap'
 import { cn } from '@/lib/utils'
 import { CircleSection, createCircleSection } from '@/types/circle-sections'
 import { supabase } from '@/lib/supabase'
-import { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
+
+interface BorderWidthConfig {
+  mobile: number
+  tablet: number
+  desktop: number
+}
 
 interface CircleProps {
   href: string
@@ -20,7 +25,7 @@ interface CircleProps {
     circleSizeDesktop: number
     circleSizeTablet: number
     circleSizeMobile: number
-    borderWidth: number
+    borderWidth: number | BorderWidthConfig
     borderColor: string
     borderStyle: string
     
@@ -51,7 +56,7 @@ const Circle = ({ href, text, glowColor, styling }: CircleProps) => {
     const circle = circleRef.current
     if (!circle) return
 
-    // Rotatie animatie met aangepaste duration
+    // Rotatie animatie
     rotationRef.current = gsap.to(circle, {
       rotation: 360,
       duration: styling.rotationDuration,
@@ -59,7 +64,7 @@ const Circle = ({ href, text, glowColor, styling }: CircleProps) => {
       ease: "none"
     })
 
-    // Aangepaste glow animatie
+    // Glow animatie
     glowRef.current = gsap.timeline({ repeat: -1 })
 
     if (glowColor.background === 'rainbow') {
@@ -97,10 +102,8 @@ const Circle = ({ href, text, glowColor, styling }: CircleProps) => {
         })
     }
 
+    // Hover en touch handlers
     let isActive = false
-    let touchStartTime: number
-    let touchStartX: number
-    let touchStartY: number
     
     const activate = () => {
       if (!isActive) {
@@ -128,28 +131,7 @@ const Circle = ({ href, text, glowColor, styling }: CircleProps) => {
     
     circle.addEventListener('mouseenter', activate)
     circle.addEventListener('mouseleave', deactivate)
-    circle.addEventListener('touchstart', (e) => {
-      touchStartTime = new Date().getTime()
-      touchStartX = e.touches[0].clientX
-      touchStartY = e.touches[0].clientY
-      activate()
-    })
-    
-    circle.addEventListener('touchend', (e) => {
-      const touchEndTime = new Date().getTime()
-      const touchEndX = e.changedTouches[0].clientX
-      const touchEndY = e.changedTouches[0].clientY
-      const dx = touchEndX - touchStartX
-      const dy = touchEndY - touchStartY
-      const distance = Math.sqrt(dx * dx + dy * dy)
-      
-      if (distance < 10 && touchEndTime - touchStartTime < 200) {
-        window.location.href = href
-      } else {
-        deactivate()
-      }
-    })
-    
+
     return () => {
       rotationRef.current?.kill()
       glowRef.current?.kill()
@@ -162,34 +144,32 @@ const Circle = ({ href, text, glowColor, styling }: CircleProps) => {
     <Link
       href={href}
       ref={circleRef}
+      className={cn(
+        "w-[var(--circle-size-mobile)] h-[var(--circle-size-mobile)]",
+        "sm:w-[var(--circle-size-tablet)] sm:h-[var(--circle-size-tablet)]",
+        "md:w-[var(--circle-size)] md:h-[var(--circle-size)]",
+        "rounded-full flex items-center justify-center cursor-pointer",
+        "no-underline transform-gpu preserve-3d",
+        "transition-transform duration-300 overflow-hidden"
+      )}
       style={{
-        '--circle-size-desktop': `${styling.circleSizeDesktop}px`,
+        '--circle-size': `${styling.circleSizeDesktop}px`,
         '--circle-size-tablet': `${styling.circleSizeTablet}px`,
         '--circle-size-mobile': `${styling.circleSizeMobile}px`,
-        '--font-size-desktop': `${styling.fontSizeDesktop}px`,
-        '--font-size-tablet': `${styling.fontSizeTablet}px`,
-        '--font-size-mobile': `${styling.fontSizeMobile}px`,
-        borderWidth: styling.borderWidth,
+        borderWidth: typeof styling.borderWidth === 'object' ? 
+          styling.borderWidth.desktop : styling.borderWidth,
         borderColor: styling.borderColor,
         borderStyle: styling.borderStyle,
         color: styling.textColor,
         fontWeight: styling.fontWeight,
       } as React.CSSProperties}
-      className={cn(
-        "w-[var(--circle-size-desktop)] h-[var(--circle-size-desktop)]",
-        "md:w-[var(--circle-size-tablet)] md:h-[var(--circle-size-tablet)]",
-        "sm:w-[var(--circle-size-mobile)] sm:h-[var(--circle-size-mobile)]",
-        "rounded-full flex items-center justify-center cursor-pointer",
-        "no-underline transform-gpu preserve-3d",
-        "transition-transform duration-300 overflow-hidden"
-      )}
     >
       <span 
         className={cn(
           "text-center select-none drop-shadow-md z-10",
-          "text-[var(--font-size-desktop)]",
-          "md:text-[var(--font-size-tablet)]",
-          "sm:text-[var(--font-size-mobile)]"
+          "text-[var(--font-size-mobile)]",
+          "sm:text-[var(--font-size-tablet)]",
+          "md:text-[var(--font-size-desktop)]"
         )}
       >
         {text}
@@ -253,34 +233,40 @@ export function ThreeCirclesSection({ initialSections }: ThreeCirclesSectionProp
   }
 
   return (
-    <section className="flex justify-center items-center min-h-[600px] w-full relative z-0">
+    <section className="flex justify-center items-center py-16 sm:py-20 md:py-24 w-full relative z-0">
       <div className="container max-w-4xl mx-auto px-4">
-        <div className="flex justify-center items-center gap-16">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-12 sm:gap-16 md:gap-20">
           {sections.map((section) => (
-            <Circle 
-              key={section.id}
-              href={section.href}
-              text={section.text}
-              glowColor={section.glowColor}
-              styling={{
-                circleSizeDesktop: section.circle_size_desktop,
-                circleSizeTablet: section.circle_size_tablet,
-                circleSizeMobile: section.circle_size_mobile,
-                borderWidth: section.border_width,
-                borderColor: section.border_color,
-                borderStyle: section.border_style,
-                fontSizeDesktop: section.font_size_desktop,
-                fontSizeTablet: section.font_size_tablet,
-                fontSizeMobile: section.font_size_mobile,
-                fontWeight: section.font_weight,
-                textColor: section.text_color,
-                rotationDuration: section.rotation_duration,
-                hoverScale: section.hover_scale,
-                animationEase: section.animation_ease,
-                glowIntensity: section.glow_intensity,
-                glowDuration: section.glow_duration,
-              }}
-            />
+            <div key={section.id} className="flex justify-center">
+              <Circle 
+                href={section.href}
+                text={section.text}
+                glowColor={section.glowColor}
+                styling={{
+                  circleSizeDesktop: section.circle_size_desktop,
+                  circleSizeTablet: Math.floor(section.circle_size_desktop * 0.75),
+                  circleSizeMobile: Math.floor(section.circle_size_desktop * 0.5),
+                  borderWidth: section.border_width > 2 ? 
+                    {
+                      mobile: Math.max(1, Math.floor(section.border_width * 0.5)),
+                      tablet: Math.max(2, Math.floor(section.border_width * 0.75)),
+                      desktop: section.border_width
+                    } : section.border_width,
+                  borderColor: section.border_color,
+                  borderStyle: section.border_style,
+                  fontSizeDesktop: section.font_size_desktop,
+                  fontSizeTablet: Math.floor(section.font_size_desktop * 0.8),
+                  fontSizeMobile: Math.floor(section.font_size_desktop * 0.7),
+                  fontWeight: section.font_weight,
+                  textColor: section.text_color,
+                  rotationDuration: section.rotation_duration,
+                  hoverScale: section.hover_scale,
+                  animationEase: section.animation_ease,
+                  glowIntensity: section.glow_intensity,
+                  glowDuration: section.glow_duration,
+                }}
+              />
+            </div>
           ))}
         </div>
       </div>

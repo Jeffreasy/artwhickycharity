@@ -82,8 +82,8 @@ export function Navigation() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 bg-black z-[999]">
-        <div className="flex h-[120px] items-center px-8 border-b border-white/20">
-          {/* Left: Contact Links - Stacked */}
+        <div className="flex h-[80px] sm:h-[100px] md:h-[120px] items-center px-4 sm:px-6 md:px-8 border-b border-white/20">
+          {/* Left: Contact Links - Stack vertically on all screens */}
           <div className="flex flex-col gap-1">
             <a 
               href="mailto:info@whisky4charity.com" 
@@ -103,15 +103,11 @@ export function Navigation() {
             </a>
           </div>
 
-          {/* Center: Pre-order with Logo */}
+          {/* Center: Pre-order with Logo - Kleiner op mobiel */}
           <div className="flex-1 flex justify-center items-center">
-            <div 
-              ref={circleContainerRef} 
-              className="relative flex items-center cursor-pointer"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <span ref={preTextRef} className="text-white text-xl mr-6">PRE</span>
-              <div className="relative w-24 h-24">
+            <div ref={circleContainerRef} className="relative flex items-center cursor-pointer">
+              <span ref={preTextRef} className="text-white text-base sm:text-lg md:text-xl mr-3 sm:mr-4 md:mr-6">PRE</span>
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
                 {/* Witte cirkel border met zwarte achtergrond */}
                 <div 
                   ref={circleRef}
@@ -128,14 +124,14 @@ export function Navigation() {
                   />
                 </div>
               </div>
-              <span ref={orderTextRef} className="text-white text-xl ml-6">ORDER</span>
+              <span ref={orderTextRef} className="text-white text-base sm:text-lg md:text-xl ml-3 sm:ml-4 md:ml-6">ORDER</span>
             </div>
           </div>
 
-          {/* Right: Menu Button */}
+          {/* Right: Menu Button - Kleiner op mobiel */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-white hover:text-white/80 transition-colors text-xl"
+            className="text-white hover:text-white/80 transition-colors text-base sm:text-lg md:text-xl"
           >
             Menu
           </button>

@@ -51,8 +51,18 @@ export function Fotocarrousel1({ initialImages }: Fotocarrousel1Props) {
         <div className="container mx-auto px-4">
           <Swiper
             modules={[Autoplay]}
-            spaceBetween={32}
-            slidesPerView={2}
+            spaceBetween={16}
+            slidesPerView={1}
+            breakpoints={{
+              640: {
+                slidesPerView: 1.5,
+                spaceBetween: 24
+              },
+              768: {
+                slidesPerView: 2,
+                spaceBetween: 32
+              }
+            }}
             speed={1000}
             autoplay={autoplayConfig}
             loop={true}
@@ -61,17 +71,17 @@ export function Fotocarrousel1({ initialImages }: Fotocarrousel1Props) {
             onTouchStart={onTouchStart}
             className="w-full"
           >
-            {images.map((image, index) => (
+            {images.map((image) => (
               <SwiperSlide key={image.id}>
-                <div className="relative w-full h-[600px] border-2 border-black">
+                <div className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] border-2 border-black">
                   <div className="absolute inset-0 p-1">
                     <CldImage
                       src={image.cloudinary_id}
+                      alt={image.alt_text}
                       width={800}
                       height={600}
-                      alt={image.alt_text || ""}
-                      className="w-full h-full object-cover"
-                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover w-full h-full"
+                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
                       priority={image.priority}
                     />
                   </div>
