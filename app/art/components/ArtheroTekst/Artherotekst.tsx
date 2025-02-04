@@ -41,7 +41,7 @@ const ArtheroTekst = ({ initialSections }: ArtheroTekstProps) => {
   }
 
   return (
-    <section className="relative h-[60vh] sm:h-[70vh] md:h-[80vh] w-full mt-[80px] sm:mt-[100px] md:mt-[120px]">
+    <section className="relative min-h-[500px] h-[60vh] sm:h-[70vh] md:h-[80vh] w-full mt-[60px] sm:mt-[80px] md:mt-[120px]">
       {/* Background Image */}
       <CldImage
         src={getCloudinaryId(getContentByType('image'))}
@@ -54,20 +54,20 @@ const ArtheroTekst = ({ initialSections }: ArtheroTekstProps) => {
       />
       
       {/* Content Block - verbeterde responsiviteit */}
-      <div className="absolute inset-0 flex items-center justify-center px-4 sm:px-6 md:px-8">
-        <div className="bg-black/70 p-6 sm:p-8 md:p-12 lg:p-16 w-full max-w-[90vw] md:max-w-4xl mx-auto">
+      <div className="absolute inset-0 flex items-center justify-center p-4 sm:px-6 md:px-8">
+        <div className="bg-black/70 p-4 sm:p-6 md:p-8 lg:p-12 w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl mx-auto">
           <div className="text-center text-white">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-4 md:mb-6">
+            <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-6">
               {getContentByType('title')}
             </h1>
-            <h2 className="text-lg sm:text-xl md:text-2xl mb-3 md:mb-4">
+            <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl mb-2 sm:mb-3 md:mb-4">
               {getContentByType('subtitle')}
             </h2>
-            <div className="space-y-4 md:space-y-6">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
               {sections
                 .filter(section => section.style_type === 'paragraph')
                 .map(section => (
-                  <p key={section.id} className="text-base sm:text-lg">
+                  <p key={section.id} className="text-sm sm:text-base md:text-lg">
                     {section.content}
                   </p>
                 ))}

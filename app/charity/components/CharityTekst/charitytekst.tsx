@@ -11,18 +11,21 @@ interface CharityTekstProps {
 }
 
 const renderText = (content: string, isTitle: boolean = false) => {
-  return content.split('').map((char, index) => (
-    <span 
-      key={index} 
-      className={`
-        animate-letter 
-        inline-block
-        ${char === ' ' ? 'w-2' : ''} 
-        ${char === '\n' ? 'block h-6' : ''}
-      `}
-    >
-      {char}
-    </span>
+  return content.split(' ').map((word, index, array) => (
+    <React.Fragment key={index}>
+      <span 
+        className={`
+          inline-block
+          animate-letter
+          ${isTitle ? 'text-4xl sm:text-5xl md:text-6xl font-bold' : 'text-lg sm:text-xl'}
+        `}
+      >
+        {word}
+      </span>
+      {index < array.length - 1 && (
+        <span className="inline-block w-2 sm:w-2.5">&nbsp;</span>
+      )}
+    </React.Fragment>
   ))
 }
 
@@ -130,41 +133,41 @@ export function CharityTekst({ initialSections }: CharityTekstProps) {
   }
 
   return (
-    <section ref={containerRef} className="min-h-screen bg-black text-white py-24">
-      <div className="container mx-auto px-6">
+    <section ref={containerRef} className="min-h-screen bg-black text-white pt-[120px] pb-24">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8">
         {sections
           .filter(section => section.style_type === 'title')
           .map(section => (
             <h1 
               key={section.id} 
               ref={(el) => setTextRef(el, section.section_key)}
-              className="text-5xl font-bold text-center mb-16"
+              className="text-center mb-16"
             >
               {renderText(section.content, true)}
             </h1>
           ))}
 
-        <div className="max-w-4xl mx-auto space-y-8 text-center">
+        <div className="max-w-3xl mx-auto space-y-8">
           {sections
             .filter(section => section.style_type === 'paragraph')
             .map(section => (
               <p 
                 key={section.id} 
                 ref={(el) => setTextRef(el, section.section_key)}
-                className="text-lg leading-relaxed"
+                className="leading-relaxed text-white/90 text-center"
               >
                 {renderText(section.content)}
               </p>
             ))}
 
-          <div className="mt-12">
+          <div className="mt-12 text-center">
             {sections
               .filter(section => section.section_key === 'more_info_text')
               .map(section => (
                 <p 
                   key={section.id} 
                   ref={(el) => setTextRef(el, section.section_key)}
-                  className="text-lg font-semibold"
+                  className="text-lg sm:text-xl font-semibold mb-4"
                 >
                   {renderText(section.content)}
                 </p>
