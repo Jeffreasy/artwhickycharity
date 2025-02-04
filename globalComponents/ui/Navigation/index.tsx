@@ -86,14 +86,14 @@ export function Navigation() {
           {/* Left: Contact Links - Stack vertically on all screens */}
           <div className="flex flex-col gap-1">
             <a 
-              href="mailto:info@whisky4charity.com" 
+              href="mailto:info@whiskyforcharity.com" 
               className="text-white/80 hover:text-white transition-colors flex items-center"
               aria-label="Send email"
             >
               <MdEmail size={24} />
             </a>
             <a 
-              href="https://instagram.com" 
+              href="https://www.instagram.com/whiskyforcharity/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white/80 hover:text-white transition-colors flex items-center"
