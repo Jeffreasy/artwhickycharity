@@ -13,7 +13,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo & Info */}
           <div className="space-y-3">
-            <h3 className="text-xl font-bold">Whisky4Charity</h3>
+            <h3 className="text-xl font-bold">WhiskyForCharity</h3>
             <p className="text-sm text-white/60">
               Uniting fine whisky, impactful art, and meaningful change.
             </p>
@@ -47,18 +47,10 @@ export function Footer() {
             <ul className="space-y-1">
               <li className="text-sm">
                 <a 
-                  href="mailto:info@whisky4charity.com"
+                  href="mailto:info@whiskyforcharity.com"
                   className="hover:text-white transition-colors"
                 >
-                  info@whisky4charity.com
-                </a>
-              </li>
-              <li className="text-sm">
-                <a 
-                  href="tel:+31612345678"
-                  className="hover:text-white transition-colors"
-                >
-                  +31 6 12345678
+                  info@whiskyforcharity.com
                 </a>
               </li>
             </ul>
@@ -69,7 +61,7 @@ export function Footer() {
             <h4 className="text-lg font-semibold">Follow Us</h4>
             <div className="flex space-x-4">
               <motion.a
-                href="https://instagram.com"
+                href="https://www.instagram.com/whiskyforcharity/"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.1 }}
@@ -78,13 +70,13 @@ export function Footer() {
                 Instagram
               </motion.a>
               <motion.a
-                href="https://facebook.com"
+                href="https://www.tiktok.com/@whisky_art_charity?_t=ZN-8tdGke3XXza&_r=1"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.1 }}
                 className="text-white/60 hover:text-white transition-colors"
               >
-                Facebook
+                TikTok
               </motion.a>
             </div>
           </div>
@@ -93,7 +85,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-6 text-center text-sm text-white/60">
           <p>
-            © {currentYear} Whisky4Charity. All rights reserved.
+            © {currentYear} WhiskyForCharity. All rights reserved.
           </p>
         </div>
       </div>
