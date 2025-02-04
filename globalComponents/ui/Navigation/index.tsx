@@ -105,7 +105,14 @@ export function Navigation() {
 
           {/* Center: Pre-order with Logo - Kleiner op mobiel */}
           <div className="flex-1 flex justify-center items-center">
-            <div ref={circleContainerRef} className="relative flex items-center cursor-pointer">
+            <div 
+              ref={circleContainerRef} 
+              className="relative flex items-center cursor-pointer"
+              onClick={() => setIsModalOpen(true)}
+              role="button"
+              tabIndex={0}
+              aria-label="Open pre-order form"
+            >
               <span ref={preTextRef} className="text-white text-base sm:text-lg md:text-xl mr-3 sm:mr-4 md:mr-6">PRE</span>
               <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
                 {/* Witte cirkel border met zwarte achtergrond */}
