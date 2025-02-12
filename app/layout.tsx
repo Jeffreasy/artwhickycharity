@@ -3,10 +3,12 @@ import { cn } from '@/utils/cn'
 import { Navigation } from '@/globalComponents/ui/Navigation'
 import './globals.css'
 import { MenuProvider } from '@/contexts/MenuContext'
+import { CartProvider } from '@/contexts/CartContext'
 import { Footer } from '@/globalComponents/ui/Footer/footer'
 import { LanguageBar } from '@/app/home/components/LanguageBar'
 import { getLanguagePhrases } from '@/app/home/lib/language-bar'
 import { Suspense } from 'react'
+import { CartButton } from '@/globalComponents/ui/CartButton'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -48,24 +50,27 @@ export default function RootLayout({
         )}
       >
         <MenuProvider>
-          <Navigation />
-          <main>
-            <div className="pt-[120px]">
-              <Suspense 
-                fallback={
-                  <div className="h-[52px] flex items-center justify-center">
-                    <span className="text-white/50">Loading...</span>
-                  </div>
-                }
-              >
-                <LanguageBarWithData />
-              </Suspense>
-            </div>
-            <div className="pt-6">
-              {children}
-            </div>
-          </main>
-          <Footer />
+          <CartProvider>
+            <Navigation />
+            <main>
+              <div className="pt-[120px]">
+                <Suspense 
+                  fallback={
+                    <div className="h-[52px] flex items-center justify-center">
+                      <span className="text-white/50">Loading...</span>
+                    </div>
+                  }
+                >
+                  <LanguageBarWithData />
+                </Suspense>
+              </div>
+              <div className="pt-6">
+                {children}
+              </div>
+            </main>
+            <Footer />
+            <CartButton />
+          </CartProvider>
         </MenuProvider>
       </body>
     </html>

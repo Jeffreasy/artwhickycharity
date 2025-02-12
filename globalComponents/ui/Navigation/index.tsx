@@ -4,14 +4,16 @@ import React, { useRef, useEffect, useState, FormEvent } from 'react'
 import { useMenu } from '@/contexts/MenuContext'
 import { FullscreenMenu } from '../FullscreenMenu'
 import { MdEmail } from 'react-icons/md'
-import { FaInstagram } from 'react-icons/fa'
+import { FaInstagram, FaShoppingCart, FaStore } from 'react-icons/fa'
 import { CldImage } from 'next-cloudinary'
 import gsap from 'gsap'
 import { Modal } from '../Modal'
 import { useRouter } from 'next/navigation'
+import { useCart } from '@/contexts/CartContext'
 
 export function Navigation() {
   const { isMenuOpen, setIsMenuOpen } = useMenu()
+  const { totalItems } = useCart()
   const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [formData, setFormData] = useState({
@@ -135,13 +137,39 @@ export function Navigation() {
             </div>
           </div>
 
-          {/* Right: Menu Button - Kleiner op mobiel */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-white hover:text-white/80 transition-colors text-base sm:text-lg md:text-xl"
-          >
-            Menu
-          </button>
+          {/* Right: Shop, Cart en Menu buttons */}
+          <div className="flex items-center gap-4">
+            {/* Shop Button */}
+            <button
+              onClick={() => router.push('/shop')}
+              className="text-white/80 hover:text-white transition-colors"
+              aria-label="Go to shop"
+            >
+              <FaStore size={20} />
+            </button>
+
+            {/* Cart Button */}
+            <button
+              onClick={() => router.push('/shop/cart')}
+              className="text-white/80 hover:text-white transition-colors relative"
+              aria-label="View cart"
+            >
+              <FaShoppingCart size={20} />
+              {totalItems > 0 && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                  {totalItems}
+                </div>
+              )}
+            </button>
+
+            {/* Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-white hover:text-white/80 transition-colors text-base sm:text-lg md:text-xl"
+            >
+              Menu
+            </button>
+          </div>
         </div>
       </nav>
 
