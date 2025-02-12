@@ -1,7 +1,7 @@
 declare module 'next-cloudinary' {
-  import { FC } from 'react'
+  import { FC, ImgHTMLAttributes } from 'react'
 
-  interface CldImageProps {
+  export interface CldImageProps extends ImgHTMLAttributes<HTMLImageElement> {
     src: string
     width?: number
     height?: number
@@ -13,7 +13,8 @@ declare module 'next-cloudinary' {
     preserveTransformations?: boolean
     format?: string
     quality?: string
+    fill?: boolean
   }
 
   export const CldImage: FC<CldImageProps>
-} 
+}
