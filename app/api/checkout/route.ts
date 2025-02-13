@@ -12,21 +12,29 @@ const supabase = createClient(
 
 // Nieuwe SMTP configuratie voor Argeweb
 const transporter = createTransport({
-  host: 'mail.argewebhosting.nl', // Gebruik de algemene mail server
-  port: 587,
-  secure: false,
+  host: process.env.SMTP_HOST,  // mail.argewebhosting.nl
+  port: Number(process.env.SMTP_PORT), // 587
+  secure: false,  // false voor STARTTLS
   auth: {
-    user: 'Jeffrey@whiskyforcharity.com', // Volledige email
-    pass: 'Bootje@12'
-  }
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: false,
+    ciphers: 'TLSv1.2',
+    minVersion: 'TLSv1.2'
+  },
+  debug: true
 })
 
-// Verifieer SMTP verbinding
-try {
-  await transporter.verify()
-  console.log('SMTP Connection verified')
-} catch (err) {
-  console.error('SMTP Verification failed:', err)
+// Verifieer SMTP verbinding alleen in productie
+if (process.env.NODE_ENV === 'production') {
+  try {
+    const verification = await transporter.verify()
+    console.log('SMTP Connection verified:', verification)
+  } catch (err) {
+    console.error('SMTP Verification failed:', err)
+  }
 }
 
 interface RequestData {
@@ -55,11 +63,28 @@ export async function POST(request: Request) {
       throw new Error('Failed to save order')
     }
 
-    // Tijdelijk: stuur geen emails, alleen order opslaan
+    // Alleen emails versturen in productie
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        // Email logica hier
+        await transporter.sendMail({
+          from: '"Whisky For Charity" <Jeffrey@whiskyforcharity.com>',
+          to: formData.email,
+          subject: `Order Bevestiging #${orderNumber}`,
+          // ... rest van de email configuratie
+        })
+      } catch (emailError) {
+        console.error('Failed to send email:', emailError)
+        // Ga door met de order zelfs als email faalt
+      }
+    }
+
     return NextResponse.json({ 
       success: true, 
       orderNumber,
-      message: 'Order successfully processed. Email confirmation temporarily disabled.'
+      message: process.env.NODE_ENV === 'production' 
+        ? 'Order successfully processed.' 
+        : 'Order processed (email disabled in development)'
     })
 
   } catch (error) {
