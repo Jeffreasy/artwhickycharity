@@ -70,17 +70,17 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
     }
   }, []) // Empty dependency array
 
-  // Aparte useEffect voor carousel initialisatie
+  // Carousel animatie setup
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
 
-    console.log('Initializing carousel with phrases:', phrases)
-    
+    // Bereken hoeveel keer we de phrases moeten herhalen om de hele breedte te vullen
     const screenWidth = window.innerWidth
-    const repeats = Math.ceil((screenWidth * 3) / (screenWidth / phrases.length)) + 1
+    const repeats = Math.ceil((screenWidth * 2) / (screenWidth / phrases.length)) + 2
     const allPhrases = Array(repeats).fill(phrases).flat()
     
+    // Maak de track leeg en voeg nieuwe items toe
     track.innerHTML = ''
     allPhrases.forEach((phrase, index) => {
       const item = document.createElement('div')
@@ -93,6 +93,7 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
       item.textContent = `${phrase.emoji} ${phrase.phrase}`
       item.setAttribute('lang', phrase.language_code)
 
+      // Fade-in animatie voor elk item
       gsap.fromTo(item, 
         { opacity: 0, y: 10 },
         { 
@@ -104,6 +105,7 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
         }
       )
 
+      // Hover effecten
       item.addEventListener('mouseenter', () => {
         gsap.to(item, {
           scale: 1.05,
@@ -123,23 +125,34 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
       track.appendChild(item)
     })
 
-    requestAnimationFrame(() => {
+    // Start de oneindige scroll animatie
+    const startAnimation = () => {
       const trackWidth = track.scrollWidth
       const singleLoopWidth = trackWidth / repeats
-      
-      gsap.set(track, {
-        x: 0,
-        onComplete: () => {
-          gsap.to(track, {
-            x: -singleLoopWidth,
-            duration: singleLoopWidth / 100,
-            ease: "none",
-            repeat: -1
-          })
+
+      // Reset positie en start animatie
+      gsap.fromTo(track,
+        { x: 0 },
+        {
+          x: -singleLoopWidth,
+          duration: 20, // Langzamere snelheid
+          ease: "none",
+          repeat: -1,
+          onRepeat: () => {
+            gsap.set(track, { x: 0 })
+          }
         }
-      })
-    })
-  }, [phrases]) // Deze useEffect reageert op phrases wijzigingen
+      )
+    }
+
+    // Start de animatie na een korte delay
+    setTimeout(startAnimation, 500)
+
+    // Cleanup
+    return () => {
+      gsap.killTweensOf(track)
+    }
+  }, [phrases])
 
   return (
     <div className="relative w-full overflow-hidden">

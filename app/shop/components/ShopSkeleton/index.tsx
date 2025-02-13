@@ -1,8 +1,8 @@
 export function ShopSkeleton() {
   return (
-    <main>
+    <main className="min-h-screen">
       {/* Hero Section Skeleton */}
-      <section className="min-h-[40vh] bg-black text-white pt-[120px] pb-24">
+      <section className="min-h-[40vh] bg-black text-white">
         <div className="container mx-auto px-4 sm:px-6 md:px-8">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <div className="h-12 bg-white/10 rounded-lg w-48 mx-auto animate-pulse" />

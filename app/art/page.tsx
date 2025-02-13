@@ -4,6 +4,7 @@ import Fotocarrousel2 from './components/Fotocarrousel/fotocarrousel2/fotocarrou
 import { Fotocarrousel3 } from './components/Fotocarrousel/fotocarrousel3/fotocarrousel3'
 import VideoSection from './components/Videosection/videosection'
 import { getArtHeroSections, getArtCarouselImages, getArtVideos } from './lib/art-content'
+import { LuukBodeSection } from './components/LuukBodeSection'
 
 export const revalidate = 0 // 0 voor ontwikkeling, hoger voor productie
 
@@ -25,6 +26,7 @@ export default async function ArtPage() {
         <Fotocarrousel2 initialImages={carousel2Images} />
         <Fotocarrousel3 initialImages={carousel3Images} />
         <VideoSection initialVideo={videos[0]} />
+        <LuukBodeSection />
       </main>
     )
   } catch (error) {
@@ -36,6 +38,7 @@ export default async function ArtPage() {
         <Fotocarrousel2 initialImages={[]} />
         <Fotocarrousel3 initialImages={[]} />
         <VideoSection initialVideo={null} />
+        <LuukBodeSection />
       </main>
     )
   }

@@ -30,9 +30,9 @@ export default function ShopPage() {
   if (isLoading) return <ShopSkeleton />
 
   return (
-    <>
+    <div className="min-h-screen">
       <ShopHero />
       <ProductList initialProducts={products} />
-    </>
+    </div>
   )
 }

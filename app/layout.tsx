@@ -9,6 +9,7 @@ import { LanguageBar } from '@/app/home/components/LanguageBar'
 import { getLanguagePhrases } from '@/app/home/lib/language-bar'
 import { Suspense } from 'react'
 import { CartButton } from '@/globalComponents/ui/CartButton'
+import { HomeButton } from '@/globalComponents/ui/Homebutton'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -68,6 +69,7 @@ export default function RootLayout({
                 {children}
               </div>
             </main>
+            <HomeButton />
             <Footer />
             <CartButton />
           </CartProvider>
