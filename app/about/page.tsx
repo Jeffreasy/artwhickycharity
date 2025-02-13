@@ -8,14 +8,14 @@ export default async function AboutPage() {
     const sections = await getAboutSections()
 
     return (
-      <main>
+      <main className="min-h-screen">
         <AboutTekst initialSections={sections} />
       </main>
     )
   } catch (error) {
     console.error('Error loading about content:', error)
     return (
-      <main>
+      <main className="min-h-screen">
         <AboutTekst initialSections={[]} />
       </main>
     )

@@ -19,7 +19,7 @@ export function Navigation() {
     <>
       <nav className="fixed top-0 left-0 right-0 bg-black z-[999]">
         <div className="container mx-auto">
-          <div className="flex h-[80px] sm:h-[100px] md:h-[120px] items-center justify-between px-4 sm:px-6 md:px-8 border-b border-white/20">
+          <div className="flex h-[80px] sm:h-[100px] md:h-[120px] items-center justify-between px-4 sm:px-6 md:px-8">
             {/* Left: Contact Links */}
             <div className="w-[100px] flex flex-col gap-1">
               <a 
@@ -27,7 +27,7 @@ export function Navigation() {
                 className="text-white/80 hover:text-white transition-colors flex items-center"
                 aria-label="Send email"
               >
-                <MdEmail size={24} />
+                <MdEmail size={20} />
               </a>
               <a 
                 href="https://www.instagram.com/whiskyforcharity/" 
@@ -36,7 +36,7 @@ export function Navigation() {
                 className="text-white/80 hover:text-white transition-colors flex items-center"
                 aria-label="Visit Instagram"
               >
-                <FaInstagram size={22} />
+                <FaInstagram size={20} />
               </a>
             </div>
 
@@ -93,7 +93,9 @@ export function Navigation() {
 
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-white hover:text-white/80 transition-colors text-base sm:text-lg md:text-xl"
+                className="text-white/80 hover:text-white transition-colors text-sm sm:text-base md:text-lg 
+                          font-medium tracking-wide px-3 py-1.5 border border-white/10 rounded-full
+                          hover:border-white/20"
               >
                 Menu
               </button>

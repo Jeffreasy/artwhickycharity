@@ -11,7 +11,7 @@ export default async function ShopPage() {
   const products = await getProducts()
 
   return (
-    <main className="bg-black min-h-screen">
+    <main className="min-h-screen">
       <ShopHero />
       <Suspense fallback={<ShopSkeleton />}>
         <ProductList products={products} />

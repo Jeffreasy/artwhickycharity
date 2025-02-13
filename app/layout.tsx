@@ -5,8 +5,6 @@ import './globals.css'
 import { MenuProvider } from '@/contexts/MenuContext'
 import { CartProvider } from '@/contexts/CartContext'
 import { Footer } from '@/globalComponents/ui/Footer/footer'
-import { LanguageBar } from '@/app/home/components/LanguageBar'
-import { getLanguagePhrases } from '@/app/home/lib/language-bar'
 import { Suspense } from 'react'
 import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
@@ -20,17 +18,6 @@ const robotoSlab = Roboto_Slab({
 export const metadata = {
   title: 'Whisky4Charity',
   description: 'Whisky for a good cause',
-}
-
-// Aparte async component voor het laden van de LanguageBar
-async function LanguageBarWithData() {
-  try {
-    const phrases = await getLanguagePhrases()
-    return <LanguageBar initialPhrases={phrases} />
-  } catch (error) {
-    console.error('Error loading language phrases:', error)
-    return null
-  }
 }
 
 export default function RootLayout({
@@ -54,17 +41,6 @@ export default function RootLayout({
           <CartProvider>
             <Navigation />
             <main>
-              <div className="pt-[120px]">
-                <Suspense 
-                  fallback={
-                    <div className="h-[52px] flex items-center justify-center">
-                      <span className="text-white/50">Loading...</span>
-                    </div>
-                  }
-                >
-                  <LanguageBarWithData />
-                </Suspense>
-              </div>
               <div className="pt-6">
                 {children}
               </div>

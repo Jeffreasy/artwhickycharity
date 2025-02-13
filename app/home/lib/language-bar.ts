@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 export async function getLanguagePhrases(): Promise<LanguagePhrase[]> {
   console.log('Fetching language phrases...')
   
-  const { data: phrases, error } = await supabase
+  const { data, error } = await supabase
     .from('language_phrases')
     .select('*')
     .eq('is_active', true)
@@ -12,11 +12,11 @@ export async function getLanguagePhrases(): Promise<LanguagePhrase[]> {
 
   if (error) {
     console.error('Error fetching language phrases:', error)
-    throw new Error('Failed to fetch language phrases')
+    throw error
   }
 
-  console.log('Fetched phrases:', phrases)
-  return phrases
+  console.log('Fetched phrases:', data)
+  return data || []
 }
 
 export async function updateLanguagePhrase(id: string, updates: Partial<LanguagePhrase>) {

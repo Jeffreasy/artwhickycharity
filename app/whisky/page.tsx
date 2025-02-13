@@ -12,7 +12,7 @@ export default async function WhiskyPage() {
     ])
 
     return (
-      <main>
+      <main className="min-h-screen">
         <WhiskyTekst initialSections={sections} />
         <WhiskyAfbeelding initialImages={images} />
       </main>
@@ -20,7 +20,7 @@ export default async function WhiskyPage() {
   } catch (error) {
     console.error('Error loading whisky content:', error)
     return (
-      <main>
+      <main className="min-h-screen">
         <WhiskyTekst initialSections={[]} />
         <WhiskyAfbeelding initialImages={[]} />
       </main>

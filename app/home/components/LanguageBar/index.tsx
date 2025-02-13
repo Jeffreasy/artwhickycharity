@@ -6,6 +6,7 @@ import { cn } from '@/utils/cn'
 import { LanguagePhrase } from '@/types/language-bar'
 import { supabase } from '@/lib/supabase'
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
+import { getLanguagePhrases } from '../../lib/language-bar'
 
 interface LanguageBarProps {
   initialPhrases: LanguagePhrase[]
@@ -155,13 +156,17 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
   }, [phrases])
 
   return (
-    <div className="relative w-full overflow-hidden">
-      <div className="w-full overflow-hidden bg-transparent py-6 relative">
-        <div 
-          ref={trackRef}
-          className="flex relative will-change-transform"
-        />
+    <section className="relative bg-black z-[998]">
+      <div className="container mx-auto">
+        <div className="border-t border-white/10">
+          <div className="overflow-hidden">
+            <div 
+              ref={trackRef}
+              className="flex relative will-change-transform py-4 sm:py-5 md:py-6"
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 } 
