@@ -6,6 +6,7 @@ import VideoSection from './components/Videosection/videosection'
 import { getArtHeroSections, getArtCarouselImages, getArtVideos } from './lib/art-content'
 import { LuukBodeSection } from './components/LuukBodeSection'
 import { Suspense } from 'react'
+import * as Sentry from "@sentry/nextjs"
 
 export const revalidate = 0 // 0 voor ontwikkeling, hoger voor productie
 
@@ -53,6 +54,7 @@ export default async function ArtPage() {
       </main>
     )
   } catch (error) {
+    Sentry.captureException(error)
     console.error('Error loading art content:', error)
     return (
       <main className="min-h-screen">

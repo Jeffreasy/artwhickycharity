@@ -1,4 +1,5 @@
-﻿import { CharityTekst } from './components/CharityTekst/charitytekst'
+﻿import * as Sentry from "@sentry/nextjs"
+import { CharityTekst } from './components/CharityTekst/charitytekst'
 import { CharityAfbeelding } from './components/CharityAfbeelding/charityafbeelding'
 import { getCharitySections, getCharityImages } from './lib/charity-content'
 import { Suspense } from 'react'
@@ -28,6 +29,7 @@ export default async function CharityPage() {
       </main>
     )
   } catch (error) {
+    Sentry.captureException(error)
     console.error('Error loading charity content:', error)
     return (
       <main className="min-h-screen">
