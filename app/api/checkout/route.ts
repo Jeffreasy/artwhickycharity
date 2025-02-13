@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { CartItem } from '@/types/cart'
 import { CheckoutFormData } from '@/types/checkout'
+import * as Sentry from '@sentry/node'
 
 // Maak een nieuwe Supabase client specifiek voor de API route
 const supabase = createClient(
@@ -24,7 +25,8 @@ const transporter = createTransport({
     ciphers: 'TLSv1.2',
     minVersion: 'TLSv1.2'
   },
-  debug: true
+  // Verwijder debug mode in productie
+  debug: process.env.NODE_ENV === 'development'
 })
 
 // Verifieer SMTP verbinding alleen in productie
@@ -66,7 +68,6 @@ export async function POST(request: Request) {
     // Alleen emails versturen in productie
     if (process.env.NODE_ENV === 'production') {
       try {
-        // Email logica hier
         await transporter.sendMail({
           from: '"Whisky For Charity" <Jeffrey@whiskyforcharity.com>',
           to: formData.email,
@@ -74,8 +75,9 @@ export async function POST(request: Request) {
           // ... rest van de email configuratie
         })
       } catch (emailError) {
+        // Log error naar Sentry maar laat de order doorgaan
+        Sentry.captureException(emailError)
         console.error('Failed to send email:', emailError)
-        // Ga door met de order zelfs als email faalt
       }
     }
 
