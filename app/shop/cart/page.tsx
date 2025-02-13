@@ -8,8 +8,8 @@ import Link from 'next/link';
 import { CheckoutModal } from '../components/CheckoutModal';
 
 export default function CartPage() {
-  const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
-  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  const { items, updateQuantity, removeFromCart, totalPrice } = useCart();
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   if (items.length === 0) {
     return (
@@ -31,89 +31,83 @@ export default function CartPage() {
   }
 
   return (
-    <>
-      <div className="min-h-[60vh] bg-black text-white pt-[120px] pb-24">
-        <div className="container mx-auto px-4 sm:px-6 md:px-8">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">Your Cart</h1>
-            
-            <div className="space-y-6">
-              {items.map((item) => (
-                <div 
-                  key={item.id}
-                  className="flex items-center gap-4 bg-white/5 p-4 rounded-lg border border-white/10"
-                >
-                  <div className="w-24 h-24 flex-shrink-0">
-                    <CldImage
-                      src={item.image}
-                      alt={item.name}
-                      width={96}
-                      height={96}
-                      className="object-cover rounded w-full h-full"
-                    />
+    <main className="min-h-screen bg-black text-white py-8">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <h1 className="text-2xl md:text-3xl font-bold mb-8">Shopping Cart</h1>
+        
+        {/* Cart Items */}
+        <div className="space-y-4 mb-8">
+          {items.map((item) => (
+            <div key={item.id} className="bg-white/5 rounded-lg p-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Image */}
+                <div className="relative w-full sm:w-32 h-32 flex-shrink-0">
+                  <CldImage
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    className="object-cover rounded-md"
+                  />
+                </div>
+                
+                {/* Content */}
+                <div className="flex-grow">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
+                    <h3 className="font-semibold">{item.name}</h3>
+                    <p className="font-bold">€{(item.price * item.quantity).toFixed(2)}</p>
                   </div>
                   
-                  <div className="flex-1">
-                    <h3 className="font-bold">{item.name}</h3>
-                    <p className="text-white/70 text-sm">{item.description}</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
+                  {/* Controls */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-3">
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-white/10 rounded hover:bg-white/20"
+                        onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        className="bg-white/10 text-white p-2 rounded hover:bg-white/20"
                       >
                         -
                       </button>
                       <span className="w-8 text-center">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-white/10 rounded hover:bg-white/20"
+                        className="bg-white/10 text-white p-2 rounded hover:bg-white/20"
                       >
                         +
                       </button>
                     </div>
                     
-                    <div className="w-24 text-right">
-                      €{(item.price * item.quantity).toFixed(2)}
-                    </div>
-                    
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="text-red-400 hover:text-red-300 p-2"
+                      className="text-red-400 hover:text-red-300 text-sm"
                     >
                       Remove
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-            
-            <div className="mt-8 p-6 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex justify-between mb-4">
-                <span>Total Items:</span>
-                <span>{totalItems}</span>
               </div>
-              <div className="flex justify-between text-xl font-bold">
-                <span>Total:</span>
-                <span>€{totalPrice.toFixed(2)}</span>
-              </div>
-              <button 
-                className="w-full mt-6 bg-white text-black py-3 rounded hover:bg-white/90 transition-colors"
-                onClick={() => setIsCheckoutModalOpen(true)}
-              >
-                Proceed to Checkout
-              </button>
             </div>
+          ))}
+        </div>
+
+        {/* Checkout Section */}
+        <div className="bg-white/5 rounded-lg p-4">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-lg font-semibold">Total</span>
+            <span className="text-xl font-bold">€{totalPrice.toFixed(2)}</span>
           </div>
+          <button
+            onClick={() => setIsCheckoutOpen(true)}
+            className="w-full bg-white text-black py-3 rounded-lg font-medium
+                     hover:bg-white/90 transition-colors"
+          >
+            Proceed to Checkout
+          </button>
         </div>
       </div>
 
       <CheckoutModal 
-        isOpen={isCheckoutModalOpen}
-        onClose={() => setIsCheckoutModalOpen(false)}
+        isOpen={isCheckoutOpen} 
+        onClose={() => setIsCheckoutOpen(false)} 
       />
-    </>
+    </main>
   );
 }

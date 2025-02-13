@@ -1,38 +1,21 @@
 // C:\Users\JJALa\Desktop\W4CWebsite\artwhickycharity\app\shop\page.tsx
-'use client'
-
 import { ShopHero } from './components/ShopHero'
 import { ProductList } from './components/ProductList'
 import { getProducts } from './lib/products'
-import { useState, useEffect } from 'react'
-import { Product } from '@/types/product'
+import { Suspense } from 'react'
 import { ShopSkeleton } from './components/ShopSkeleton'
 
-export default function ShopPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+export const revalidate = 3600 // revalidate elke uur
 
-  useEffect(() => {
-    async function loadProducts() {
-      try {
-        const fetchedProducts = await getProducts()
-        setProducts(fetchedProducts)
-        setTimeout(() => setIsLoading(false), 2000)
-      } catch (error) {
-        console.error('Error loading products:', error)
-        setIsLoading(false)
-      }
-    }
-
-    loadProducts()
-  }, [])
-
-  if (isLoading) return <ShopSkeleton />
+export default async function ShopPage() {
+  const products = await getProducts()
 
   return (
-    <div className="min-h-screen">
+    <main className="bg-black min-h-screen">
       <ShopHero />
-      <ProductList initialProducts={products} />
-    </div>
+      <Suspense fallback={<ShopSkeleton />}>
+        <ProductList products={products} />
+      </Suspense>
+    </main>
   )
 }

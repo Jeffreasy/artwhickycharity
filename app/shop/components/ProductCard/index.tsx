@@ -51,32 +51,25 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div 
-        ref={cardRef}
-        className="bg-white/5 rounded-lg overflow-hidden border border-white/10 hover:border-white/20 transition-colors cursor-pointer group"
-        onClick={() => setIsModalOpen(true)}
-      >
-        <div className="relative pt-[100%]">
-          <div 
-            ref={imageContainerRef}
-            className="absolute inset-0 overflow-hidden bg-black/20"
-          >
-            <CldImage
-              src={product.image}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover"
-              priority
-            />
-          </div>
+      <div className="bg-black/50 rounded-lg overflow-hidden border border-white/10 flex flex-col">
+        <div className="relative aspect-square w-full">
+          <CldImage
+            src={product.image}
+            alt={product.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
         </div>
-        
-        <div className="p-6 bg-white/5 backdrop-blur-sm">
-          <h3 className="text-xl font-bold mb-2 text-white">{product.name}</h3>
-          <p className="text-white/90 mb-4">{product.description}</p>
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-white">€{product.price}</span>
+
+        <div className="p-4 flex flex-col justify-between flex-grow">
+          <div>
+            <h3 className="text-lg font-semibold mb-2 line-clamp-2">{product.name}</h3>
+            <p className="text-sm text-white/70 mb-4 line-clamp-3">{product.description}</p>
+          </div>
+
+          <div className="flex items-center justify-between mt-auto">
+            <span className="text-xl font-bold">€{product.price.toFixed(2)}</span>
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -91,43 +84,59 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <div className="text-white">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="relative pt-[100%]"> {/* Modal image container */}
-              <div className="absolute inset-0">
-                <CldImage
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover rounded-lg"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              </div>
+        <div className="text-white max-h-[90vh] overflow-y-auto px-4 py-6 w-full max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Image */}
+            <div className="relative aspect-square w-full rounded-lg overflow-hidden">
+              <CldImage
+                src={product.image}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
             </div>
 
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold">{product.name}</h2>
-              <div className="text-2xl font-bold">€{product.price}</div>
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold">Description</h3>
-                <p className="text-white/70">{product.description}</p>
+            {/* Content */}
+            <div className="flex flex-col gap-4">
+              <h2 className="text-2xl md:text-3xl font-bold">{product.name}</h2>
+              <div className="text-xl md:text-2xl font-bold">€{product.price.toFixed(2)}</div>
+              
+              <div className="flex-grow">
+                <h3 className="text-lg font-semibold mb-2">Description</h3>
+                <p className="text-white/70 text-sm md:text-base">{product.description}</p>
               </div>
+              
               {product.stock > 0 ? (
-                <div className="text-green-400">
+                <div className="text-green-400 text-sm">
                   In Stock ({product.stock} available)
                 </div>
               ) : (
-                <div className="text-red-400">Out of Stock</div>
+                <div className="text-red-400 text-sm">Out of Stock</div>
               )}
-              <button
-                onClick={() => {
-                  addToCart(product)
-                  setIsModalOpen(false)
-                }}
-                className="w-full bg-white text-black py-3 rounded hover:bg-white/90 transition-colors"
-              >
-                Add to Cart
-              </button>
+
+              {/* Buttons */}
+              <div className="flex flex-col gap-3 mt-auto">
+                <button
+                  onClick={() => {
+                    addToCart(product)
+                    setIsModalOpen(false)
+                  }}
+                  className="w-full bg-white text-black py-3 rounded-lg font-medium
+                           hover:bg-white/90 transition-colors"
+                >
+                  Add to Cart
+                </button>
+                
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-full bg-transparent border border-white/20 text-white py-3 
+                           rounded-lg font-medium hover:bg-white/10 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
