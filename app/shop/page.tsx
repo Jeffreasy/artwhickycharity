@@ -10,10 +10,7 @@ export const revalidate = 3600 // revalidate elke uur
 
 export default async function ShopPage() {
   try {
-    const [products, heroContent] = await Promise.all([
-      getProducts(),
-      getShopHeroContent()
-    ])
+    const products = await getProducts()
 
     return (
       <main className="min-h-screen">
