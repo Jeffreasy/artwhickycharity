@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { CartItem } from '@/types/cart'
 import { CheckoutFormData } from '@/types/checkout'
 import * as Sentry from '@sentry/node'
+import { SHOP_CONFIG } from '../../config/shopConfig'
 
 // Maak een nieuwe Supabase client specifiek voor de API route
 const supabase = createClient(
@@ -46,6 +47,13 @@ interface RequestData {
 }
 
 export async function POST(request: Request) {
+  if (!SHOP_CONFIG.isEnabled) {
+    return NextResponse.json(
+      { error: 'Shop is currently disabled' },
+      { status: 503 }
+    )
+  }
+  
   try {
     const { formData, items, totalPrice }: RequestData = await request.json()
     const orderNumber = `W4C${Date.now().toString().slice(-6)}${Math.random().toString(36).slice(-2).toUpperCase()}`

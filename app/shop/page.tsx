@@ -5,8 +5,15 @@ import { getProducts } from './lib/products'
 import { Suspense } from 'react'
 import { ShopSkeleton } from './components/ShopSkeleton'
 import * as Sentry from "@sentry/nextjs"
+import { redirect } from 'next/navigation'
+import { SHOP_CONFIG } from '../config/shopConfig'
 
 export const revalidate = 3600 // revalidate elke uur
+
+export const metadata = {
+  title: 'Shop Coming Soon | Whisky For Charity',
+  description: 'Our webshop is currently under construction. Check back soon for an amazing selection of whiskies for charity.',
+}
 
 export default async function ShopPage() {
   try {

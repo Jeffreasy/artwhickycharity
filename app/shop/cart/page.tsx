@@ -6,6 +6,8 @@ import { useCart } from '@/contexts/CartContext';
 import { CldImage } from 'next-cloudinary';
 import Link from 'next/link';
 import { CheckoutModal } from '../components/CheckoutModal';
+import { redirect } from 'next/navigation'
+import { SHOP_CONFIG } from '../../config/shopConfig'
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, totalPrice } = useCart();
