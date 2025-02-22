@@ -1,4 +1,5 @@
-﻿import { AboutTekst } from './components/AboutTekst/abouttekst'
+﻿import { Suspense } from 'react'
+import { AboutTekst } from './components/AboutTekst/abouttekst'
 import { getAboutSections } from './lib/about-content'
 import * as Sentry from "@sentry/nextjs"
 
@@ -6,11 +7,15 @@ export const revalidate = 0 // 0 voor ontwikkeling, hoger voor productie
 
 export default async function AboutPage() {
   try {
-    const sections = await getAboutSections()
-
     return (
       <main className="min-h-screen">
-        <AboutTekst initialSections={sections} />
+        <Suspense 
+          fallback={
+            <div className="animate-pulse bg-gray-800 h-[400px] w-full" />
+          }
+        >
+          <AboutTekst initialSections={await getAboutSections()} />
+        </Suspense>
       </main>
     )
   } catch (error) {

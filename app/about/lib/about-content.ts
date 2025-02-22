@@ -1,16 +1,16 @@
-import { AboutSection } from '@/types/about-section'
 import { supabase } from '@/lib/supabase'
+import { AboutSection } from '@/types/about-section'
 
 export async function getAboutSections(): Promise<AboutSection[]> {
-  const { data: sections, error } = await supabase
+  const { data, error } = await supabase
     .from('about_sections')
     .select('*')
     .order('order_number', { ascending: true })
 
   if (error) {
     console.error('Error fetching about sections:', error)
-    throw new Error('Failed to fetch about sections')
+    return []
   }
 
-  return sections as AboutSection[]
+  return data as AboutSection[]
 } 

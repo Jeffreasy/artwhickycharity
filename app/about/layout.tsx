@@ -1,3 +1,6 @@
+import { Suspense } from 'react'
+import { Loading } from '@/globalComponents/ui/Loading'
+
 export default function AboutLayout({
   children,
 }: {
@@ -5,7 +8,9 @@ export default function AboutLayout({
 }) {
   return (
     <div className="pt-[80px] sm:pt-[100px] md:pt-[120px]">
-      {children}
+      <Suspense fallback={<Loading />}>
+        {children}
+      </Suspense>
     </div>
   )
 } 

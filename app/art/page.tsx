@@ -7,81 +7,50 @@ import { getArtHeroSections, getArtCarouselImages, getArtVideos } from './lib/ar
 import { LuukBodeSection } from './components/LuukBodeSection'
 import { Suspense } from 'react'
 import * as Sentry from "@sentry/nextjs"
+import { Loading } from '@/globalComponents/ui/Loading'
 
 export const revalidate = 0 // 0 voor ontwikkeling, hoger voor productie
 
 export default async function ArtPage() {
-  try {
-    const [heroSections, carousel1Images, carousel2Images, carousel3Images, videos] = 
-      await Promise.all([
-        getArtHeroSections(),
-        getArtCarouselImages(1),
-        getArtCarouselImages(2),
-        getArtCarouselImages(3),
-        getArtVideos()
-      ])
-
-    return (
-      <main className="min-h-screen">
-        {/* Hero Section */}
+  return (
+    <main className="min-h-screen">
+      {/* Hero Section */}
+      <Suspense fallback={<div className="h-[400px] bg-black/20" />}>
         <section className="mb-12 sm:mb-16 md:mb-20">
-          <ArtheroTekst initialSections={heroSections} />
+          <ArtheroTekst initialSections={await getArtHeroSections()} />
         </section>
+      </Suspense>
 
-        {/* Carousel Sections */}
-        <Suspense fallback={<div className="h-[400px] bg-black/20" />}>
-          <section className="mb-12 sm:mb-16 md:mb-20">
-            <Fotocarrousel1 initialImages={carousel1Images} />
-          </section>
-
-          <section className="mb-12 sm:mb-16 md:mb-20">
-            <Fotocarrousel2 initialImages={carousel2Images} />
-          </section>
-
-          <section className="mb-12 sm:mb-16 md:mb-20">
-            <Fotocarrousel3 initialImages={carousel3Images} />
-          </section>
-        </Suspense>
-
-        {/* Video & Artist Sections */}
+      {/* Carousel Sections */}
+      <Suspense fallback={<div className="h-[400px] bg-black/20" />}>
         <section className="mb-12 sm:mb-16 md:mb-20">
-          <VideoSection initialVideo={videos[0]} />
+          <Fotocarrousel1 initialImages={await getArtCarouselImages(1)} />
         </section>
+      </Suspense>
 
-        <section>
-          <LuukBodeSection />
-        </section>
-      </main>
-    )
-  } catch (error) {
-    Sentry.captureException(error)
-    console.error('Error loading art content:', error)
-    return (
-      <main className="min-h-screen">
+      <Suspense fallback={<div className="h-[400px] bg-black/20" />}>
         <section className="mb-12 sm:mb-16 md:mb-20">
-          <ArtheroTekst initialSections={[]} />
+          <Fotocarrousel2 initialImages={await getArtCarouselImages(2)} />
         </section>
+      </Suspense>
 
-        <Suspense fallback={<div className="h-[400px] bg-black/20" />}>
-          <section className="mb-12 sm:mb-16 md:mb-20">
-            <Fotocarrousel1 initialImages={[]} />
-          </section>
-          <section className="mb-12 sm:mb-16 md:mb-20">
-            <Fotocarrousel2 initialImages={[]} />
-          </section>
-          <section className="mb-12 sm:mb-16 md:mb-20">
-            <Fotocarrousel3 initialImages={[]} />
-          </section>
-        </Suspense>
-
+      <Suspense fallback={<div className="h-[400px] bg-black/20" />}>
         <section className="mb-12 sm:mb-16 md:mb-20">
-          <VideoSection initialVideo={null} />
+          <Fotocarrousel3 initialImages={await getArtCarouselImages(3)} />
         </section>
+      </Suspense>
 
-        <section>
-          <LuukBodeSection />
+      {/* Video Section */}
+      <Suspense fallback={<div className="h-[400px] bg-black/20" />}>
+        <section className="mb-12 sm:mb-16 md:mb-20">
+          <VideoSection initialVideo={(await getArtVideos())[0]} />
         </section>
-      </main>
-    )
-  }
+      </Suspense>
+
+      {/* Artist Section */}
+      <section>
+        <LuukBodeSection />
+      </section>
+    </main>
+  )
 }

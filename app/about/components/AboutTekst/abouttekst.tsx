@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { AboutSection } from '@/types/about-section'
-import { supabase } from '@/lib/supabase'
+import { motion } from 'framer-motion'
 
 interface AboutTekstProps {
   initialSections: AboutSection[]
@@ -34,7 +34,8 @@ const renderText = (content: string, isTitle: boolean = false) => {
 }
 
 export function AboutTekst({ initialSections }: AboutTekstProps) {
-  const [sections, setSections] = useState<AboutSection[]>(initialSections || [])
+  const [sections, setSections] = useState<AboutSection[]>(initialSections)
+  const [isLoading, setIsLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const textRefs = useRef<{ [key: string]: HTMLElement | null }>({})
 
@@ -44,29 +45,24 @@ export function AboutTekst({ initialSections }: AboutTekstProps) {
     }
   }
 
-  // Realtime updates
   useEffect(() => {
-    const pollInterval = setInterval(async () => {
-      const { data, error } = await supabase
-        .from('about_sections')
-        .select('*')
-        .order('order_number', { ascending: true })
-      
-      if (error) {
-        console.error('Polling error:', error)
-        return
-      }
-      
-      if (data) {
-        const newSections = data as AboutSection[]
-        if (JSON.stringify(newSections) !== JSON.stringify(sections)) {
-          setSections(newSections)
+    const loadContent = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/about-content')
+        const data = await response.json()
+        if (Array.isArray(data)) {
+          setSections(data)
         }
+      } catch (error) {
+        console.error('Failed to load content:', error)
+      } finally {
+        setIsLoading(false)
       }
-    }, 1000)
+    }
 
-    return () => clearInterval(pollInterval)
-  }, [sections])
+    loadContent()
+  }, [])
 
   // GSAP animaties
   useEffect(() => {
@@ -140,8 +136,18 @@ export function AboutTekst({ initialSections }: AboutTekstProps) {
     }
   }, [sections])
 
+  if (isLoading) {
+    return <div className="animate-pulse bg-gray-800 h-[400px] w-full" />
+  }
+
   return (
-    <section ref={containerRef} className="min-h-screen bg-black text-white pt-[120px] pb-24">
+    <motion.section
+      ref={containerRef}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-black text-white pt-[120px] pb-24"
+    >
       <div className="container mx-auto px-4 sm:px-6 md:px-8">
         {/* Title */}
         {sections
@@ -187,6 +193,6 @@ export function AboutTekst({ initialSections }: AboutTekstProps) {
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   )
 }

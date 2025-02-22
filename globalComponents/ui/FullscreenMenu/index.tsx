@@ -5,13 +5,33 @@ import { cn } from '@/utils/cn'
 import { useMenu } from '@/contexts/MenuContext'
 import Link from 'next/link'
 import { gsap } from 'gsap'
+import { useRouter } from 'next/navigation'
 
 export function FullscreenMenu() {
   const { isMenuOpen, setIsMenuOpen } = useMenu()
+  const router = useRouter()
   const menuRef = useRef<HTMLDivElement>(null)
   const menuItemsRef = useRef<HTMLDivElement>(null)
   const homeRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const timelineRef = useRef<gsap.core.Timeline | null>(null)
+
+  // Handle navigation with animation
+  const handleNavigation = async (href: string) => {
+    // Start menu closing animation
+    const tl = timelineRef.current
+    if (!tl) return
+
+    // Reverse the timeline
+    await new Promise(resolve => {
+      tl.reverse()
+      tl.eventCallback('onReverseComplete', resolve)
+    })
+
+    // After animation completes, update state and navigate
+    setIsMenuOpen(false)
+    router.push(href)
+  }
 
   useEffect(() => {
     const menu = menuRef.current
@@ -22,7 +42,14 @@ export function FullscreenMenu() {
     if (!menu || !menuItems || !home || !closeButton) return
 
     // Timeline voor gecoördineerde animaties
-    const tl = gsap.timeline({ paused: true })
+    const tl = gsap.timeline({ 
+      paused: true,
+      onReverseComplete: () => {
+        // Optional: Additional cleanup after reverse animation
+      }
+    })
+
+    timelineRef.current = tl
 
     // Menu backdrop animation
     tl.to(menu, {
@@ -67,11 +94,8 @@ export function FullscreenMenu() {
       ease: "power2.out"
     }, "-=0.3")
 
-    // Play/reverse timeline based on menu state
     if (isMenuOpen) {
       tl.play()
-    } else {
-      tl.reverse()
     }
 
     return () => {
@@ -79,8 +103,8 @@ export function FullscreenMenu() {
     }
   }, [isMenuOpen])
 
-  // Hover animations for menu items
-  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  // Update de type annotaties voor de mouse handlers
+  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
     gsap.to(e.currentTarget, {
       scale: 1.1,
       duration: 0.3,
@@ -88,7 +112,7 @@ export function FullscreenMenu() {
     })
   }
 
-  const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
     gsap.to(e.currentTarget, {
       scale: 1,
       duration: 0.3,
@@ -119,7 +143,7 @@ export function FullscreenMenu() {
         "border-t border-white/10",
         "transition-all duration-500 ease-in-out",
         isMenuOpen 
-          ? "visible pointer-events-auto opacity-0" // Start met opacity 0 voor GSAP
+          ? "visible pointer-events-auto opacity-0"
           : "invisible pointer-events-none opacity-0"
       )}
     >
@@ -137,16 +161,15 @@ export function FullscreenMenu() {
               { href: "/about", text: "ABOUT" }
             ].map((item) => (
               <div key={item.href} className="flex items-center justify-center py-8 sm:py-12 md:py-20 px-4 sm:px-8 md:px-16">
-                <Link 
-                  href={item.href}
+                <button 
+                  onClick={() => handleNavigation(item.href)}
                   className="text-2xl sm:text-3xl md:text-[32px] font-bold text-white/80 hover:text-white 
                            transition-all duration-300 tracking-wide"
-                  onClick={() => setIsMenuOpen(false)}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
                   {item.text}
-                </Link>
+                </button>
               </div>
             ))}
           </div>
@@ -157,23 +180,22 @@ export function FullscreenMenu() {
             
             <div className="flex items-center justify-center gap-8 sm:gap-12 md:gap-16">
               <div ref={homeRef} className="text-center">
-                <Link 
-                  href="/"
+                <button 
+                  onClick={() => handleNavigation("/")}
                   className="text-2xl sm:text-3xl md:text-[32px] font-bold text-white/80 hover:text-white 
                            transition-all duration-300 tracking-wide"
-                  onClick={() => setIsMenuOpen(false)}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
                   HOME
-                </Link>
+                </button>
               </div>
 
               <div className="h-8 sm:h-10 md:h-12 w-px bg-white/10" /> {/* Verticale separator */}
 
               <button
                 ref={closeButtonRef}
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => handleNavigation(window.location.pathname)}
                 onMouseEnter={() => handleCloseHover(true)}
                 onMouseLeave={() => handleCloseHover(false)}
                 className="text-2xl sm:text-3xl md:text-[32px] font-bold text-white/80 hover:text-white 

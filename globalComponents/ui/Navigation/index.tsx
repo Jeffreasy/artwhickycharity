@@ -1,19 +1,45 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { useMenu } from '@/contexts/MenuContext'
 import { FullscreenMenu } from '../FullscreenMenu'
 import { MdEmail } from 'react-icons/md'
 import { FaInstagram, FaShoppingCart, FaStore } from 'react-icons/fa'
 import { CldImage } from 'next-cloudinary'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCart } from '@/contexts/CartContext'
+import { Loading } from '@/globalComponents/ui/Loading'
 
 export function Navigation() {
   const { isMenuOpen, setIsMenuOpen } = useMenu()
   const { totalItems } = useCart()
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const circleRef = useRef<HTMLDivElement>(null)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const navigationTimer = useRef<NodeJS.Timeout>()
+
+  // Reset navigation state when route changes
+  useEffect(() => {
+    setIsNavigating(true)
+    
+    // Clear any existing timer
+    if (navigationTimer.current) {
+      clearTimeout(navigationTimer.current)
+    }
+
+    // Set a new timer
+    navigationTimer.current = setTimeout(() => {
+      setIsNavigating(false)
+    }, 1000) // Increased timeout for better UX
+
+    return () => {
+      if (navigationTimer.current) {
+        clearTimeout(navigationTimer.current)
+      }
+    }
+  }, [pathname, searchParams])
 
   return (
     <>
@@ -105,6 +131,7 @@ export function Navigation() {
       </nav>
 
       <FullscreenMenu />
+      {isNavigating && <Loading />}
     </>
   )
 } 

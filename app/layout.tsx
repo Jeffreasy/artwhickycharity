@@ -8,6 +8,7 @@ import { Footer } from '@/globalComponents/ui/Footer/footer'
 import { Suspense } from 'react'
 import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
+import { Loading } from '@/globalComponents/ui/Loading'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -26,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" className="h-full">
+    <html lang="en">
       <body 
         className={cn(
           robotoSlab.variable,
@@ -40,10 +41,8 @@ export default function RootLayout({
         <MenuProvider>
           <CartProvider>
             <Navigation />
-            <main>
-              <div className="pt-6">
-                {children}
-              </div>
+            <main className="pt-[80px] sm:pt-[100px] md:pt-[120px]">
+              {children}
             </main>
             <HomeButton />
             <Footer />

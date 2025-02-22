@@ -2,19 +2,19 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { CircleHeroImage } from '@/types/circle-hero'
+import { CircleHeroItem } from '@/types/circle-hero'
 import { getCloudinaryImageUrl } from '@/app/home/lib/cloudinary'
 
 interface CircleHeroAdminProps {
-  images: CircleHeroImage[]
-  onUpdate: (images: CircleHeroImage[]) => Promise<void>
+  images: CircleHeroItem[]
+  onUpdate: (images: CircleHeroItem[]) => Promise<void>
 }
 
 export function CircleHeroAdmin({ images: initialImages, onUpdate }: CircleHeroAdminProps) {
   const [images, setImages] = useState(initialImages)
   const [loading, setLoading] = useState(false)
 
-  const handleImageUpdate = async (index: number, updates: Partial<CircleHeroImage>) => {
+  const handleImageUpdate = async (index: number, updates: Partial<CircleHeroItem>) => {
     const updatedImages = [...images]
     updatedImages[index] = { ...updatedImages[index], ...updates }
     
@@ -29,7 +29,7 @@ export function CircleHeroAdmin({ images: initialImages, onUpdate }: CircleHeroA
     }
   }
 
-  const handleImageChange = async (image: CircleHeroImage, newImage: File) => {
+  const handleImageChange = async (image: CircleHeroItem, newImage: File) => {
     try {
       const formData = new FormData()
       formData.append('file', newImage)
@@ -70,16 +70,16 @@ export function CircleHeroAdmin({ images: initialImages, onUpdate }: CircleHeroA
             <div className="flex items-center gap-4">
               <div className="w-24 h-24 relative">
                 <img
-                  src={getCloudinaryImageUrl(image.cloudinary_id)}
-                  alt={image.alt}
+                  src={getCloudinaryImageUrl(image.cloudinary_id || '')}
+                  alt={image.image_alt}
                   className="w-full h-full object-cover rounded"
                 />
               </div>
               <div className="flex-1 space-y-3">
                 <input
                   type="text"
-                  value={image.alt}
-                  onChange={(e) => handleImageUpdate(index, { alt: e.target.value })}
+                  value={image.image_alt}
+                  onChange={(e) => handleImageUpdate(index, { image_alt: e.target.value })}
                   className="w-full p-2 border rounded"
                   placeholder="Alt text"
                 />
