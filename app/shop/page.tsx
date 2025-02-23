@@ -7,8 +7,8 @@ import { ShopSkeleton } from './components/ShopSkeleton'
 import * as Sentry from "@sentry/nextjs"
 import { redirect } from 'next/navigation'
 import { SHOP_CONFIG } from '../config/shopConfig'
-import { SearchParamsWrapper } from '@/components/wrappers/SearchParamsWrapper'
 import { Loading } from '@/globalComponents/ui/Loading'
+import { ClientSearchParams } from '@/components/wrappers/ClientSearchParams'
 
 export const revalidate = 3600 // revalidate elke uur
 
@@ -23,28 +23,28 @@ export default async function ShopPage() {
 
     return (
       <Suspense fallback={<Loading />}>
-        <SearchParamsWrapper>
-          <main className="min-h-screen">
-            <ShopHero />
-            <Suspense fallback={<ShopSkeleton />}>
-              <ProductList products={products} />
-            </Suspense>
-          </main>
-        </SearchParamsWrapper>
+        <ClientSearchParams />
+        <main className="min-h-screen">
+          <ShopHero />
+          <Suspense fallback={<ShopSkeleton />}>
+            <ProductList products={products} />
+          </Suspense>
+        </main>
       </Suspense>
     )
   } catch (error) {
     Sentry.captureException(error)
     console.error('Error loading shop content:', error)
     return (
-      <SearchParamsWrapper>
+      <Suspense fallback={<Loading />}>
+        <ClientSearchParams />
         <main className="min-h-screen">
           <ShopHero />
           <Suspense fallback={<ShopSkeleton />}>
             <ProductList products={[]} />
           </Suspense>
         </main>
-      </SearchParamsWrapper>
+      </Suspense>
     )
   }
 }

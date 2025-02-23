@@ -1,11 +1,10 @@
 'use client'
 
-import { Component, ErrorInfo, ReactNode } from 'react'
+import React, { Component, ErrorInfo } from 'react'
 import * as Sentry from "@sentry/nextjs"
 
 interface Props {
-  children: ReactNode
-  fallback?: ReactNode
+  children: React.ReactNode
 }
 
 interface State {
@@ -22,14 +21,22 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    Sentry.captureException(error, { extra: errorInfo })
+    // Convert ErrorInfo to a plain object that Sentry can handle
+    const extraInfo = {
+      componentStack: errorInfo.componentStack
+    }
+    
+    Sentry.captureException(error, { extra: extraInfo })
   }
 
   public render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="min-h-[400px] flex items-center justify-center bg-black text-white">
-          <p>Something went wrong. Please try again later.</p>
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-black text-white">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">Something went wrong</h1>
+            <p className="text-lg text-white/80">Please try refreshing the page</p>
+          </div>
         </div>
       )
     }
