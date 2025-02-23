@@ -8,6 +8,7 @@ import * as Sentry from "@sentry/nextjs"
 import { redirect } from 'next/navigation'
 import { SHOP_CONFIG } from '../config/shopConfig'
 import { SearchParamsWrapper } from '@/components/wrappers/SearchParamsWrapper'
+import { Loading } from '@/globalComponents/ui/Loading'
 
 export const revalidate = 3600 // revalidate elke uur
 
@@ -21,14 +22,16 @@ export default async function ShopPage() {
     const products = await getProducts()
 
     return (
-      <SearchParamsWrapper>
-        <main className="min-h-screen">
-          <ShopHero />
-          <Suspense fallback={<ShopSkeleton />}>
-            <ProductList products={products} />
-          </Suspense>
-        </main>
-      </SearchParamsWrapper>
+      <Suspense fallback={<Loading />}>
+        <SearchParamsWrapper>
+          <main className="min-h-screen">
+            <ShopHero />
+            <Suspense fallback={<ShopSkeleton />}>
+              <ProductList products={products} />
+            </Suspense>
+          </main>
+        </SearchParamsWrapper>
+      </Suspense>
     )
   } catch (error) {
     Sentry.captureException(error)
