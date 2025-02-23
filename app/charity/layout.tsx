@@ -1,11 +1,16 @@
+import { BaseLayout } from '@/components/layouts/BaseLayout'
+import { ErrorBoundary } from '@/components/layouts/ErrorBoundary'
+
 export default function CharityLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <div className="pt-[80px] sm:pt-[100px] md:pt-[120px]">
-      {children}
-    </div>
+    <ErrorBoundary>
+      <BaseLayout>
+        {children}
+      </BaseLayout>
+    </ErrorBoundary>
   )
 } 

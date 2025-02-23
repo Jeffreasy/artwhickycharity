@@ -31,17 +31,13 @@ export default function RootLayout({
       <body 
         className={cn(
           robotoSlab.variable,
-          'h-full',
-          'bg-black',
-          'text-white',
-          'antialiased',
-          'font-sans'
+          'h-full bg-black text-white antialiased font-sans'
         )}
       >
         <MenuProvider>
           <CartProvider>
             <Navigation />
-            <main className="pt-[80px] sm:pt-[100px] md:pt-[120px]">
+            <main>
               {children}
             </main>
             <HomeButton />

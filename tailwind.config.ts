@@ -147,12 +147,25 @@ const config: Config = {
         'carousel': 'carousel var(--duration) linear infinite',
         'hueGlow': 'hueGlow 5s linear infinite',
         'textGlow': 'textGlow 5s linear infinite'
+      },
+      spacing: {
+        'header-mobile': '80px',
+        'header-tablet': '100px',
+        'header-desktop': '120px',
+      },
+      padding: {
+        'layout-mobile': '80px',
+        'layout-tablet': '100px',
+        'layout-desktop': '120px',
       }
     },
   },
   plugins: [
     require("@tailwindcss/typography"),
-    require("@tailwindcss/forms")
+    require("@tailwindcss/forms"),
+    plugin(function({ addUtilities }) {
+      // plugin configuratie
+    })
   ]
 }
 

@@ -1,5 +1,5 @@
-import { Suspense } from 'react'
-import { Loading } from '@/globalComponents/ui/Loading'
+import { BaseLayout } from '@/components/layouts/BaseLayout'
+import { ErrorBoundary } from '@/components/layouts/ErrorBoundary'
 
 export default function ArtLayout({
   children,
@@ -7,10 +7,10 @@ export default function ArtLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="pt-[80px] sm:pt-[100px] md:pt-[120px]">
-      <Suspense fallback={<Loading />}>
+    <ErrorBoundary>
+      <BaseLayout>
         {children}
-      </Suspense>
-    </div>
+      </BaseLayout>
+    </ErrorBoundary>
   )
 } 

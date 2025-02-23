@@ -1,3 +1,5 @@
+import { BaseLayout } from '@/components/layouts/BaseLayout'
+import { ErrorBoundary } from '@/components/layouts/ErrorBoundary'
 import { SHOP_CONFIG } from '../config/shopConfig'
 import ShopClosed from './components/ShopClosed'
 
@@ -12,8 +14,10 @@ export default function ShopLayout({
   }
 
   return (
-    <div className="pt-[80px] sm:pt-[100px] md:pt-[120px]">
-      {children}
-    </div>
+    <ErrorBoundary>
+      <BaseLayout>
+        {children}
+      </BaseLayout>
+    </ErrorBoundary>
   )
 } 

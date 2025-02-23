@@ -192,7 +192,7 @@ export function TextSection({ initialSections }: TextSectionProps) {
 
   return (
     <section ref={containerRef} className="min-h-screen bg-black relative py-12 sm:py-16 md:py-24">
-      <div className="container mx-auto relative px-4 sm:px-6 md:px-8" style={{ opacity: isAnimationInitialized ? 1 : 0 }}>
+      <div className="container mx-auto relative px-4 sm:px-6 md:px-8">
         {sections?.map((section) => (
           <div 
             key={section.id}
@@ -208,30 +208,39 @@ export function TextSection({ initialSections }: TextSectionProps) {
               }}
               className={`
                 ${section.style_type === 'main' || section.style_type === 'purpose'
-                  ? 'max-w-[280px] sm:max-w-md md:max-w-xl mx-4 sm:ml-12 md:ml-24'
-                  : 'max-w-[240px] sm:max-w-sm md:max-w-md mx-4 sm:mr-12 md:mr-24 text-right'
-                } cursor-default
+                  ? 'max-w-[600px] sm:max-w-2xl md:max-w-3xl mx-4 sm:ml-12 md:ml-24'
+                  : 'max-w-[500px] sm:max-w-xl md:max-w-2xl mx-4 sm:mr-12 md:mr-24 text-right'
+                } 
+                cursor-default 
+                whitespace-normal 
+                break-words 
+                overflow-wrap-normal
               `}
             >
-              {section.content.split('').map((char, index) => (
-                <span 
-                  key={index} 
-                  className={`
-                    ${section.style_type}-letter 
-                    inline-block 
-                    ${section.style_type === 'main' || section.style_type === 'purpose'
-                      ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
-                      : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
-                    } 
-                    tracking-wide
-                    ${char === '\n' ? 'block h-6 sm:h-8 md:h-10' : ''}
-                    ${char === ' ' ? 'w-2 sm:w-2.5 md:w-3' : ''}
-                    ${char === '-' ? 'text-gray-500 block h-4 sm:h-5 md:h-6' : ''}
-                    ${char === ':' ? 'block h-4 sm:h-5 md:h-6' : ''}
-                  `}
-                >
-                  {char}
-                </span>
+              {section.content.split(/\s+/).map((word, wordIndex) => (
+                <React.Fragment key={wordIndex}>
+                  <span className="inline-flex">
+                    {word.split('').map((char, charIndex) => (
+                      <span 
+                        key={`${wordIndex}-${charIndex}`}
+                        className={`
+                          ${section.style_type}-letter 
+                          inline-block 
+                          ${section.style_type === 'main' || section.style_type === 'purpose'
+                            ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
+                            : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
+                          } 
+                          tracking-wide
+                        `}
+                      >
+                        {char}
+                      </span>
+                    ))}
+                  </span>
+                  {wordIndex < section.content.split(/\s+/).length - 1 && (
+                    <span className="inline-block w-2 sm:w-2.5 md:w-3">&nbsp;</span>
+                  )}
+                </React.Fragment>
               ))}
             </div>
           </div>
