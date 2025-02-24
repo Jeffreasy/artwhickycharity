@@ -1,11 +1,9 @@
 import { Suspense } from 'react'
-import { ClientSearchParams } from '@/components/wrappers/ClientSearchParams'
 import { Loading } from '@/globalComponents/ui/Loading'
 
 export default function NotFound() {
   return (
     <Suspense fallback={<Loading />}>
-      <ClientSearchParams />
       <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">404 - Page Not Found</h1>
