@@ -88,7 +88,6 @@ export function TextSection({ initialSections }: TextSectionProps) {
       })
     }
 
-    // Verfijnde scroll animaties
     const addLetterHoverEffects = (element: HTMLDivElement, isLargeText: boolean) => {
       const letters = element.querySelectorAll('span')
       
@@ -103,7 +102,6 @@ export function TextSection({ initialSections }: TextSectionProps) {
             ease: "power2.out"
           })
 
-          // Subtiel effect op direct aangrenzende letters
           const prev = letter.previousElementSibling
           const next = letter.nextElementSibling
           
@@ -172,7 +170,6 @@ export function TextSection({ initialSections }: TextSectionProps) {
       animateTextIn(letters.sip, 0.9)
     ]
 
-    // Hover effecten
     const elements = {
       main: textRefs.current['main_text'],
       impact: textRefs.current['impact_text'],
@@ -191,8 +188,15 @@ export function TextSection({ initialSections }: TextSectionProps) {
   }, [sections, isAnimationInitialized])
 
   return (
-    <section ref={containerRef} className="min-h-screen bg-black relative py-12 sm:py-16 md:py-24">
-      <div className="container mx-auto relative px-4 sm:px-6 md:px-8" style={{ opacity: isAnimationInitialized ? 1 : 0 }}>
+    <section 
+      ref={containerRef} 
+      className="min-h-screen bg-black relative py-12 sm:py-16 md:py-24" 
+      style={{ whiteSpace: 'pre-wrap' }}
+    >
+      <div 
+        className="container mx-auto relative px-4 sm:px-6 md:px-8" 
+        style={{ opacity: isAnimationInitialized ? 1 : 0 }}
+      >
         {sections?.map((section) => (
           <div 
             key={section.id}
@@ -213,25 +217,33 @@ export function TextSection({ initialSections }: TextSectionProps) {
                 } cursor-default
               `}
             >
-              {section.content.split('').map((char, index) => (
-                <span 
-                  key={index} 
-                  className={`
-                    ${section.style_type}-letter 
-                    inline-block 
-                    ${section.style_type === 'main' || section.style_type === 'purpose'
-                      ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
-                      : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
-                    } 
-                    tracking-wide
-                    ${char === '\n' ? 'block h-6 sm:h-8 md:h-10' : ''}
-                    ${char === ' ' ? 'w-2 sm:w-2.5 md:w-3' : ''}
-                    ${char === '-' ? 'text-gray-500 block h-4 sm:h-5 md:h-6' : ''}
-                    ${char === ':' ? 'block h-4 sm:h-5 md:h-6' : ''}
-                  `}
-                >
-                  {char}
-                </span>
+              {section.content.split('\n').map((line, lineIndex) => (
+                <React.Fragment key={lineIndex}>
+                  {lineIndex > 0 && <br />}
+                  {line.split(' ').map((word, wordIndex) => (
+                    <span key={`${lineIndex}-${wordIndex}`} className="inline-block">
+                      {word.split('').map((char, charIndex) => (
+                        <span 
+                          key={`${lineIndex}-${wordIndex}-${charIndex}`}
+                          className={`
+                            ${section.style_type}-letter 
+                            inline-block 
+                            ${section.style_type === 'main' || section.style_type === 'purpose'
+                              ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
+                              : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
+                            } 
+                            tracking-wide
+                          `}
+                        >
+                          {char}
+                        </span>
+                      ))}
+                      {wordIndex < line.split(' ').length - 1 && (
+                        <span className="w-2 sm:w-2.5 md:w-3">&nbsp;</span>
+                      )}
+                    </span>
+                  ))}
+                </React.Fragment>
               ))}
             </div>
           </div>
