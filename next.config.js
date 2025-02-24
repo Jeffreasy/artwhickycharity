@@ -5,7 +5,9 @@ const nextConfig = {
   images: {
     domains: [
       'res.cloudinary.com',
-      'cdn.prod.website-files.com'
+      'cdn.prod.website-files.com',
+      'scontent.cdninstagram.com',
+      'scontent-ams2-1.cdninstagram.com'
     ],
   },
   // Voeg deze toe om build errors te voorkomen voor ongebruikte routes
