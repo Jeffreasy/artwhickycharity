@@ -8,7 +8,6 @@ import * as Sentry from "@sentry/nextjs"
 import { redirect } from 'next/navigation'
 import { SHOP_CONFIG } from '../config/shopConfig'
 import { Loading } from '@/globalComponents/ui/Loading'
-import { ClientSearchParams } from '@/components/wrappers/ClientSearchParams'
 
 export const revalidate = 3600 // revalidate elke uur
 
@@ -23,7 +22,6 @@ export default async function ShopPage() {
 
     return (
       <Suspense fallback={<Loading />}>
-        <ClientSearchParams />
         <main className="min-h-screen">
           <ShopHero />
           <Suspense fallback={<ShopSkeleton />}>
@@ -37,7 +35,6 @@ export default async function ShopPage() {
     console.error('Error loading shop content:', error)
     return (
       <Suspense fallback={<Loading />}>
-        <ClientSearchParams />
         <main className="min-h-screen">
           <ShopHero />
           <Suspense fallback={<ShopSkeleton />}>

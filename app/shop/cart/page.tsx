@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { redirect } from 'next/navigation'
 import { SHOP_CONFIG } from '../../config/shopConfig'
-import { ClientSearchParams } from '@/components/wrappers/ClientSearchParams'
 import { Loading } from '@/globalComponents/ui/Loading'
 
 export default function CartPage() {
@@ -36,7 +35,6 @@ export default function CartPage() {
 
   return (
     <Suspense fallback={<Loading />}>
-      <ClientSearchParams />
       <main className="min-h-screen bg-black text-white py-8">
         <div className="container mx-auto px-4 max-w-4xl">
           <h1 className="text-2xl md:text-3xl font-bold mb-8">Shopping Cart</h1>
