@@ -5,10 +5,8 @@ import './globals.css'
 import { MenuProvider } from '@/contexts/MenuContext'
 import { CartProvider } from '@/contexts/CartContext'
 import { Footer } from '@/globalComponents/ui/Footer/footer'
-import { Suspense } from 'react'
 import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
-import { Loading } from '@/globalComponents/ui/Loading'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -34,19 +32,17 @@ export default function RootLayout({
           'h-full bg-black text-white antialiased font-sans'
         )}
       >
-        <Suspense fallback={<Loading />}>
-          <MenuProvider>
-            <CartProvider>
-              <Navigation />
-              <main>
-                {children}
-              </main>
-              <HomeButton />
-              <Footer />
-              <CartButton />
-            </CartProvider>
-          </MenuProvider>
-        </Suspense>
+        <MenuProvider>
+          <CartProvider>
+            <Navigation />
+            <main>
+              {children}
+            </main>
+            <HomeButton />
+            <Footer />
+            <CartButton />
+          </CartProvider>
+        </MenuProvider>
       </body>
     </html>
   )
