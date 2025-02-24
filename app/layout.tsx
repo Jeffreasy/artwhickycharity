@@ -34,17 +34,19 @@ export default function RootLayout({
           'h-full bg-black text-white antialiased font-sans'
         )}
       >
-        <MenuProvider>
-          <CartProvider>
-            <Navigation />
-            <main>
-              {children}
-            </main>
-            <HomeButton />
-            <Footer />
-            <CartButton />
-          </CartProvider>
-        </MenuProvider>
+        <Suspense fallback={<Loading />}>
+          <MenuProvider>
+            <CartProvider>
+              <Navigation />
+              <main>
+                {children}
+              </main>
+              <HomeButton />
+              <Footer />
+              <CartButton />
+            </CartProvider>
+          </MenuProvider>
+        </Suspense>
       </body>
     </html>
   )
