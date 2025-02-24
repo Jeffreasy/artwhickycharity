@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { InstagramPost, CachedSocialPost } from '@/types/social-media'
+import { InstagramPost, CachedSocialPost } from '@/app/home/types/social-media'
 
 interface TikTokPost {
   id: string
@@ -34,7 +34,7 @@ export async function getInstagramPosts() {
   }
 }
 
-export async function getTikTokPosts() {
+export async function getTikTokPosts(): Promise<TikTokPost[]> {
   // Hier komt de TikTok API implementatie
   // Je hebt een TikTok Developer account nodig
   
@@ -62,11 +62,11 @@ export async function cacheSocialMediaPosts() {
       getTikTokPosts()
     ])
 
-    // Update Instagram posts in Supabase
+    // Update Instagram posts
     await supabase
       .from('cached_social_posts')
       .upsert(
-        instagramPosts.map(post => ({
+        instagramPosts.map((post: InstagramPost) => ({
           platform: 'instagram',
           post_id: post.id,
           data: post,
@@ -74,18 +74,19 @@ export async function cacheSocialMediaPosts() {
         }))
       )
 
-    // Update TikTok posts in Supabase
-    await supabase
-      .from('cached_social_posts')
-      .upsert(
-        tiktokPosts.map(post => ({
-          platform: 'tiktok',
-          post_id: post.id,
-          data: post,
-          cached_at: new Date().toISOString()
-        }))
-      )
-
+    // Update TikTok posts
+    if (tiktokPosts.length > 0) {
+      await supabase
+        .from('cached_social_posts')
+        .upsert(
+          tiktokPosts.map((post: TikTokPost) => ({
+            platform: 'tiktok',
+            post_id: post.id,
+            data: post,
+            cached_at: new Date().toISOString()
+          }))
+        )
+    }
   } catch (error) {
     console.error('Error caching social media posts:', error)
   }
@@ -101,7 +102,6 @@ export async function fetchAndCacheInstagramPosts() {
   }
 
   try {
-    // Fetch posts from Instagram API
     const response = await fetch(
       `https://graph.instagram.com/v12.0/${INSTAGRAM_USER_ID}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,children{media_url,media_type}&access_token=${INSTAGRAM_TOKEN}`
     )
@@ -109,8 +109,7 @@ export async function fetchAndCacheInstagramPosts() {
     const data = await response.json()
     const posts: InstagramPost[] = data.data
 
-    // Transform and cache posts
-    const transformedPosts: Partial<CachedSocialPost>[] = posts.map(post => ({
+    const transformedPosts: CachedSocialPost[] = posts.map(post => ({
       platform: 'instagram',
       post_id: post.id,
       media_type: post.media_type,
@@ -118,16 +117,14 @@ export async function fetchAndCacheInstagramPosts() {
       thumbnail_url: post.thumbnail_url,
       caption: post.caption,
       permalink: post.permalink,
-      timestamp: new Date(post.timestamp).toISOString(),
-      is_active: true
+      timestamp: new Date(post.timestamp).toISOString()
     }))
 
-    // Upsert to Supabase
-    const { data: cachedPosts, error } = await supabase
+    // Update Supabase zonder 'returning'
+    const { error } = await supabase
       .from('cached_social_posts')
       .upsert(transformedPosts, {
-        onConflict: 'platform,post_id',
-        returning: true
+        onConflict: 'platform,post_id'
       })
 
     if (error) {
@@ -135,7 +132,7 @@ export async function fetchAndCacheInstagramPosts() {
       return []
     }
 
-    return cachedPosts
+    return transformedPosts
   } catch (error) {
     console.error('Error fetching Instagram posts:', error)
     return []
@@ -157,5 +154,5 @@ export async function getCachedSocialPosts(platform: 'instagram' | 'tiktok' = 'i
     return []
   }
 
-  return data
+  return data as CachedSocialPost[]
 } 

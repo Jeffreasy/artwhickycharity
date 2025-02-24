@@ -1,4 +1,4 @@
-import { fetchAndCacheInstagramPosts } from '@/lib/social-media'
+import { fetchAndCacheInstagramPosts } from '@/app/home/lib/social-media'
 import { NextResponse } from 'next/server'
 
 export async function GET() {

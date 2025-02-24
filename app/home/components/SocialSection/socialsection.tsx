@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FaInstagram, FaTiktok } from 'react-icons/fa'
 import { cn } from '@/lib/utils'
 import { debounce } from 'lodash'
+import { getCachedSocialPosts } from '@/app/home/lib/social-media'  // Update het pad
 
 // Instagram post IDs
 const INSTAGRAM_POSTS = [
