@@ -20,24 +20,36 @@ export function Navigation() {
       <nav className="fixed top-0 left-0 right-0 bg-black z-[999]">
         <div className="container mx-auto">
           <div className="flex h-[80px] sm:h-[100px] md:h-[120px] items-center justify-between px-4 sm:px-6 md:px-8">
-            {/* Left: Contact Links */}
-            <div className="w-[100px] flex flex-col gap-1">
-              <a 
-                href="mailto:info@whiskyforcharity.com" 
-                className="text-white/80 hover:text-white transition-colors flex items-center"
-                aria-label="Send email"
+            {/* Left: Contact Links + Shop */}
+            <div className="w-[100px] flex items-center gap-4">
+              {/* Email en Instagram kolom */}
+              <div className="flex flex-col gap-1">
+                <a 
+                  href="mailto:info@whiskyforcharity.com" 
+                  className="text-white/80 hover:text-white transition-colors flex items-center"
+                  aria-label="Send email"
+                >
+                  <MdEmail size={20} />
+                </a>
+                <a 
+                  href="https://www.instagram.com/whiskyforcharity/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-white/80 hover:text-white transition-colors flex items-center"
+                  aria-label="Visit Instagram"
+                >
+                  <FaInstagram size={20} />
+                </a>
+              </div>
+              
+              {/* Shop button naast de kolom */}
+              <button
+                onClick={() => router.push('/shop')}
+                className="text-white/80 hover:text-white transition-colors"
+                aria-label="Go to shop"
               >
-                <MdEmail size={20} />
-              </a>
-              <a 
-                href="https://www.instagram.com/whiskyforcharity/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-white/80 hover:text-white transition-colors flex items-center"
-                aria-label="Visit Instagram"
-              >
-                <FaInstagram size={20} />
-              </a>
+                <FaStore size={20} />
+              </button>
             </div>
 
             {/* Center: Logo met link naar shop */}
@@ -68,16 +80,8 @@ export function Navigation() {
               </div>
             </div>
 
-            {/* Right: Shop, Cart en Menu buttons */}
+            {/* Right: Cart en Menu buttons */}
             <div className="w-[100px] flex items-center justify-end gap-4">
-              <button
-                onClick={() => router.push('/shop')}
-                className="text-white/80 hover:text-white transition-colors"
-                aria-label="Go to shop"
-              >
-                <FaStore size={20} />
-              </button>
-
               <button
                 onClick={() => router.push('/shop/cart')}
                 className="text-white/80 hover:text-white transition-colors relative"
