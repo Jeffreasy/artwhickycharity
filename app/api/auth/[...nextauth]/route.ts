@@ -50,8 +50,12 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60, // 24 uur
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-do-not-use-in-production',
+  debug: process.env.NODE_ENV === 'development',
 }
 
+// Use NextAuth handler function directly rather than object
 const handler = NextAuth(authOptions)
+
+// Export handler functions for API routes
 export { handler as GET, handler as POST } 
