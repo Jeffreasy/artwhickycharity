@@ -64,6 +64,12 @@ function LoginPageContent() {
       try {
         const allCookies = document.cookie;
         setCookieInfo(`Current cookies: ${allCookies || 'None'}`);
+        
+        // Check for auth errors in localStorage
+        const authErrors = localStorage.getItem('nextauth.error');
+        if (authErrors) {
+          setCookieInfo(prev => `${prev}\nAuth Errors: ${authErrors}`);
+        }
       } catch (e: any) {
         setCookieInfo(`Error reading cookies: ${e.message}`);
       }
@@ -147,6 +153,22 @@ function LoginPageContent() {
         
         setDebugMsg('NextAuth login successful! Redirecting...');
         
+        // Testing direct fetch to session endpoint
+        try {
+          const sessionRes = await fetch('/api/auth/session');
+          if (sessionRes.ok) {
+            const sessionData = await sessionRes.json();
+            console.log('Session test:', sessionData);
+            setDebugMsg(prev => `${prev}\nSession test: ${JSON.stringify(sessionData).substring(0, 50)}...`);
+          } else {
+            console.error('Session fetch failed:', sessionRes.status);
+            setDebugMsg(prev => `${prev}\nSession fetch failed: ${sessionRes.status}`);
+          }
+        } catch (fetchErr) {
+          console.error('Session fetch error:', fetchErr);
+          setDebugMsg(prev => `${prev}\nSession fetch error: ${fetchErr}`);
+        }
+        
         // Set a flag cookie to help with redirects
         Cookies.set('login_success', 'true', { 
           path: '/',
@@ -172,6 +194,17 @@ function LoginPageContent() {
 
   const toggleDebug = () => {
     setShowDebug(!showDebug);
+  };
+
+  // Test for session directly
+  const testSession = async () => {
+    try {
+      const res = await fetch('/api/auth/session');
+      const data = await res.json();
+      setCookieInfo(`Session Test: ${JSON.stringify(data)}`);
+    } catch (e: any) {
+      setCookieInfo(`Session Test Error: ${e.message}`);
+    }
   };
 
   return (
@@ -250,6 +283,13 @@ function LoginPageContent() {
               <div>URL: {typeof window !== 'undefined' ? window.location.href : 'Server rendering'}</div>
               <div>Host: {typeof window !== 'undefined' ? window.location.host : 'Unknown'}</div>
               <div>{cookieInfo}</div>
+              <button 
+                onClick={testSession}
+                className="mt-2 px-2 py-1 bg-blue-700 text-white rounded text-xs"
+                type="button"
+              >
+                Test Session API
+              </button>
             </div>
           )}
 
