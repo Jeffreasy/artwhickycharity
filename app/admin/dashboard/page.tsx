@@ -1,12 +1,11 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { FaChartLine, FaBug, FaUsers, FaBell, FaExclamationTriangle, FaCog, FaSignOutAlt } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { Loading } from '@/globalComponents/ui/Loading'
-import { cookies } from 'next/headers'
 import Cookies from 'js-cookie'
 
 export default function DashboardPage() {
@@ -22,23 +21,30 @@ export default function DashboardPage() {
 
   // Check for bypass cookie on client side
   useEffect(() => {
-    const hasEmergencyCookie = document.cookie.includes('admin_bypass=true')
-    setIsEmergencyAccess(hasEmergencyCookie)
+    const checkCookies = () => {
+      const adminBypass = Cookies.get('admin_bypass');
+      setIsEmergencyAccess(adminBypass === 'true');
+      
+      // Set page title to indicate emergency mode if using bypass
+      if (adminBypass === 'true') {
+        document.title = '⚠️ EMERGENCY MODE - Admin Dashboard';
+        console.log('Emergency access active, showing emergency UI');
+      } else {
+        document.title = 'Admin Dashboard';
+      }
+      setIsLoading(false);
+    };
     
-    // Set page title to indicate emergency mode if using bypass
-    if (hasEmergencyCookie) {
-      document.title = '⚠️ EMERGENCY MODE - Admin Dashboard'
-    }
-    setIsLoading(false)
-  }, [])
+    checkCookies();
+  }, []);
 
   // Protect dashboard route
   useEffect(() => {
     if (status === 'unauthenticated' && !isEmergencyAccess) {
-      console.log('User is not authenticated, redirecting to login')
-      router.replace('/admin/login')
+      console.log('User is not authenticated, redirecting to login');
+      router.replace('/admin/login');
     }
-  }, [status, router, isEmergencyAccess])
+  }, [status, router, isEmergencyAccess]);
 
   useEffect(() => {
     // Simuleer het laden van data
@@ -48,48 +54,69 @@ export default function DashboardPage() {
         visitors: 1254,
         pageviews: 3872,
         errors: 12,
-      })
-    }, 1000)
+      });
+    }, 1000);
 
-    return () => clearTimeout(timer)
-  }, [])
+    return () => clearTimeout(timer);
+  }, []);
 
   // Function to handle logout - clear cookies and redirect
-  const handleLogout = () => {
-    // Clear the admin bypass cookie
-    Cookies.remove('admin_bypass')
-    // Redirect to login page
-    router.push('/admin/login')
-  }
+  const handleLogout = async () => {
+    console.log('Logging out...');
+    try {
+      // Clear the admin bypass cookie
+      Cookies.remove('admin_bypass', { path: '/' });
+      
+      // Also clear any NextAuth cookies to be safe
+      Cookies.remove('next-auth.session-token', { path: '/' });
+      Cookies.remove('next-auth.csrf-token', { path: '/' });
+      Cookies.remove('next-auth.callback-url', { path: '/' });
+      
+      // If using NextAuth, sign out properly
+      if (status === 'authenticated') {
+        await signOut({ redirect: false });
+      }
+      
+      // Redirect to login page after a small delay to ensure cookies are cleared
+      setTimeout(() => {
+        console.log('Redirecting to login page...');
+        router.push('/admin/login');
+      }, 500);
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Redirect anyway as fallback
+      router.push('/admin/login');
+    }
+  };
 
   // Show loading state while checking authentication
-  if (status === 'loading' && !isEmergencyAccess) {
-    return <Loading />
+  if (isLoading) {
+    return <Loading />;
   }
 
   // If not authenticated and not using emergency access, don't render dashboard content
   if (status === 'unauthenticated' && !isEmergencyAccess) {
-    return null
+    return null;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="p-6">
       {isEmergencyAccess && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded shadow-md">
+        <div className="mb-6 rounded-md border-l-4 border-yellow-500 bg-yellow-50 p-4 text-yellow-700 shadow-md dark:bg-yellow-900/30 dark:text-yellow-200">
           <div className="flex items-center">
-            <FaExclamationTriangle className="text-yellow-500 mr-2" />
-            <p className="font-bold">Emergency Access Mode</p>
+            <FaExclamationTriangle className="mr-2 text-yellow-500" />
+            <p className="font-bold">EMERGENCY ACCESS MODE</p>
           </div>
           <p className="mt-2">You are currently using emergency access. Some functionality may be limited.</p>
-          <p className="mt-1">Session Status: {status}</p>
+          <p className="mt-1 text-sm">Session Status: {status}</p>
         </div>
       )}
       
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
         <button 
           onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center"
+          className="flex items-center rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
         >
           <FaSignOutAlt className="mr-2" />
           Logout
