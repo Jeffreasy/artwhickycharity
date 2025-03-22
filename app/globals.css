@@ -5,42 +5,13 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --golden: 56.1, 96.4%, 57.3%;
+    --foreground: 0 0% 100%;
+    --background: 0 0% 0%;
+  }
+
   body {
     @apply bg-black text-white;
   }
-}
-
-/* Instagram embed dark mode overrides */
-[data-instgrm-permalink] {
-  background: #000 !important;
-}
-
-/* Verberg bepaalde Instagram UI elementen */
-[data-instgrm-permalink] .Header,
-[data-instgrm-permalink] .Footer {
-  display: none !important;
-}
-
-/* Donkere modus voor Instagram embed */
-.instagram-media,
-.instagram-media-rendered {
-  background-color: #000 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* Instagram embed styling */
-.instagram-media {
-  background: #1C1C1C !important;
-  border: none !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
-  display: block !important;
-  min-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100% !important;
 }

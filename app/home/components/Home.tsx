@@ -1,7 +1,6 @@
 import { CircleHeroWrapper } from './CircleHero'
 import { ThreeCirclesWrapper } from './3circlessection'
 import { TextSection } from './Textsection/Textsection'
-import { SocialSection } from './SocialSection/socialsection'
 import { getTextSections } from '@/app/home/lib/text-section'
 import { Suspense } from 'react'
 import { LanguageBarServer } from './LanguageBar/LanguageBarServer'
@@ -27,7 +26,6 @@ export async function Home() {
 
         <CircleHeroWrapper />
         <ThreeCirclesWrapper />
-        <SocialSection />
         <TextSection initialSections={sections} />
       </div>
     )
