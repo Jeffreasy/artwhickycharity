@@ -9,6 +9,7 @@ import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
 import { Analytics } from '@vercel/analytics/react'
 import { GoogleAnalytics } from '@next/third-parties/google'
+import { CookieBanner } from '@/globalComponents/ui/CookieConsent'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -47,6 +48,7 @@ export default function RootLayout({
             <CartButton />
             <Analytics />
             {gaId && <GoogleAnalytics gaId={gaId} />}
+            <CookieBanner />
           </CartProvider>
         </MenuProvider>
       </body>
