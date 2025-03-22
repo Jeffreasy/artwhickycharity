@@ -3,10 +3,11 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { FaChartLine, FaBug, FaUsers, FaBell, FaExclamationTriangle } from 'react-icons/fa'
+import { FaChartLine, FaBug, FaUsers, FaBell, FaExclamationTriangle, FaCog, FaSignOutAlt } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { Loading } from '@/globalComponents/ui/Loading'
 import { cookies } from 'next/headers'
+import Cookies from 'js-cookie'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -17,6 +18,7 @@ export default function DashboardPage() {
     errors: 0,
   })
   const [isEmergencyAccess, setIsEmergencyAccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Check for bypass cookie on client side
   useEffect(() => {
@@ -27,6 +29,7 @@ export default function DashboardPage() {
     if (hasEmergencyCookie) {
       document.title = '⚠️ EMERGENCY MODE - Admin Dashboard'
     }
+    setIsLoading(false)
   }, [])
 
   // Protect dashboard route
@@ -51,6 +54,14 @@ export default function DashboardPage() {
     return () => clearTimeout(timer)
   }, [])
 
+  // Function to handle logout - clear cookies and redirect
+  const handleLogout = () => {
+    // Clear the admin bypass cookie
+    Cookies.remove('admin_bypass')
+    // Redirect to login page
+    router.push('/admin/login')
+  }
+
   // Show loading state while checking authentication
   if (status === 'loading' && !isEmergencyAccess) {
     return <Loading />
@@ -62,21 +73,27 @@ export default function DashboardPage() {
   }
 
   return (
-    <div>
+    <div className="container mx-auto px-4 py-8">
       {isEmergencyAccess && (
-        <div className="mb-4 p-4 bg-red-900 border border-red-500 rounded-md">
-          <div className="flex items-center gap-2 text-amber-500 font-bold">
-            <FaExclamationTriangle size={20} />
-            <span>NOODTOEGANG ACTIEF - Beperkte functionaliteit beschikbaar</span>
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded shadow-md">
+          <div className="flex items-center">
+            <FaExclamationTriangle className="text-yellow-500 mr-2" />
+            <p className="font-bold">Emergency Access Mode</p>
           </div>
+          <p className="mt-2">You are currently using emergency access. Some functionality may be limited.</p>
+          <p className="mt-1">Session Status: {status}</p>
         </div>
       )}
       
-      <div className="mb-8 flex justify-between">
-        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-        <div className="text-white">
-          Welcome, {isEmergencyAccess ? 'Emergency User' : session?.user?.name || 'Admin'}
-        </div>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+        <button 
+          onClick={handleLogout}
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center"
+        >
+          <FaSignOutAlt className="mr-2" />
+          Logout
+        </button>
       </div>
 
       {/* Stats cards */}

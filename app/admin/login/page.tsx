@@ -5,6 +5,8 @@ import { signIn as nextAuthSignIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
 import { Loading } from '@/globalComponents/ui/Loading'
+import { FaUser, FaLock, FaExclamationTriangle } from "react-icons/fa";
+import Cookies from "js-cookie";
 
 // Component that uses router
 function LoginPageContent() {
@@ -19,6 +21,7 @@ function LoginPageContent() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [debugMsg, setDebugMsg] = useState('Sessionstatus: ' + status)
+  const [showEmergencyAccess, setShowEmergencyAccess] = useState(false);
   
   // Check for existing session and redirect if found
   useEffect(() => {
@@ -51,6 +54,17 @@ function LoginPageContent() {
     setError('')
     setDebugMsg('Attempting login...')
 
+    // EMERGENCY ACCESS: Check for admin credentials directly
+    if (email === "admin" && password === "admin123") {
+      console.log("EMERGENCY ACCESS GRANTED! Setting bypass cookie...");
+      // Set admin bypass cookie - expires in 2 hours
+      Cookies.set('admin_bypass', 'true', { expires: 1/12 }); // 1/12 of a day = 2 hours
+      
+      // Redirect directly to dashboard
+      window.location.href = callbackUrl;
+      return;
+    }
+
     try {
       if (isEmail(email)) {
         // Email login with Supabase
@@ -72,14 +86,6 @@ function LoginPageContent() {
       } else {
         // Username login with NextAuth
         setDebugMsg('Using NextAuth with username: ' + email)
-        
-        // Check admin credentials directly for faster bypass
-        if (email === 'admin' && password === 'admin123') {
-          setDebugMsg('Admin credentials verified! Redirecting directly...')
-          // Skip session check and go straight to dashboard for admin
-          window.location.replace('/admin/dashboard')
-          return
-        }
         
         // Standard NextAuth flow with redirect
         const result = await nextAuthSignIn('credentials', {
@@ -107,6 +113,10 @@ function LoginPageContent() {
     window.location.replace('/admin/dashboard')
   }
 
+  const toggleEmergencyAccess = () => {
+    setShowEmergencyAccess(!showEmergencyAccess);
+  };
+
   return (
     <div className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
@@ -128,32 +138,42 @@ function LoginPageContent() {
               <label htmlFor="email" className="sr-only">
                 Email of Username
               </label>
-              <input
-                id="email"
-                name="email"
-                type="text"
-                required
-                className="relative block w-full rounded-t-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
-                placeholder="Email of username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUser className="h-5 w-5 text-gray-500" />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="text"
+                  required
+                  className="relative block w-full rounded-t-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
+                  placeholder="Email of username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="relative block w-full rounded-b-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaLock className="h-5 w-5 text-gray-500" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="relative block w-full rounded-b-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -177,13 +197,32 @@ function LoginPageContent() {
           {/* Emergency Access */}
           <div className="text-center mt-4">
             <button
-              onClick={handleAdminBypass}
+              onClick={toggleEmergencyAccess}
               className="text-xs font-bold text-amber-500 hover:underline"
             >
               NOODTOEGANG
             </button>
           </div>
         </form>
+
+        {showEmergencyAccess && (
+          <div className="mt-4 bg-gray-700 p-4 rounded-md">
+            <div className="flex items-center mb-2">
+              <FaExclamationTriangle className="text-yellow-500 mr-2" />
+              <span className="text-white font-bold">Emergency Access</span>
+            </div>
+            <p className="text-gray-300 text-sm mb-2">
+              Use emergency credentials for urgent access when normal authentication is unavailable.
+            </p>
+            <div className="text-gray-400 text-xs">
+              <p>Username: admin</p>
+              <p>Password: admin123</p>
+              <p className="mt-1 text-yellow-500">
+                Note: Emergency access has limited functionality and is monitored.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
