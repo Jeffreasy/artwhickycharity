@@ -1,16 +1,16 @@
 'use client'
 
-import { useSession, signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { FaChartLine, FaBug, FaUsers, FaBell, FaExclamationTriangle, FaCog, FaSignOutAlt } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { Loading } from '@/globalComponents/ui/Loading'
 import Cookies from 'js-cookie'
+import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { user, session, signOut } = useSupabaseAuth()
   const [stats, setStats] = useState({
     visitors: 0,
     pageviews: 0,
@@ -40,11 +40,11 @@ export default function DashboardPage() {
 
   // Protect dashboard route
   useEffect(() => {
-    if (status === 'unauthenticated' && !isEmergencyAccess) {
+    if (!user && !session && !isEmergencyAccess) {
       console.log('User is not authenticated, redirecting to login');
       router.replace('/admin/login');
     }
-  }, [status, router, isEmergencyAccess]);
+  }, [user, session, router, isEmergencyAccess]);
 
   useEffect(() => {
     // Simuleer het laden van data
@@ -67,14 +67,9 @@ export default function DashboardPage() {
       // Clear the admin bypass cookie
       Cookies.remove('admin_bypass', { path: '/' });
       
-      // Also clear any NextAuth cookies to be safe
-      Cookies.remove('next-auth.session-token', { path: '/' });
-      Cookies.remove('next-auth.csrf-token', { path: '/' });
-      Cookies.remove('next-auth.callback-url', { path: '/' });
-      
-      // If using NextAuth, sign out properly
-      if (status === 'authenticated') {
-        await signOut({ redirect: false });
+      // If authenticated with Supabase, sign out
+      if (user && session) {
+        await signOut();
       }
       
       // Redirect to login page after a small delay to ensure cookies are cleared
@@ -95,7 +90,7 @@ export default function DashboardPage() {
   }
 
   // If not authenticated and not using emergency access, don't render dashboard content
-  if (status === 'unauthenticated' && !isEmergencyAccess) {
+  if (!user && !session && !isEmergencyAccess) {
     return null;
   }
 
@@ -108,7 +103,7 @@ export default function DashboardPage() {
             <p className="font-bold">EMERGENCY ACCESS MODE</p>
           </div>
           <p className="mt-2">You are currently using emergency access. Some functionality may be limited.</p>
-          <p className="mt-1 text-sm">Session Status: {status}</p>
+          <p className="mt-1 text-sm">User: {user ? user.email : 'Not authenticated via Supabase'}</p>
         </div>
       )}
       
