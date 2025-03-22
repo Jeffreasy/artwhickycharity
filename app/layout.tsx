@@ -10,6 +10,7 @@ import { HomeButton } from '@/globalComponents/ui/Homebutton'
 import { Analytics } from '@vercel/analytics/react'
 import { CookieBanner } from '@/globalComponents/ui/CookieConsent'
 import { GoogleAnalyticsScript } from '@/globalComponents/ui/Analytics'
+import { AuthProvider } from '@/app/providers/AuthProvider'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -35,20 +36,22 @@ export default function RootLayout({
           'h-full bg-black text-white antialiased font-sans'
         )}
       >
-        <MenuProvider>
-          <CartProvider>
-            <Navigation />
-            <main>
-              {children}
-            </main>
-            <HomeButton />
-            <Footer />
-            <CartButton />
-            <Analytics />
-            <GoogleAnalyticsScript />
-            <CookieBanner />
-          </CartProvider>
-        </MenuProvider>
+        <AuthProvider>
+          <MenuProvider>
+            <CartProvider>
+              <Navigation />
+              <main>
+                {children}
+              </main>
+              <HomeButton />
+              <Footer />
+              <CartButton />
+              <Analytics />
+              <GoogleAnalyticsScript />
+              <CookieBanner />
+            </CartProvider>
+          </MenuProvider>
+        </AuthProvider>
       </body>
     </html>
   )
