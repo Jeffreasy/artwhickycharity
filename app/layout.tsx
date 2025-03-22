@@ -8,6 +8,7 @@ import { Footer } from '@/globalComponents/ui/Footer/footer'
 import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
 import { Analytics } from '@vercel/analytics/react'
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -25,6 +26,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID || '';
+  
   return (
     <html lang="en">
       <body 
@@ -43,6 +46,7 @@ export default function RootLayout({
             <Footer />
             <CartButton />
             <Analytics />
+            {gaId && <GoogleAnalytics gaId={gaId} />}
           </CartProvider>
         </MenuProvider>
       </body>
