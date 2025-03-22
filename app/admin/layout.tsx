@@ -3,8 +3,7 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
-import { signOut } from 'next-auth/react'
+import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider'
 import { Suspense } from 'react'
 import { Loading } from '@/globalComponents/ui/Loading'
 
@@ -18,21 +17,12 @@ function AdminLayoutWithPathname({
 }: {
   children: React.ReactNode
 }) {
-  const { 
-    nextAuthStatus, 
-    nextAuthSession, 
-    supabaseUser, 
-    supabaseSession, 
-    isLoading: supabaseLoading, 
-    signOut: supabaseSignOut, 
-    authMode 
-  } = useCombinedAuth()
+  const { user, session, isLoading, signOut } = useSupabaseAuth()
   
   const pathname = usePathname()
 
-  // Bepaal of de gebruiker is ingelogd via een van beide methoden
-  const isAuthenticated = nextAuthStatus === 'authenticated' || !!supabaseUser
-  const isLoading = nextAuthStatus === 'loading' || supabaseLoading
+  // Bepaal of de gebruiker is ingelogd
+  const isAuthenticated = !!user && !!session
 
   // Toon loading state
   if (isLoading) {
@@ -71,12 +61,8 @@ function AdminLayoutWithPathname({
   ]
 
   const handleSignOut = async () => {
-    if (authMode === 'nextauth') {
-      await signOut({ redirect: true, callbackUrl: '/admin/login' })
-    } else if (authMode === 'supabase') {
-      await supabaseSignOut()
-      window.location.href = '/admin/login'
-    }
+    await signOut()
+    window.location.href = '/admin/login'
   }
 
   return (
@@ -89,7 +75,7 @@ function AdminLayoutWithPathname({
         </div>
 
         <div className="mb-4 text-xs text-gray-500">
-          {authMode === 'nextauth' ? 'Ingelogd als Admin' : authMode === 'supabase' ? `Ingelogd als ${supabaseUser?.email}` : 'Niet ingelogd'}
+          {user ? `Ingelogd als ${user.email}` : 'Niet ingelogd'}
         </div>
 
         <nav>

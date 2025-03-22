@@ -10,7 +10,7 @@ import { HomeButton } from '@/globalComponents/ui/Homebutton'
 import { Analytics } from '@vercel/analytics/react'
 import { CookieBanner } from '@/globalComponents/ui/CookieConsent'
 import { GoogleAnalyticsScript } from '@/globalComponents/ui/Analytics'
-import { AuthProviderWrapper } from '@/app/providers/AuthProviderWrapper'
+import { SupabaseAuthProviderWrapper } from '@/app/providers/SupabaseAuthProviderWrapper'
 import SupabaseListener from '@/app/components/SupabaseListener'
 import { Suspense } from 'react'
 import { Loading } from '@/globalComponents/ui/Loading'
@@ -39,7 +39,7 @@ export default function RootLayout({
           'h-full bg-black text-white antialiased font-sans'
         )}
       >
-        <AuthProviderWrapper>
+        <SupabaseAuthProviderWrapper>
           <SupabaseListener />
           <MenuProvider>
             <CartProvider>
@@ -57,7 +57,7 @@ export default function RootLayout({
               <CookieBanner />
             </CartProvider>
           </MenuProvider>
-        </AuthProviderWrapper>
+        </SupabaseAuthProviderWrapper>
       </body>
     </html>
   )

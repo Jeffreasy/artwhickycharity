@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, Suspense, useEffect } from 'react'
-import { signIn as nextAuthSignIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
+import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider'
 import { Loading } from '@/globalComponents/ui/Loading'
 import { FaUser, FaLock, FaExclamationTriangle, FaBug } from "react-icons/fa";
 import Cookies from "js-cookie";
@@ -14,8 +13,7 @@ function LoginPageContent() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams?.get('callbackUrl') || '/admin/dashboard'
   
-  const { signIn: supabaseSignIn } = useCombinedAuth()
-  const { data: session, status } = useSession()
+  const { signIn, session, user, isLoading: authLoading } = useSupabaseAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -27,8 +25,8 @@ function LoginPageContent() {
 
   // Check for existing session and redirect if found
   useEffect(() => {
-    console.log('Session status:', status, 'Session:', session);
-    setDebugMsg(`Session status: ${status}`);
+    console.log('Session status:', user ? 'authenticated' : 'unauthenticated', 'Session:', session);
+    setDebugMsg(`Session status: ${user ? 'authenticated' : 'unauthenticated'}`);
 
     // Check for admin bypass cookie
     const hasEmergencyCookie = document.cookie.includes('admin_bypass=true');
@@ -38,7 +36,7 @@ function LoginPageContent() {
       return;
     }
     
-    if (status === 'authenticated' && session) {
+    if (user && session) {
       console.log('User is authenticated, redirecting to dashboard');
       setDebugMsg('Authenticated! Redirecting to: ' + callbackUrl);
       
@@ -56,7 +54,7 @@ function LoginPageContent() {
         }
       }, 100);
     }
-  }, [session, status, callbackUrl])
+  }, [user, session, callbackUrl])
 
   // Check and display cookies for debugging
   useEffect(() => {
@@ -66,7 +64,7 @@ function LoginPageContent() {
         setCookieInfo(`Current cookies: ${allCookies || 'None'}`);
         
         // Check for auth errors in localStorage
-        const authErrors = localStorage.getItem('nextauth.error');
+        const authErrors = localStorage.getItem('supabase.auth.error');
         if (authErrors) {
           setCookieInfo(prev => `${prev}\nAuth Errors: ${authErrors}`);
         }
@@ -76,12 +74,6 @@ function LoginPageContent() {
     }
   }, [showDebug]);
   
-  // Determines if input is email or username
-  const isEmail = (value: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(value);
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -92,11 +84,6 @@ function LoginPageContent() {
     if (email === "admin" && password === "admin123") {
       console.log("EMERGENCY ACCESS GRANTED! Setting bypass cookie...");
       setDebugMsg("EMERGENCY ACCESS GRANTED! Setting bypass cookie...");
-      
-      // Clear any existing cookies that might interfere
-      Cookies.remove('next-auth.session-token', { path: '/' });
-      Cookies.remove('next-auth.csrf-token', { path: '/' });
-      Cookies.remove('next-auth.callback-url', { path: '/' });
       
       // Set admin bypass cookie - expires in 2 hours
       Cookies.set('admin_bypass', 'true', { 
@@ -115,71 +102,31 @@ function LoginPageContent() {
     }
 
     try {
-      if (isEmail(email)) {
-        // Email login with Supabase
-        setDebugMsg('Using Supabase auth with email: ' + email)
-        
-        const { error: supabaseError } = await supabaseSignIn(email, password)
-        
-        if (supabaseError) {
-          console.error('Supabase auth error:', supabaseError)
-          setError(supabaseError.message)
-          setDebugMsg('Login failed: ' + supabaseError.message)
-          setIsLoading(false)
-          return
-        }
-        
-        setDebugMsg('Supabase login successful! Redirecting...')
-        // Force page reload to dashboard
-        window.location.href = '/admin/dashboard'
-      } else {
-        // Username login with NextAuth
-        setDebugMsg('Using NextAuth with username: ' + email)
-        
-        // Standard NextAuth flow with callback
-        const result = await nextAuthSignIn('credentials', {
-          username: email,
-          password,
-          redirect: false,
-          callbackUrl: '/admin/dashboard' // Explicitly set callback
-        })
-        
-        if (result?.error) {
-          setError("Invalid credentials");
-          setDebugMsg('NextAuth error: ' + result.error);
-          setIsLoading(false);
-          return;
-        }
-        
-        setDebugMsg('NextAuth login successful! Redirecting...');
-        
-        // Testing direct fetch to session endpoint
-        try {
-          const sessionRes = await fetch('/api/auth/session');
-          if (sessionRes.ok) {
-            const sessionData = await sessionRes.json();
-            console.log('Session test:', sessionData);
-            setDebugMsg(prev => `${prev}\nSession test: ${JSON.stringify(sessionData).substring(0, 50)}...`);
-          } else {
-            console.error('Session fetch failed:', sessionRes.status);
-            setDebugMsg(prev => `${prev}\nSession fetch failed: ${sessionRes.status}`);
-          }
-        } catch (fetchErr) {
-          console.error('Session fetch error:', fetchErr);
-          setDebugMsg(prev => `${prev}\nSession fetch error: ${fetchErr}`);
-        }
-        
-        // Set a flag cookie to help with redirects
-        Cookies.set('login_success', 'true', { 
-          path: '/',
-          secure: window.location.protocol === 'https:',
-          sameSite: 'lax',
-          expires: 1/144 // 10 minutes
-        });
-        
-        // Use window.location for most reliable redirect
-        window.location.href = '/admin/dashboard';
+      // Email login with Supabase
+      setDebugMsg('Using Supabase auth with email: ' + email)
+      
+      const { error: supabaseError } = await signIn(email, password)
+      
+      if (supabaseError) {
+        console.error('Supabase auth error:', supabaseError)
+        setError(supabaseError.message)
+        setDebugMsg('Login failed: ' + supabaseError.message)
+        setIsLoading(false)
+        return
       }
+      
+      setDebugMsg('Supabase login successful! Redirecting...')
+      
+      // Set a flag cookie to help with redirects
+      Cookies.set('login_success', 'true', { 
+        path: '/',
+        secure: window.location.protocol === 'https:',
+        sameSite: 'lax',
+        expires: 1/144 // 10 minutes
+      });
+      
+      // Force page reload to dashboard
+      window.location.href = '/admin/dashboard'
     } catch (error: any) {
       console.error('Login error:', error)
       setError('An error occurred during login')
@@ -199,9 +146,9 @@ function LoginPageContent() {
   // Test for session directly
   const testSession = async () => {
     try {
-      const res = await fetch('/api/auth/session');
-      const data = await res.json();
-      setCookieInfo(`Session Test: ${JSON.stringify(data)}`);
+      const sessionData = session ? JSON.stringify(session) : 'No session';
+      const userData = user ? JSON.stringify(user) : 'No user';
+      setCookieInfo(`Session Test:\nSession: ${sessionData}\nUser: ${userData}`);
     } catch (e: any) {
       setCookieInfo(`Session Test Error: ${e.message}`);
     }
@@ -226,7 +173,7 @@ function LoginPageContent() {
           <div className="-space-y-px rounded-md shadow-sm">
             <div>
               <label htmlFor="email" className="sr-only">
-                Email of Username
+                Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -235,10 +182,10 @@ function LoginPageContent() {
                 <input
                   id="email"
                   name="email"
-                  type="text"
+                  type="email"
                   required
                   className="relative block w-full rounded-t-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
-                  placeholder="Email of username"
+                  placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -278,7 +225,7 @@ function LoginPageContent() {
 
           {showDebug && (
             <div className="bg-gray-800 p-3 rounded text-xs text-gray-400 mt-2">
-              <div>Session status: {status}</div>
+              <div>Auth status: {user ? 'authenticated' : 'unauthenticated'}</div>
               <div>Session data: {session ? JSON.stringify(session).substring(0, 100) + '...' : 'null'}</div>
               <div>URL: {typeof window !== 'undefined' ? window.location.href : 'Server rendering'}</div>
               <div>Host: {typeof window !== 'undefined' ? window.location.host : 'Unknown'}</div>
@@ -288,7 +235,7 @@ function LoginPageContent() {
                 className="mt-2 px-2 py-1 bg-blue-700 text-white rounded text-xs"
                 type="button"
               >
-                Test Session API
+                Test Session 
               </button>
             </div>
           )}
@@ -296,7 +243,7 @@ function LoginPageContent() {
           <div>
             <button
               type="submit"
-              disabled={isLoading || status === 'loading'}
+              disabled={isLoading || authLoading}
               className="group relative flex w-full justify-center rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 disabled:opacity-70"
             >
               {isLoading ? 'Inloggen...' : 'Login'}
