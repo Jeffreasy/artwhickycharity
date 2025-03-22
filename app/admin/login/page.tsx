@@ -73,27 +73,22 @@ function LoginPageContent() {
         // Username login with NextAuth
         setDebugMsg('Using NextAuth with username: ' + email)
         
-        // Use direct callback URL in call to NextAuth
+        // Check admin credentials directly for faster bypass
+        if (email === 'admin' && password === 'admin123') {
+          setDebugMsg('Admin credentials verified! Redirecting directly...')
+          // Skip session check and go straight to dashboard for admin
+          window.location.replace('/admin/dashboard')
+          return
+        }
+        
+        // Standard NextAuth flow with redirect
         const result = await nextAuthSignIn('credentials', {
           username: email,
           password,
-          // Use redirect: true for more reliable redirecting
+          // Force the redirect
           redirect: true,
-          callbackUrl: decodeURIComponent(callbackUrl)
+          callbackUrl: '/admin/dashboard'
         })
-        
-        // Note: The code below won't run if redirect: true is used
-        // This is just a fallback
-        if (result?.error) {
-          console.error('NextAuth login error:', result.error)
-          setError('Invalid username or password')
-          setDebugMsg('NextAuth login failed: ' + result.error)
-          setIsLoading(false)
-        } else {
-          setDebugMsg('NextAuth login success! Redirecting...')
-          // If we somehow get here, force page reload to dashboard
-          window.location.replace('/admin/dashboard')
-        }
       }
     } catch (error: any) {
       console.error('Login error:', error)
@@ -101,6 +96,15 @@ function LoginPageContent() {
       setDebugMsg('Error during login: ' + (error.message || 'Unknown error'))
       setIsLoading(false)
     }
+  }
+
+  // Hardcoded admin login for emergency access
+  const handleAdminBypass = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setDebugMsg('Emergency admin bypass initiated')
+    // Create a temporary cookie to indicate admin access
+    document.cookie = "admin_bypass=true; path=/; max-age=3600"
+    window.location.replace('/admin/dashboard')
   }
 
   return (
@@ -170,14 +174,14 @@ function LoginPageContent() {
             </button>
           </div>
           
-          {/* Direct dashboard link for testing */}
-          <div className="text-center">
-            <a 
-              href="/admin/dashboard" 
-              className="text-xs text-amber-500 hover:underline"
+          {/* Emergency Access */}
+          <div className="text-center mt-4">
+            <button
+              onClick={handleAdminBypass}
+              className="text-xs font-bold text-amber-500 hover:underline"
             >
-              Direct naar Dashboard (test)
-            </a>
+              NOODTOEGANG
+            </button>
           </div>
         </form>
       </div>

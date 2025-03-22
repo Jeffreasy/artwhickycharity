@@ -3,9 +3,10 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { FaChartLine, FaBug, FaUsers, FaBell } from 'react-icons/fa'
+import { FaChartLine, FaBug, FaUsers, FaBell, FaExclamationTriangle } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { Loading } from '@/globalComponents/ui/Loading'
+import { cookies } from 'next/headers'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -15,14 +16,26 @@ export default function DashboardPage() {
     pageviews: 0,
     errors: 0,
   })
+  const [isEmergencyAccess, setIsEmergencyAccess] = useState(false)
+
+  // Check for bypass cookie on client side
+  useEffect(() => {
+    const hasEmergencyCookie = document.cookie.includes('admin_bypass=true')
+    setIsEmergencyAccess(hasEmergencyCookie)
+    
+    // Set page title to indicate emergency mode if using bypass
+    if (hasEmergencyCookie) {
+      document.title = '⚠️ EMERGENCY MODE - Admin Dashboard'
+    }
+  }, [])
 
   // Protect dashboard route
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (status === 'unauthenticated' && !isEmergencyAccess) {
       console.log('User is not authenticated, redirecting to login')
       router.replace('/admin/login')
     }
-  }, [status, router])
+  }, [status, router, isEmergencyAccess])
 
   useEffect(() => {
     // Simuleer het laden van data
@@ -39,21 +52,30 @@ export default function DashboardPage() {
   }, [])
 
   // Show loading state while checking authentication
-  if (status === 'loading') {
+  if (status === 'loading' && !isEmergencyAccess) {
     return <Loading />
   }
 
-  // If not authenticated, don't render dashboard content
-  if (status === 'unauthenticated') {
+  // If not authenticated and not using emergency access, don't render dashboard content
+  if (status === 'unauthenticated' && !isEmergencyAccess) {
     return null
   }
 
   return (
     <div>
+      {isEmergencyAccess && (
+        <div className="mb-4 p-4 bg-red-900 border border-red-500 rounded-md">
+          <div className="flex items-center gap-2 text-amber-500 font-bold">
+            <FaExclamationTriangle size={20} />
+            <span>NOODTOEGANG ACTIEF - Beperkte functionaliteit beschikbaar</span>
+          </div>
+        </div>
+      )}
+      
       <div className="mb-8 flex justify-between">
         <h1 className="text-3xl font-bold text-white">Dashboard</h1>
         <div className="text-white">
-          Welcome, {session?.user?.name || 'Admin'}
+          Welcome, {isEmergencyAccess ? 'Emergency User' : session?.user?.name || 'Admin'}
         </div>
       </div>
 

@@ -17,6 +17,13 @@ export async function middleware(request: NextRequest) {
 
   console.log("Checking auth for admin path:", path);
   
+  // Check for admin bypass cookie (emergency access)
+  const adminBypass = request.cookies.get('admin_bypass')
+  if (adminBypass && adminBypass.value === 'true') {
+    console.log("Admin bypass cookie found, allowing access");
+    return response;
+  }
+  
   // Probeer eerst NextAuth token te krijgen
   const token = await getToken({
     req: request,
