@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { signIn as nextAuthSignIn } from 'next-auth/react'
+import { useState, Suspense, useEffect } from 'react'
+import { signIn as nextAuthSignIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
 import { Loading } from '@/globalComponents/ui/Loading'
@@ -10,10 +10,21 @@ import { Loading } from '@/globalComponents/ui/Loading'
 function LoginPageContent() {
   const router = useRouter()
   const { signIn: supabaseSignIn } = useCombinedAuth()
+  const { data: session, status } = useSession()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [debugMsg, setDebugMsg] = useState('')
+  
+  // Check for existing session and redirect if found
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      console.log('User is authenticated, redirecting to dashboard')
+      setDebugMsg('Redirecting to dashboard...')
+      router.replace('/admin/dashboard')
+    }
+  }, [session, status, router])
   
   // Determines if input is email or username
   const isEmail = (value: string) => {
@@ -25,21 +36,26 @@ function LoginPageContent() {
     e.preventDefault()
     setIsLoading(true)
     setError('')
+    setDebugMsg('Attempting login...')
 
     try {
       if (isEmail(email)) {
         // Use Supabase auth for email logins
+        setDebugMsg('Using Supabase auth for email login...')
         const { error: supabaseError } = await supabaseSignIn(email, password)
 
         if (supabaseError) {
           setError(supabaseError.message)
+          setDebugMsg('Supabase login failed: ' + supabaseError.message)
           setIsLoading(false)
           return
         }
         
-        router.push('/admin/dashboard')
+        setDebugMsg('Supabase login successful, redirecting...')
+        router.replace('/admin/dashboard')
       } else {
         // Use NextAuth for username-based admin login
+        setDebugMsg('Using NextAuth for username login...')
         const result = await nextAuthSignIn('credentials', {
           username: email, // We're reusing the email field for username
           password,
@@ -48,14 +64,20 @@ function LoginPageContent() {
 
         if (result?.error) {
           setError('Invalid username or password')
+          setDebugMsg('NextAuth login failed: ' + result.error)
           setIsLoading(false)
           return
         }
 
-        router.push('/admin/dashboard')
+        setDebugMsg('NextAuth login successful, redirecting...')
+        // Wait a moment for the session to be established
+        setTimeout(() => {
+          router.replace('/admin/dashboard')
+        }, 1000)
       }
     } catch (error: any) {
       setError('An error occurred during login')
+      setDebugMsg('Login error: ' + (error.message || 'Unknown error'))
       setIsLoading(false)
     }
   }
@@ -110,11 +132,15 @@ function LoginPageContent() {
           {error && (
             <div className="text-red-500 text-sm text-center">{error}</div>
           )}
+          
+          {debugMsg && process.env.NODE_ENV === 'development' && (
+            <div className="text-amber-500 text-xs text-center">{debugMsg}</div>
+          )}
 
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || status === 'loading'}
               className="group relative flex w-full justify-center rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 disabled:opacity-70"
             >
               {isLoading ? 'Inloggen...' : 'Login'}

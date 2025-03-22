@@ -4,14 +4,25 @@ import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { FaChartLine, FaBug, FaUsers, FaBell } from 'react-icons/fa'
+import { useRouter } from 'next/navigation'
+import { Loading } from '@/globalComponents/ui/Loading'
 
 export default function DashboardPage() {
-  const { data: session } = useSession()
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const [stats, setStats] = useState({
     visitors: 0,
     pageviews: 0,
     errors: 0,
   })
+
+  // Protect dashboard route
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      console.log('User is not authenticated, redirecting to login')
+      router.replace('/admin/login')
+    }
+  }, [status, router])
 
   useEffect(() => {
     // Simuleer het laden van data
@@ -26,6 +37,16 @@ export default function DashboardPage() {
 
     return () => clearTimeout(timer)
   }, [])
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return <Loading />
+  }
+
+  // If not authenticated, don't render dashboard content
+  if (status === 'unauthenticated') {
+    return null
+  }
 
   return (
     <div>
