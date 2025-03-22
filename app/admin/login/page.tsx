@@ -42,22 +42,31 @@ function LoginPageContent() {
       console.log('User is authenticated, redirecting to dashboard');
       setDebugMsg('Authenticated! Redirecting to: ' + callbackUrl);
       
-      try {
-        // Direct navigation - most reliable method
-        window.location.href = decodeURIComponent(callbackUrl);
-      } catch (e) {
-        console.error('Redirect error:', e);
-        // Fallback
-        window.location.href = '/admin/dashboard';
-      }
+      // Use setTimeout to ensure state updates complete before navigation
+      setTimeout(() => {
+        try {
+          // Direct navigation for most reliable method
+          window.location.href = callbackUrl.startsWith('/') 
+            ? callbackUrl 
+            : decodeURIComponent(callbackUrl);
+        } catch (e) {
+          console.error('Redirect error:', e);
+          // Fallback
+          window.location.href = '/admin/dashboard';
+        }
+      }, 100);
     }
   }, [session, status, callbackUrl])
 
   // Check and display cookies for debugging
   useEffect(() => {
     if (showDebug) {
-      const allCookies = document.cookie;
-      setCookieInfo(`Current cookies: ${allCookies || 'None'}`);
+      try {
+        const allCookies = document.cookie;
+        setCookieInfo(`Current cookies: ${allCookies || 'None'}`);
+      } catch (e: any) {
+        setCookieInfo(`Error reading cookies: ${e.message}`);
+      }
     }
   }, [showDebug]);
   
@@ -79,12 +88,17 @@ function LoginPageContent() {
       setDebugMsg("EMERGENCY ACCESS GRANTED! Setting bypass cookie...");
       
       // Clear any existing cookies that might interfere
-      Cookies.remove('next-auth.session-token');
-      Cookies.remove('next-auth.csrf-token');
-      Cookies.remove('next-auth.callback-url');
+      Cookies.remove('next-auth.session-token', { path: '/' });
+      Cookies.remove('next-auth.csrf-token', { path: '/' });
+      Cookies.remove('next-auth.callback-url', { path: '/' });
       
       // Set admin bypass cookie - expires in 2 hours
-      Cookies.set('admin_bypass', 'true', { expires: 1/12, path: '/' }); // 1/12 of a day = 2 hours
+      Cookies.set('admin_bypass', 'true', { 
+        expires: 1/12, 
+        path: '/',
+        secure: window.location.protocol === 'https:',
+        sameSite: 'lax'
+      }); 
       
       // Short delay to ensure cookie is set
       setTimeout(() => {
@@ -120,7 +134,8 @@ function LoginPageContent() {
         const result = await nextAuthSignIn('credentials', {
           username: email,
           password,
-          redirect: false
+          redirect: false,
+          callbackUrl: '/admin/dashboard' // Explicitly set callback
         })
         
         if (result?.error) {
@@ -131,8 +146,17 @@ function LoginPageContent() {
         }
         
         setDebugMsg('NextAuth login successful! Redirecting...');
+        
+        // Set a flag cookie to help with redirects
+        Cookies.set('login_success', 'true', { 
+          path: '/',
+          secure: window.location.protocol === 'https:',
+          sameSite: 'lax',
+          expires: 1/144 // 10 minutes
+        });
+        
         // Use window.location for most reliable redirect
-        window.location.href = callbackUrl;
+        window.location.href = '/admin/dashboard';
       }
     } catch (error: any) {
       console.error('Login error:', error)
@@ -223,6 +247,8 @@ function LoginPageContent() {
             <div className="bg-gray-800 p-3 rounded text-xs text-gray-400 mt-2">
               <div>Session status: {status}</div>
               <div>Session data: {session ? JSON.stringify(session).substring(0, 100) + '...' : 'null'}</div>
+              <div>URL: {typeof window !== 'undefined' ? window.location.href : 'Server rendering'}</div>
+              <div>Host: {typeof window !== 'undefined' ? window.location.host : 'Unknown'}</div>
               <div>{cookieInfo}</div>
             </div>
           )}
