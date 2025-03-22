@@ -3,38 +3,33 @@
 import React, { useState, useEffect } from 'react';
 import CookieConsent from 'react-cookie-consent';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { updateAnalyticsConsent, hasAnalyticsConsent } from '@/utils/analytics';
 
 export const CookieBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Check if consent was already given or declined
-    const hasConsent = localStorage.getItem('cookieConsent') === 'true';
-    const hasDeclined = localStorage.getItem('cookieConsent') === 'false';
-    
-    if (!hasConsent && !hasDeclined) {
-      setIsVisible(true);
-    }
+    // Wacht even met het tonen van de banner om hydration mismatch te voorkomen
+    const timer = setTimeout(() => {
+      // Check if consent was already set in localStorage
+      const consentStatus = localStorage.getItem('cookieConsent');
+      
+      if (consentStatus !== 'true' && consentStatus !== 'false') {
+        setIsVisible(true);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAccept = () => {
-    localStorage.setItem('cookieConsent', 'true');
     setIsVisible(false);
-    
-    // Enable Google Analytics when cookies are accepted
-    window.gtag?.('consent', 'update', {
-      'analytics_storage': 'granted'
-    });
+    updateAnalyticsConsent(true);
   };
 
   const handleDecline = () => {
-    localStorage.setItem('cookieConsent', 'false');
     setIsVisible(false);
-    
-    // Disable Google Analytics when cookies are declined
-    window.gtag?.('consent', 'update', {
-      'analytics_storage': 'denied'
-    });
+    updateAnalyticsConsent(false);
   };
 
   if (!isVisible) return null;
