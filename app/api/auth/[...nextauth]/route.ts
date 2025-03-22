@@ -14,17 +14,19 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         console.log('Authorizing with credentials:', credentials?.username);
         
-        // Hardcoded credentials - in productie zou je deze vervangen door veilige authenticatie
+        // Check for emergency access first
         if (
           credentials?.username === process.env.ADMIN_USERNAME &&
           credentials?.password === process.env.ADMIN_PASSWORD
         ) {
           console.log('Credentials match, authorizing user');
+          // Return user object that NextAuth will store in the JWT
           return {
             id: '1',
             name: 'Admin',
             email: 'admin@example.com',
-            role: 'admin'
+            role: 'admin',
+            authenticated: true // Add explicit flag
           }
         }
         
@@ -35,19 +37,28 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: '/admin/login', // Custom login page
+    error: '/admin/login', // Redirect to login on error
   },
   callbacks: {
     async jwt({ token, user }) {
-      console.log('JWT callback - User:', user ? 'exists' : 'null', 'Token:', token.name || 'no name');
+      console.log('JWT callback - User:', user ? JSON.stringify(user) : 'null', 'Token:', JSON.stringify(token));
       if (user) {
-        token.role = user.role
+        // Copy all user properties to token
+        token.role = user.role;
+        token.authenticated = true; // Explicit auth flag
+        token.userId = user.id;
       }
       return token
     },
     async session({ session, token }) {
+      console.log('Session callback - token:', JSON.stringify(token));
       console.log('Session callback - building session for', session?.user?.name || 'unknown user');
       if (session.user) {
-        session.user.role = token.role as string
+        session.user.role = token.role as string;
+        (session.user as any).id = token.userId as string;
+        
+        // Add authenticated flag
+        (session.user as any).authenticated = true;
       }
       return session
     }
