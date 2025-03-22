@@ -72,18 +72,18 @@ export const authOptions: NextAuthOptions = {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/',
-        secure: process.env.NEXTAUTH_COOKIE_SECURE === 'false' ? false : true,
+        secure: process.env.NODE_ENV === 'production',
         domain: process.env.NEXTAUTH_COOKIE_DOMAIN || undefined // Allow explicit domain setting
       }
     },
     callbackUrl: {
       name: `next-auth.callback-url`,
       options: {
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/',
-        secure: process.env.NEXTAUTH_COOKIE_SECURE === 'false' ? false : true,
+        secure: process.env.NODE_ENV === 'production',
         domain: process.env.NEXTAUTH_COOKIE_DOMAIN || undefined
       }
     },
@@ -91,9 +91,9 @@ export const authOptions: NextAuthOptions = {
       name: `next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/',
-        secure: process.env.NEXTAUTH_COOKIE_SECURE === 'false' ? false : true,
+        secure: process.env.NODE_ENV === 'production',
         domain: process.env.NEXTAUTH_COOKIE_DOMAIN || undefined
       }
     }
