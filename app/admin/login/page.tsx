@@ -5,7 +5,7 @@ import { signIn as nextAuthSignIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
 import { Loading } from '@/globalComponents/ui/Loading'
-import { FaUser, FaLock, FaExclamationTriangle } from "react-icons/fa";
+import { FaUser, FaLock, FaExclamationTriangle, FaBug } from "react-icons/fa";
 import Cookies from "js-cookie";
 
 // Component that uses router
@@ -20,12 +20,23 @@ function LoginPageContent() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [debugMsg, setDebugMsg] = useState('Sessionstatus: ' + status)
-  const [showEmergencyAccess, setShowEmergencyAccess] = useState(false);
-  
+  const [debugMsg, setDebugMsg] = useState('')
+  const [showEmergencyAccess, setShowEmergencyAccess] = useState(false)
+  const [showDebug, setShowDebug] = useState(false)
+  const [cookieInfo, setCookieInfo] = useState('')
+
   // Check for existing session and redirect if found
   useEffect(() => {
     console.log('Session status:', status, 'Session:', session);
+    setDebugMsg(`Session status: ${status}`);
+
+    // Check for admin bypass cookie
+    const hasEmergencyCookie = document.cookie.includes('admin_bypass=true');
+    if (hasEmergencyCookie) {
+      setDebugMsg('Emergency access cookie detected. Redirecting to dashboard...');
+      window.location.href = '/admin/dashboard';
+      return;
+    }
     
     if (status === 'authenticated' && session) {
       console.log('User is authenticated, redirecting to dashboard');
@@ -33,7 +44,7 @@ function LoginPageContent() {
       
       try {
         // Direct navigation - most reliable method
-        window.location.replace(decodeURIComponent(callbackUrl));
+        window.location.href = decodeURIComponent(callbackUrl);
       } catch (e) {
         console.error('Redirect error:', e);
         // Fallback
@@ -41,6 +52,14 @@ function LoginPageContent() {
       }
     }
   }, [session, status, callbackUrl])
+
+  // Check and display cookies for debugging
+  useEffect(() => {
+    if (showDebug) {
+      const allCookies = document.cookie;
+      setCookieInfo(`Current cookies: ${allCookies || 'None'}`);
+    }
+  }, [showDebug]);
   
   // Determines if input is email or username
   const isEmail = (value: string) => {
@@ -57,11 +76,21 @@ function LoginPageContent() {
     // EMERGENCY ACCESS: Check for admin credentials directly
     if (email === "admin" && password === "admin123") {
       console.log("EMERGENCY ACCESS GRANTED! Setting bypass cookie...");
-      // Set admin bypass cookie - expires in 2 hours
-      Cookies.set('admin_bypass', 'true', { expires: 1/12 }); // 1/12 of a day = 2 hours
+      setDebugMsg("EMERGENCY ACCESS GRANTED! Setting bypass cookie...");
       
-      // Redirect directly to dashboard
-      window.location.href = callbackUrl;
+      // Clear any existing cookies that might interfere
+      Cookies.remove('next-auth.session-token');
+      Cookies.remove('next-auth.csrf-token');
+      Cookies.remove('next-auth.callback-url');
+      
+      // Set admin bypass cookie - expires in 2 hours
+      Cookies.set('admin_bypass', 'true', { expires: 1/12, path: '/' }); // 1/12 of a day = 2 hours
+      
+      // Short delay to ensure cookie is set
+      setTimeout(() => {
+        // Redirect directly to dashboard
+        window.location.href = '/admin/dashboard';
+      }, 500);
       return;
     }
 
@@ -82,19 +111,28 @@ function LoginPageContent() {
         
         setDebugMsg('Supabase login successful! Redirecting...')
         // Force page reload to dashboard
-        window.location.replace('/admin/dashboard')
+        window.location.href = '/admin/dashboard'
       } else {
         // Username login with NextAuth
         setDebugMsg('Using NextAuth with username: ' + email)
         
-        // Standard NextAuth flow with redirect
+        // Standard NextAuth flow with callback
         const result = await nextAuthSignIn('credentials', {
           username: email,
           password,
-          // Force the redirect
-          redirect: true,
-          callbackUrl: '/admin/dashboard'
+          redirect: false
         })
+        
+        if (result?.error) {
+          setError("Invalid credentials");
+          setDebugMsg('NextAuth error: ' + result.error);
+          setIsLoading(false);
+          return;
+        }
+        
+        setDebugMsg('NextAuth login successful! Redirecting...');
+        // Use window.location for most reliable redirect
+        window.location.href = callbackUrl;
       }
     } catch (error: any) {
       console.error('Login error:', error)
@@ -104,17 +142,12 @@ function LoginPageContent() {
     }
   }
 
-  // Hardcoded admin login for emergency access
-  const handleAdminBypass = (e: React.MouseEvent) => {
-    e.preventDefault()
-    setDebugMsg('Emergency admin bypass initiated')
-    // Create a temporary cookie to indicate admin access
-    document.cookie = "admin_bypass=true; path=/; max-age=3600"
-    window.location.replace('/admin/dashboard')
-  }
-
   const toggleEmergencyAccess = () => {
     setShowEmergencyAccess(!showEmergencyAccess);
+  };
+
+  const toggleDebug = () => {
+    setShowDebug(!showDebug);
   };
 
   return (
@@ -147,7 +180,7 @@ function LoginPageContent() {
                   name="email"
                   type="text"
                   required
-                  className="relative block w-full rounded-t-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
+                  className="relative block w-full rounded-t-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
                   placeholder="Email of username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -168,7 +201,7 @@ function LoginPageContent() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="relative block w-full rounded-b-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
+                  className="relative block w-full rounded-b-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -181,8 +214,18 @@ function LoginPageContent() {
             <div className="text-red-500 text-sm text-center font-bold">{error}</div>
           )}
           
-          {/* Always show debug info to diagnose issues */}
-          <div className="text-amber-500 text-xs text-center">{debugMsg}</div>
+          {/* Debug info */}
+          {debugMsg && (
+            <div className="text-amber-500 text-xs text-center">{debugMsg}</div>
+          )}
+
+          {showDebug && (
+            <div className="bg-gray-800 p-3 rounded text-xs text-gray-400 mt-2">
+              <div>Session status: {status}</div>
+              <div>Session data: {session ? JSON.stringify(session).substring(0, 100) + '...' : 'null'}</div>
+              <div>{cookieInfo}</div>
+            </div>
+          )}
 
           <div>
             <button
@@ -194,13 +237,23 @@ function LoginPageContent() {
             </button>
           </div>
           
-          {/* Emergency Access */}
-          <div className="text-center mt-4">
+          {/* Action buttons */}
+          <div className="flex justify-between text-xs mt-4">
             <button
               onClick={toggleEmergencyAccess}
-              className="text-xs font-bold text-amber-500 hover:underline"
+              className="font-bold text-amber-500 hover:underline"
+              type="button"
             >
               NOODTOEGANG
+            </button>
+            
+            <button
+              onClick={toggleDebug}
+              className="text-gray-500 hover:text-gray-400 flex items-center gap-1"
+              type="button"
+            >
+              <FaBug className="h-3 w-3" />
+              {showDebug ? 'Hide Debug' : 'Show Debug'}
             </button>
           </div>
         </form>
