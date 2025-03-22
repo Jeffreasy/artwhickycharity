@@ -8,6 +8,12 @@ import { CombinedAuthProvider } from './CombinedAuthProvider'
 function CombinedAuthWrapper({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession()
   
+  // Debug session issues
+  if (typeof window !== 'undefined') {
+    console.log('AUTH DEBUG - useSession status:', status);
+    console.log('AUTH DEBUG - session data:', session ? 'Present' : 'None');
+  }
+  
   return (
     <CombinedAuthProvider session={session} status={status}>
       {children}
@@ -18,7 +24,7 @@ function CombinedAuthWrapper({ children }: { children: ReactNode }) {
 // Main wrapper component that provides session
 export function AuthProviderWrapper({ children }: { children: ReactNode }) {
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={5 * 60} refetchOnWindowFocus={true}>
       <CombinedAuthWrapper>
         {children}
       </CombinedAuthWrapper>
