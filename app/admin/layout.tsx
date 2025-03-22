@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
 import { signOut } from 'next-auth/react'
+import { Suspense } from 'react'
 
 // Icons
 import { RiDashboardLine, RiSettings4Line, RiLogoutBoxLine, RiUserAddLine } from 'react-icons/ri'
@@ -47,7 +48,11 @@ export default function AdminLayout({
 
   // Toon de login/register pagina zonder layout als dat de huidige pagina is
   if (pathname === '/admin/login' || pathname === '/admin/register') {
-    return children
+    return <Suspense fallback={
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+      </div>
+    }>{children}</Suspense>
   }
 
   // Admin menu items
@@ -143,7 +148,13 @@ export default function AdminLayout({
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto p-8">
-        {children}
+        <Suspense fallback={
+          <div className="flex h-screen items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+          </div>
+        }>
+          {children}
+        </Suspense>
       </div>
     </div>
   )

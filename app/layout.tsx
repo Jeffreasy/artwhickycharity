@@ -12,6 +12,8 @@ import { CookieBanner } from '@/globalComponents/ui/CookieConsent'
 import { GoogleAnalyticsScript } from '@/globalComponents/ui/Analytics'
 import { AuthProviderWrapper } from '@/app/providers/AuthProviderWrapper'
 import SupabaseListener from '@/app/components/SupabaseListener'
+import { Suspense } from 'react'
+import { Loading } from '@/globalComponents/ui/Loading'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -43,7 +45,9 @@ export default function RootLayout({
             <CartProvider>
               <Navigation />
               <main>
-                {children}
+                <Suspense fallback={<Loading />}>
+                  {children}
+                </Suspense>
               </main>
               <HomeButton />
               <Footer />
