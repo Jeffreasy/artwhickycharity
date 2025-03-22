@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, Suspense } from 'react'
 import { useMenu } from '@/contexts/MenuContext'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCart } from '@/contexts/CartContext'
@@ -10,7 +10,8 @@ import { FaInstagram, FaShoppingCart, FaStore } from 'react-icons/fa'
 import { CldImage } from 'next-cloudinary'
 import { FullscreenMenu } from '../FullscreenMenu'
 
-export function NavigationContent() {
+// Extract component that uses useSearchParams
+function NavigationWithParams() {
   const { isMenuOpen, setIsMenuOpen } = useMenu()
   const { totalItems } = useCart()
   const router = useRouter()
@@ -130,5 +131,14 @@ export function NavigationContent() {
       <FullscreenMenu />
       {isNavigating && <Loading />}
     </>
+  )
+}
+
+// Main export with Suspense
+export function NavigationContent() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <NavigationWithParams />
+    </Suspense>
   )
 } 

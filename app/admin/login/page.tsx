@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { signIn as nextAuthSignIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
+import { Loading } from '@/globalComponents/ui/Loading'
 
-export default function LoginPage() {
+// Component that uses router
+function LoginPageContent() {
   const router = useRouter()
   const { signIn: supabaseSignIn } = useCombinedAuth()
   const [email, setEmail] = useState('')
@@ -121,5 +123,14 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+// Main export with Suspense
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <LoginPageContent />
+    </Suspense>
   )
 } 

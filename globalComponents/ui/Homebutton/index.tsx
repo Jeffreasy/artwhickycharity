@@ -1,10 +1,12 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { FaHome } from 'react-icons/fa'
+import { Loading } from '@/globalComponents/ui/Loading'
 
-export function HomeButton() {
+// Component that uses router
+function HomeButtonContent() {
   const router = useRouter()
 
   return (
@@ -28,5 +30,14 @@ export function HomeButton() {
         </button>
       </div>
     </div>
+  )
+}
+
+// Main export with Suspense
+export function HomeButton() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <HomeButtonContent />
+    </Suspense>
   )
 } 

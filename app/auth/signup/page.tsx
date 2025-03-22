@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider'
+import { Loading } from '@/globalComponents/ui/Loading'
 
-export default function SignUpPage() {
+// Component that uses auth
+function SignUpPageContent() {
   const { signUp } = useSupabaseAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -155,5 +157,14 @@ export default function SignUpPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// Main export with Suspense
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <SignUpPageContent />
+    </Suspense>
   )
 } 

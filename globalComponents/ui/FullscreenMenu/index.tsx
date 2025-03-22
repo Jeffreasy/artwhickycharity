@@ -1,13 +1,15 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, Suspense } from 'react'
 import { cn } from '@/utils/cn'
 import { useMenu } from '@/contexts/MenuContext'
 import Link from 'next/link'
 import { gsap } from 'gsap'
 import { useRouter } from 'next/navigation'
+import { Loading } from '@/globalComponents/ui/Loading'
 
-export function FullscreenMenu() {
+// Component that uses router
+function FullscreenMenuContent() {
   const { isMenuOpen, setIsMenuOpen } = useMenu()
   const router = useRouter()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -209,5 +211,14 @@ export function FullscreenMenu() {
         </nav>
       </div>
     </div>
+  )
+}
+
+// Main export with Suspense
+export function FullscreenMenu() {
+  return (
+    <Suspense fallback={null}>
+      <FullscreenMenuContent />
+    </Suspense>
   )
 } 

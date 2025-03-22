@@ -1,10 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export default function SupabaseListener() {
+// Component that uses router
+function SupabaseListenerContent() {
   const router = useRouter()
 
   useEffect(() => {
@@ -22,4 +23,13 @@ export default function SupabaseListener() {
   }, [router])
 
   return null
+}
+
+// Main export with Suspense
+export default function SupabaseListener() {
+  return (
+    <Suspense fallback={null}>
+      <SupabaseListenerContent />
+    </Suspense>
+  )
 } 

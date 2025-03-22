@@ -6,12 +6,14 @@ import { redirect } from 'next/navigation'
 import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
 import { signOut } from 'next-auth/react'
 import { Suspense } from 'react'
+import { Loading } from '@/globalComponents/ui/Loading'
 
 // Icons
 import { RiDashboardLine, RiSettings4Line, RiLogoutBoxLine, RiUserAddLine } from 'react-icons/ri'
 import { FaChartLine, FaBug } from 'react-icons/fa'
 
-export default function AdminLayout({
+// Component that uses pathname
+function AdminLayoutWithPathname({
   children,
 }: {
   children: React.ReactNode
@@ -157,5 +159,18 @@ export default function AdminLayout({
         </Suspense>
       </div>
     </div>
+  )
+}
+
+// Main export with Suspense
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <AdminLayoutWithPathname children={children} />
+    </Suspense>
   )
 } 

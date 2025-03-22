@@ -3,8 +3,11 @@
 import { useCart } from '@/contexts/CartContext'
 import { useRouter } from 'next/navigation'
 import { FaShoppingCart, FaStore } from 'react-icons/fa'
+import { Suspense } from 'react'
+import { Loading } from '@/globalComponents/ui/Loading'
 
-export function CartButton() {
+// Component that uses router
+function CartButtonContent() {
   const { totalItems } = useCart()
   const router = useRouter()
 
@@ -35,5 +38,14 @@ export function CartButton() {
         </div>
       </button>
     </div>
+  )
+}
+
+// Main export with Suspense
+export function CartButton() {
+  return (
+    <Suspense fallback={null}>
+      <CartButtonContent />
+    </Suspense>
   )
 } 

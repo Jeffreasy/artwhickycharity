@@ -2,8 +2,9 @@
 
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { hasAnalyticsConsent } from '@/utils/analytics';
+import { Loading } from '@/globalComponents/ui/Loading';
 
 // Helper function for page views
 const pageview = (gaId: string, url: string) => {
@@ -13,7 +14,8 @@ const pageview = (gaId: string, url: string) => {
   });
 };
 
-export function GoogleAnalyticsScript() {
+// Component that uses search params
+function AnalyticsWithParams() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const gaId = process.env.NEXT_PUBLIC_GA_ID || '';
@@ -63,5 +65,14 @@ export function GoogleAnalyticsScript() {
         }}
       />
     </>
+  );
+}
+
+// Main export with Suspense
+export function GoogleAnalyticsScript() {
+  return (
+    <Suspense fallback={null}>
+      <AnalyticsWithParams />
+    </Suspense>
   );
 } 
