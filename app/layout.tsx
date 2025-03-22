@@ -10,8 +10,7 @@ import { HomeButton } from '@/globalComponents/ui/Homebutton'
 import { Analytics } from '@vercel/analytics/react'
 import { CookieBanner } from '@/globalComponents/ui/CookieConsent'
 import { GoogleAnalyticsScript } from '@/globalComponents/ui/Analytics'
-import { AuthProvider } from '@/app/providers/AuthProvider'
-import { CombinedAuthProvider } from '@/app/providers/CombinedAuthProvider'
+import { AuthProviderWrapper } from '@/app/providers/AuthProviderWrapper'
 import SupabaseListener from '@/app/components/SupabaseListener'
 
 const robotoSlab = Roboto_Slab({ 
@@ -38,25 +37,23 @@ export default function RootLayout({
           'h-full bg-black text-white antialiased font-sans'
         )}
       >
-        <CombinedAuthProvider>
+        <AuthProviderWrapper>
           <SupabaseListener />
-          <AuthProvider>
-            <MenuProvider>
-              <CartProvider>
-                <Navigation />
-                <main>
-                  {children}
-                </main>
-                <HomeButton />
-                <Footer />
-                <CartButton />
-                <Analytics />
-                <GoogleAnalyticsScript />
-                <CookieBanner />
-              </CartProvider>
-            </MenuProvider>
-          </AuthProvider>
-        </CombinedAuthProvider>
+          <MenuProvider>
+            <CartProvider>
+              <Navigation />
+              <main>
+                {children}
+              </main>
+              <HomeButton />
+              <Footer />
+              <CartButton />
+              <Analytics />
+              <GoogleAnalyticsScript />
+              <CookieBanner />
+            </CartProvider>
+          </MenuProvider>
+        </AuthProviderWrapper>
       </body>
     </html>
   )

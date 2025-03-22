@@ -1,7 +1,7 @@
 'use client'
 
 import { ReactNode, createContext, useContext, useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { Session } from 'next-auth'
 import { supabase } from '@/lib/supabase'
 import { Session as SupabaseSession, User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -11,6 +11,7 @@ type CombinedAuthState = {
   authMode: AuthMode
   // NextAuth info
   nextAuthStatus: 'loading' | 'authenticated' | 'unauthenticated'
+  nextAuthSession: Session | null
   // Supabase info
   supabaseUser: SupabaseUser | null
   supabaseSession: SupabaseSession | null
@@ -35,14 +36,17 @@ const CombinedAuthContext = createContext<CombinedAuthState | undefined>(
   undefined
 )
 
+type CombinedAuthProviderProps = {
+  children: ReactNode;
+  session?: Session | null;
+  status?: 'loading' | 'authenticated' | 'unauthenticated';
+}
+
 export function CombinedAuthProvider({
   children,
-}: {
-  children: ReactNode
-}) {
-  // Next Auth session
-  const { data: session, status } = useSession()
-  
+  session = null,
+  status = 'unauthenticated'
+}: CombinedAuthProviderProps) {
   // Supabase Auth state
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
   const [supabaseSession, setSupabaseSession] = useState<SupabaseSession | null>(null)
@@ -117,6 +121,7 @@ export function CombinedAuthProvider({
     authMode,
     // NextAuth
     nextAuthStatus: status,
+    nextAuthSession: session,
     // Supabase
     supabaseUser,
     supabaseSession,

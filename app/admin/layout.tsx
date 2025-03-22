@@ -2,22 +2,29 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
+import { signOut } from 'next-auth/react'
 
 // Icons
 import { RiDashboardLine, RiSettings4Line, RiLogoutBoxLine, RiUserAddLine } from 'react-icons/ri'
 import { FaChartLine, FaBug } from 'react-icons/fa'
-import { signOut } from 'next-auth/react'
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { data: nextAuthSession, status: nextAuthStatus } = useSession()
-  const { supabaseUser, supabaseSession, isLoading: supabaseLoading, signOut: supabaseSignOut, authMode } = useCombinedAuth()
+  const { 
+    nextAuthStatus, 
+    nextAuthSession, 
+    supabaseUser, 
+    supabaseSession, 
+    isLoading: supabaseLoading, 
+    signOut: supabaseSignOut, 
+    authMode 
+  } = useCombinedAuth()
+  
   const pathname = usePathname()
 
   // Bepaal of de gebruiker is ingelogd via een van beide methoden
