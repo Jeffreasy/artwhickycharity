@@ -18,16 +18,24 @@ function LoginPageContent() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [debugMsg, setDebugMsg] = useState('')
+  const [debugMsg, setDebugMsg] = useState('Sessionstatus: ' + status)
   
   // Check for existing session and redirect if found
   useEffect(() => {
+    console.log('Session status:', status, 'Session:', session);
+    
     if (status === 'authenticated' && session) {
-      console.log('User is authenticated, redirecting to dashboard')
-      setDebugMsg('Redirecting to: ' + callbackUrl)
-      // Decode the URL if it's encoded
-      const decodedUrl = decodeURIComponent(callbackUrl)
-      window.location.href = decodedUrl // Use direct navigation to avoid Next.js router issues
+      console.log('User is authenticated, redirecting to dashboard');
+      setDebugMsg('Authenticated! Redirecting to: ' + callbackUrl);
+      
+      try {
+        // Direct navigation - most reliable method
+        window.location.replace(decodeURIComponent(callbackUrl));
+      } catch (e) {
+        console.error('Redirect error:', e);
+        // Fallback
+        window.location.href = '/admin/dashboard';
+      }
     }
   }, [session, status, callbackUrl])
   
@@ -45,49 +53,52 @@ function LoginPageContent() {
 
     try {
       if (isEmail(email)) {
-        // Use Supabase auth for email logins
-        setDebugMsg('Using Supabase auth for email login...')
+        // Email login with Supabase
+        setDebugMsg('Using Supabase auth with email: ' + email)
+        
         const { error: supabaseError } = await supabaseSignIn(email, password)
-
+        
         if (supabaseError) {
+          console.error('Supabase auth error:', supabaseError)
           setError(supabaseError.message)
-          setDebugMsg('Supabase login failed: ' + supabaseError.message)
+          setDebugMsg('Login failed: ' + supabaseError.message)
           setIsLoading(false)
           return
         }
         
-        setDebugMsg('Supabase login successful, redirecting to: ' + callbackUrl)
-        // Decode the URL if it's encoded
-        const decodedUrl = decodeURIComponent(callbackUrl)
-        window.location.href = decodedUrl // Use direct navigation to avoid Next.js router issues
+        setDebugMsg('Supabase login successful! Redirecting...')
+        // Force page reload to dashboard
+        window.location.replace('/admin/dashboard')
       } else {
-        // Use NextAuth for username-based admin login
-        setDebugMsg('Using NextAuth for username login...')
+        // Username login with NextAuth
+        setDebugMsg('Using NextAuth with username: ' + email)
+        
+        // Use direct callback URL in call to NextAuth
         const result = await nextAuthSignIn('credentials', {
-          username: email, // We're reusing the email field for username
+          username: email,
           password,
-          redirect: false,
-          callbackUrl: callbackUrl,
+          // Use redirect: true for more reliable redirecting
+          redirect: true,
+          callbackUrl: decodeURIComponent(callbackUrl)
         })
-
+        
+        // Note: The code below won't run if redirect: true is used
+        // This is just a fallback
         if (result?.error) {
+          console.error('NextAuth login error:', result.error)
           setError('Invalid username or password')
           setDebugMsg('NextAuth login failed: ' + result.error)
           setIsLoading(false)
-          return
+        } else {
+          setDebugMsg('NextAuth login success! Redirecting...')
+          // If we somehow get here, force page reload to dashboard
+          window.location.replace('/admin/dashboard')
         }
-
-        setDebugMsg('NextAuth login successful, redirecting to: ' + callbackUrl)
-        // Wait a moment for the session to be established
-        setTimeout(() => {
-          // Decode the URL if it's encoded
-          const decodedUrl = decodeURIComponent(callbackUrl)
-          window.location.href = decodedUrl // Use direct navigation to avoid Next.js router issues
-        }, 1000)
       }
     } catch (error: any) {
+      console.error('Login error:', error)
       setError('An error occurred during login')
-      setDebugMsg('Login error: ' + (error.message || 'Unknown error'))
+      setDebugMsg('Error during login: ' + (error.message || 'Unknown error'))
       setIsLoading(false)
     }
   }
@@ -101,6 +112,9 @@ function LoginPageContent() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
             Login met je admin account of email
+          </p>
+          <p className="mt-2 text-center text-xs text-amber-500">
+            Callback URL: {callbackUrl}
           </p>
         </div>
         
@@ -140,13 +154,11 @@ function LoginPageContent() {
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
+            <div className="text-red-500 text-sm text-center font-bold">{error}</div>
           )}
           
-          {/* Always show debug info in production temporarily to diagnose issues */}
-          {debugMsg && (
-            <div className="text-amber-500 text-xs text-center">{debugMsg}</div>
-          )}
+          {/* Always show debug info to diagnose issues */}
+          <div className="text-amber-500 text-xs text-center">{debugMsg}</div>
 
           <div>
             <button
@@ -156,6 +168,16 @@ function LoginPageContent() {
             >
               {isLoading ? 'Inloggen...' : 'Login'}
             </button>
+          </div>
+          
+          {/* Direct dashboard link for testing */}
+          <div className="text-center">
+            <a 
+              href="/admin/dashboard" 
+              className="text-xs text-amber-500 hover:underline"
+            >
+              Direct naar Dashboard (test)
+            </a>
           </div>
         </form>
       </div>
