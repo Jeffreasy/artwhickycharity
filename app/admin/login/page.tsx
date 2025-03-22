@@ -2,13 +2,16 @@
 
 import { useState, Suspense, useEffect } from 'react'
 import { signIn as nextAuthSignIn, useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCombinedAuth } from '@/app/providers/CombinedAuthProvider'
 import { Loading } from '@/globalComponents/ui/Loading'
 
 // Component that uses router
 function LoginPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams?.get('callbackUrl') || '/admin/dashboard'
+  
   const { signIn: supabaseSignIn } = useCombinedAuth()
   const { data: session, status } = useSession()
   const [email, setEmail] = useState('')
@@ -21,10 +24,12 @@ function LoginPageContent() {
   useEffect(() => {
     if (status === 'authenticated' && session) {
       console.log('User is authenticated, redirecting to dashboard')
-      setDebugMsg('Redirecting to dashboard...')
-      router.replace('/admin/dashboard')
+      setDebugMsg('Redirecting to: ' + callbackUrl)
+      // Decode the URL if it's encoded
+      const decodedUrl = decodeURIComponent(callbackUrl)
+      window.location.href = decodedUrl // Use direct navigation to avoid Next.js router issues
     }
-  }, [session, status, router])
+  }, [session, status, callbackUrl])
   
   // Determines if input is email or username
   const isEmail = (value: string) => {
@@ -51,8 +56,10 @@ function LoginPageContent() {
           return
         }
         
-        setDebugMsg('Supabase login successful, redirecting...')
-        router.replace('/admin/dashboard')
+        setDebugMsg('Supabase login successful, redirecting to: ' + callbackUrl)
+        // Decode the URL if it's encoded
+        const decodedUrl = decodeURIComponent(callbackUrl)
+        window.location.href = decodedUrl // Use direct navigation to avoid Next.js router issues
       } else {
         // Use NextAuth for username-based admin login
         setDebugMsg('Using NextAuth for username login...')
@@ -60,6 +67,7 @@ function LoginPageContent() {
           username: email, // We're reusing the email field for username
           password,
           redirect: false,
+          callbackUrl: callbackUrl,
         })
 
         if (result?.error) {
@@ -69,10 +77,12 @@ function LoginPageContent() {
           return
         }
 
-        setDebugMsg('NextAuth login successful, redirecting...')
+        setDebugMsg('NextAuth login successful, redirecting to: ' + callbackUrl)
         // Wait a moment for the session to be established
         setTimeout(() => {
-          router.replace('/admin/dashboard')
+          // Decode the URL if it's encoded
+          const decodedUrl = decodeURIComponent(callbackUrl)
+          window.location.href = decodedUrl // Use direct navigation to avoid Next.js router issues
         }, 1000)
       }
     } catch (error: any) {
@@ -133,7 +143,8 @@ function LoginPageContent() {
             <div className="text-red-500 text-sm text-center">{error}</div>
           )}
           
-          {debugMsg && process.env.NODE_ENV === 'development' && (
+          {/* Always show debug info in production temporarily to diagnose issues */}
+          {debugMsg && (
             <div className="text-amber-500 text-xs text-center">{debugMsg}</div>
           )}
 
