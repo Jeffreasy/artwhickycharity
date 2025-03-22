@@ -13,6 +13,7 @@
     "@heroicons/react": "^2.2.0",
     "@sentry/nextjs": "^8.55.0",
     "@supabase/supabase-js": "^2.47.10",
+    "@vercel/analytics": "^1.5.0",
     "cloudinary": "^2.5.1",
     "clsx": "^2.1.0",
     "date-fns": "^4.1.0",
