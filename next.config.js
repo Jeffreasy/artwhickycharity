@@ -16,10 +16,6 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  // Vercel Analytics configuration
-  analytics: {
-    enabled: true,
   }
 }
 
