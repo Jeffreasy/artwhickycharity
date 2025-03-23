@@ -64,13 +64,22 @@ export default function AnalyticsPage() {
         const { startDate, endDate } = getDateRange(period)
         
         // Make an API call to our backend endpoint that will fetch from GA4
-        const response = await fetch(`/api/analytics?startDate=${startDate}&endDate=${endDate}`)
+        const apiUrl = `/api/analytics?startDate=${startDate}&endDate=${endDate}`
+        console.log('Fetching analytics data from:', apiUrl)
+        
+        const response = await fetch(apiUrl)
         
         if (!response.ok) {
           throw new Error(`Failed to fetch analytics data: ${response.statusText}`)
         }
         
         const data = await response.json()
+        console.log('Received analytics data:', data)
+        
+        // Log if we're getting real data or mock data
+        if (data.isMockData) {
+          console.warn('Using mock data because:', data.mockReason)
+        }
         
         // Update state with real data
         setAnalytics({

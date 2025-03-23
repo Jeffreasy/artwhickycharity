@@ -12,6 +12,8 @@ interface AnalyticsQueryParams {
 
 // Mock data for fallback when GA API isn't available
 const MOCK_DATA = {
+  isMockData: true,
+  mockReason: "Default fallback",
   visitors: 2438,
   pageviews: 8752,
   avgSessionDuration: 124, // seconds
@@ -44,6 +46,9 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate') || getDefaultDateRange().startDate;
     const endDate = searchParams.get('endDate') || getDefaultDateRange().endDate;
 
+    // Log request details for debugging
+    console.log(`Analytics API request - startDate: ${startDate}, endDate: ${endDate}`);
+
     // Validate date format (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
@@ -56,10 +61,16 @@ export async function GET(request: Request) {
     // Check if we have the necessary environment variables
     const hasCredentials = checkGACredentials();
     
+    // Log environment variable status
+    console.log(`GA API credentials status - GA_PROPERTY_ID: ${!!process.env.GA_PROPERTY_ID}, GA_CLIENT_EMAIL: ${!!process.env.GA_CLIENT_EMAIL}, GA_PRIVATE_KEY: ${!!process.env.GA_PRIVATE_KEY}`);
+    
     // If credentials are missing, return mock data
     if (!hasCredentials) {
       console.log('Using mock data because Google Analytics credentials are missing or invalid');
-      return NextResponse.json(MOCK_DATA);
+      return NextResponse.json({
+        ...MOCK_DATA,
+        mockReason: "Missing GA credentials"
+      });
     }
 
     // Get analytics data
@@ -69,7 +80,10 @@ export async function GET(request: Request) {
     console.error('Error fetching analytics data:', error);
     // Return mock data in case of any error
     console.log('Using mock data due to error:', error.message);
-    return NextResponse.json(MOCK_DATA);
+    return NextResponse.json({
+      ...MOCK_DATA,
+      mockReason: `Error: ${error.message}`
+    });
   }
 }
 
@@ -110,6 +124,10 @@ async function initializeAnalyticsClient() {
   const clientEmail = process.env.GA_CLIENT_EMAIL;
   const propertyId = process.env.GA_PROPERTY_ID;
 
+  console.log("GA Property ID:", propertyId);
+  console.log("GA Client Email:", clientEmail?.substring(0, 5) + "..." + (clientEmail?.slice(-5) || ""));
+  console.log("GA Private Key (first 10 chars):", rawPrivateKey?.substring(0, 10) + "...");
+
   if (!rawPrivateKey || !clientEmail || !propertyId) {
     throw new Error('Missing required Google Analytics credentials in environment variables');
   }
@@ -137,6 +155,8 @@ async function fetchAnalyticsData({ startDate, endDate }: AnalyticsQueryParams) 
   try {
     const { analyticsDataClient, propertyId } = await initializeAnalyticsClient();
 
+    console.log(`Initialized GA client with property ID: ${propertyId}`);
+    
     // Run reports in parallel for efficiency
     const [visitorStatsResponse, pagesResponse, deviceResponse, countryResponse] = await Promise.all([
       // Core metrics: visitors, pageviews, session duration, bounce rate
@@ -187,6 +207,8 @@ async function fetchAnalyticsData({ startDate, endDate }: AnalyticsQueryParams) 
       }),
     ]);
 
+    console.log("Successfully retrieved GA data");
+
     // Process visitor stats - extract from first response
     const visitorStats = visitorStatsResponse[0]?.rows?.[0]?.metricValues || [];
     const visitors = parseInt(visitorStats[0]?.value || '0');
@@ -230,6 +252,7 @@ async function fetchAnalyticsData({ startDate, endDate }: AnalyticsQueryParams) 
     }) || [];
 
     return {
+      isMockData: false,
       visitors,
       pageviews,
       avgSessionDuration,
@@ -241,6 +264,9 @@ async function fetchAnalyticsData({ startDate, endDate }: AnalyticsQueryParams) 
   } catch (error) {
     console.error('Error fetching Google Analytics data:', error);
     // Return mock data in case of any API error
-    return MOCK_DATA;
+    return {
+      ...MOCK_DATA,
+      mockReason: `GA API error: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
   }
 } 
