@@ -63,11 +63,11 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="p-6 pt-24 sm:pt-28 md:pt-32">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold text-white">Analytics</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Analytics</h1>
         
-        <div className="mt-4 flex space-x-2 sm:mt-0">
+        <div className="flex space-x-2">
           {['7d', '30d', '90d'].map((p) => (
             <button
               key={p}
@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
       ) : (
         <>
           {/* Overview stats */}
-          <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <AnalyticCard
               title="Total Visitors"
               value={analytics.visitors.toLocaleString()}
@@ -118,10 +118,10 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Top Pages */}
-          <div className="mb-8">
+          <div>
             <h2 className="mb-4 text-xl font-semibold text-white">Top Pages</h2>
-            <div className="overflow-hidden rounded-lg bg-[#1A1A1A]">
-              <table className="w-full">
+            <div className="overflow-x-auto rounded-lg bg-[#1A1A1A]">
+              <table className="w-full min-w-[500px]">
                 <thead>
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Page</th>
@@ -143,20 +143,20 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Device and Country Breakdown */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Device Breakdown */}
             <div>
               <h2 className="mb-4 text-xl font-semibold text-white">Device Breakdown</h2>
               <div className="rounded-lg bg-[#1A1A1A] p-4">
-                <div className="mb-6 flex items-end justify-between">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#252525] text-amber-500">
-                    <FaMobileAlt size={24} />
+                <div className="mb-6 flex items-end justify-around sm:justify-between">
+                  <div className="flex h-12 sm:h-16 w-12 sm:w-16 items-center justify-center rounded-full bg-[#252525] text-amber-500">
+                    <FaMobileAlt size={20} className="sm:text-2xl" />
                   </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#252525] text-blue-500">
-                    <FaDesktop size={20} />
+                  <div className="flex h-10 sm:h-12 w-10 sm:w-12 items-center justify-center rounded-full bg-[#252525] text-blue-500">
+                    <FaDesktop size={16} className="sm:text-xl" />
                   </div>
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#252525] text-green-500">
-                    <FaTabletAlt size={16} />
+                    <FaTabletAlt size={14} className="sm:text-base" />
                   </div>
                 </div>
                 
@@ -177,7 +177,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
                 
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs sm:text-sm text-gray-300">
                   <div>
                     <span className="text-amber-500">{analytics.deviceBreakdown.mobile}%</span> Mobile
                   </div>
@@ -194,7 +194,7 @@ export default function AnalyticsPage() {
             {/* Top Countries */}
             <div>
               <h2 className="mb-4 text-xl font-semibold text-white">Top Countries</h2>
-              <div className="overflow-hidden rounded-lg bg-[#1A1A1A]">
+              <div className="overflow-x-auto rounded-lg bg-[#1A1A1A]">
                 <table className="w-full">
                   <thead>
                     <tr>

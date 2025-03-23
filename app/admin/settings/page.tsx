@@ -90,13 +90,13 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 pt-24 sm:pt-28 md:pt-32">
-      <div className="mb-8">
-        <h1 className="mb-8 text-3xl font-bold text-white">Settings</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Settings</h1>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Google Analytics Settings */}
-          <div className="rounded-lg bg-[#1A1A1A] p-6">
+          <div className="rounded-lg bg-[#1A1A1A] p-4 sm:p-6">
             <div className="mb-6 flex items-center">
               <div className="mr-3 rounded-full bg-amber-500/20 p-2">
                 <FaKey className="h-5 w-5 text-amber-500" />
@@ -180,7 +180,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Sentry Settings */}
-          <div className="rounded-lg bg-[#1A1A1A] p-6">
+          <div className="rounded-lg bg-[#1A1A1A] p-4 sm:p-6">
             <div className="mb-6 flex items-center">
               <div className="mr-3 rounded-full bg-amber-500/20 p-2">
                 <FaUserShield className="h-5 w-5 text-amber-500" />

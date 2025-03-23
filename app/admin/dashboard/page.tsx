@@ -110,7 +110,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 pt-24 sm:pt-28 md:pt-32">
+    <div className="space-y-6">
       {isEmergencyAccess && (
         <div className="mb-6 rounded-md border-l-4 border-yellow-500 bg-yellow-50 p-4 text-yellow-700 shadow-md dark:bg-yellow-900/30 dark:text-yellow-200">
           <div className="flex items-center">
@@ -122,11 +122,11 @@ export default function DashboardPage() {
         </div>
       )}
       
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Admin Dashboard</h1>
         <button 
           onClick={handleLogout}
-          className="flex items-center rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
+          className="flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 w-full sm:w-auto"
         >
           <FaSignOutAlt className="mr-2" />
           Logout
@@ -134,7 +134,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats cards */}
-      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Website Visitors" 
           value={stats.visitors.toLocaleString()} 
@@ -166,9 +166,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick access links */}
-      <div className="mb-8">
-        <h2 className="mb-4 text-xl font-semibold text-white">Quick Actions</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Link
             href="/admin/analytics"
             className="flex items-center justify-between rounded-lg bg-[#1A1A1A] p-4 transition-colors hover:bg-[#252525]"
@@ -194,7 +194,7 @@ export default function DashboardPage() {
 
       {/* Recent activity */}
       <div>
-        <h2 className="mb-4 text-xl font-semibold text-white">Recent Activity</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">Recent Activity</h2>
         <div className="rounded-lg bg-[#1A1A1A] p-4">
           <div className="space-y-4">
             <ActivityItem
@@ -254,13 +254,12 @@ type ActivityItemProps = {
 
 function ActivityItem({ title, description, time }: ActivityItemProps) {
   return (
-    <div className="flex border-b border-[#2A2A2A] pb-3 last:border-0 last:pb-0">
-      <div className="mr-4 h-2 w-2 translate-y-2 rounded-full bg-amber-500"></div>
-      <div className="flex-1">
+    <div className="border-b border-[#2A2A2A] pb-4 last:border-0 last:pb-0">
+      <div className="flex flex-wrap justify-between gap-2">
         <h4 className="font-medium text-white">{title}</h4>
-        <p className="text-sm text-gray-400">{description}</p>
+        <span className="text-xs text-gray-500">{time}</span>
       </div>
-      <div className="text-xs text-gray-500">{time}</div>
+      <p className="mt-1 text-sm text-gray-400">{description}</p>
     </div>
   )
 } 

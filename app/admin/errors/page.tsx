@@ -131,11 +131,11 @@ export default function ErrorsPage() {
   }
 
   return (
-    <div className="p-6 pt-24 sm:pt-28 md:pt-32">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold text-white">Error Logs</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Error Logs</h1>
         
-        <div className="mt-4 flex space-x-2 sm:mt-0">
+        <div className="flex space-x-2">
           {['all', 'open', 'resolved'].map((f) => (
             <button
               key={f}
@@ -157,43 +157,43 @@ export default function ErrorsPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg bg-[#1A1A1A]">
+        <div className="overflow-x-auto rounded-lg bg-[#1A1A1A]">
           <table className="min-w-full divide-y divide-[#2A2A2A]">
             <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Error</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Location</th>
-                <th className="hidden px-4 py-3 text-left text-sm font-medium text-gray-400 md:table-cell">Occurrences</th>
-                <th className="hidden px-4 py-3 text-left text-sm font-medium text-gray-400 md:table-cell">Users</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Last Seen</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Status</th>
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-400">Error</th>
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-400">Location</th>
+                <th className="hidden px-3 py-3 text-left text-sm font-medium text-gray-400 md:table-cell">Occurrences</th>
+                <th className="hidden px-3 py-3 text-left text-sm font-medium text-gray-400 md:table-cell">Users</th>
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-400">Last Seen</th>
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-400">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2A2A2A]">
               {filteredErrors.map((error) => (
                 <tr key={error.id} className="text-white hover:bg-[#252525]">
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-3">
                     <div className="flex items-start">
-                      <div className="mr-3 mt-1">{getSeverityIcon(error.severity)}</div>
+                      <div className="mr-2 mt-1">{getSeverityIcon(error.severity)}</div>
                       <div>
-                        <div className="font-medium">{error.type}</div>
-                        <div className="text-sm text-gray-400">{error.message}</div>
+                        <div className="font-medium text-sm">{error.type}</div>
+                        <div className="text-xs text-gray-400 max-w-[200px] sm:max-w-none truncate sm:whitespace-normal">{error.message}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-sm">
-                    <span className="font-mono text-gray-300">{error.url}</span>
+                  <td className="px-3 py-3 text-xs">
+                    <span className="font-mono text-gray-300 truncate block max-w-[80px] sm:max-w-none">{error.url}</span>
                   </td>
-                  <td className="hidden px-4 py-4 text-sm md:table-cell">
+                  <td className="hidden px-3 py-3 text-xs md:table-cell">
                     {error.occurrences}
                   </td>
-                  <td className="hidden px-4 py-4 text-sm md:table-cell">
+                  <td className="hidden px-3 py-3 text-xs md:table-cell">
                     {error.users}
                   </td>
-                  <td className="px-4 py-4 text-sm">
+                  <td className="px-3 py-3 text-xs">
                     {error.lastSeen}
                   </td>
-                  <td className="px-4 py-4 text-sm">
+                  <td className="px-3 py-3 text-xs">
                     <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(error.status)}`}>
                       {error.status}
                     </span>
@@ -204,7 +204,7 @@ export default function ErrorsPage() {
           </table>
         </div>
       )}
-      <div className="mt-4 text-center text-sm text-gray-500">
+      <div className="text-center text-sm text-gray-500">
         Showing {filteredErrors.length} errors from Sentry
       </div>
     </div>
