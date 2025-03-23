@@ -110,22 +110,39 @@ function formatPrivateKey(key: string | undefined): string {
   
   try {
     // Remove any surrounding quotes if present
-    let formattedKey = key;
+    let formattedKey = key.trim();
     if ((formattedKey.startsWith('"') && formattedKey.endsWith('"')) || 
         (formattedKey.startsWith("'") && formattedKey.endsWith("'"))) {
       formattedKey = formattedKey.substring(1, formattedKey.length - 1);
     }
     
-    // Replace escaped newlines with actual newlines
-    formattedKey = formattedKey.replace(/\\n/g, '\n');
-    
-    // Ensure the key has the proper PEM format
-    if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----')) {
-      console.log('Private key does not contain proper PEM header, attempting to fix...');
-      formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
+    // If the key is base64 without headers, add them
+    if (!formattedKey.includes('-----BEGIN')) {
+      // Clean the key: remove spaces and ensure no linebreaks in the base64 content
+      formattedKey = formattedKey.replace(/\s/g, '');
+      
+      // Add proper PEM format with linebreaks for proper parsing
+      formattedKey = '-----BEGIN PRIVATE KEY-----\n' + 
+                     formattedKey.match(/.{1,64}/g)?.join('\n') + 
+                     '\n-----END PRIVATE KEY-----';
+    } else {
+      // If the key already has headers but potentially incorrect formatting
+      // Extract the base64 content between the headers
+      const base64Content = formattedKey
+        .replace('-----BEGIN PRIVATE KEY-----', '')
+        .replace('-----END PRIVATE KEY-----', '')
+        .replace(/\s/g, '');
+      
+      // Re-format with proper line breaks (PEM requires lines of max 64 chars)
+      formattedKey = '-----BEGIN PRIVATE KEY-----\n' + 
+                     base64Content.match(/.{1,64}/g)?.join('\n') + 
+                     '\n-----END PRIVATE KEY-----';
     }
     
+    // Log details for debugging
     console.log('Private key format check: Has header:', formattedKey.includes('-----BEGIN PRIVATE KEY-----'));
+    console.log('Private key format check: Has footer:', formattedKey.includes('-----END PRIVATE KEY-----'));
+    console.log('Private key format check: Number of lines:', formattedKey.split('\n').length);
     console.log('Private key format check: Has newlines:', formattedKey.includes('\n'));
     
     return formattedKey;
@@ -156,11 +173,25 @@ async function initializeAnalyticsClient() {
     console.log("First 10 chars of formatted key:", privateKey.substring(0, 10) + "...");
     console.log("Last 10 chars of formatted key:", "..." + privateKey.substring(privateKey.length - 10));
     
-    // Create an authorized client
+    // FALLBACK: Use a hard-coded key for testing purposes if the formatted one fails
+    // WARNING: This should be removed in production or only kept temporarily for debugging
+    const useHardcodedKeyAsLastResort = false; // Set to true only for debugging in development
+    const testKey = useHardcodedKeyAsLastResort ? 
+      `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCtcwHAkkdq1eSq
+zvs4mWXN4SsJsJutcE0IU4bS/vovXJ05c8rEa9pI6xWbYjNj8SL8Cnn0+j/Jy8jb
+nwA1l26uCXGUOg+HVLdSFEcfPwLQY0xnGw2bKCfmFsTQ36S3T7qp9b1gkCgQIqDw
+TfWovRRPVbzR7sBMDEQ7JSgPzT47vRRV1qXmIjrOsvvVx5+/Sw7fR8YRlXzQQpIc
+cQk8TiKQPNebx0rKO0xHavCZE0B5mCPy7d7YnfWz/iNN62dTdlpkEOD+GnCsw6y1
+NxP/vbMp66TA5kRdciZVd33cYGI0VqJ8L05hAkRDrz8O3av3+QjLKe5/9CzixKH+
+nD9O6YppAgMBAAECggEABLWjkbI3xQMtzmjOFP4jCbWIfMKq1c7xlAmLEXVJXbhS
+-----END PRIVATE KEY-----` : null;
+    
+    // Create an authorized client with the formatted key or testKey if testing
     const analyticsDataClient = new BetaAnalyticsDataClient({
       credentials: {
         client_email: clientEmail,
-        private_key: privateKey,
+        private_key: testKey || privateKey,
       },
     });
     
