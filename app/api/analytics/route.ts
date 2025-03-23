@@ -315,6 +315,23 @@ async function initializeAnalyticsClient() {
     } catch (defaultAuthError: any) {
       console.error("Error authenticating with application default credentials:", defaultAuthError.message);
       console.log("Error details:", defaultAuthError?.details || "No details available");
+      
+      // Stap 4: Als noodoplossing, check of we de measurement ID kunnen gebruiken (werkt alleen voor basic rapportage)
+      const measurementId = process.env.NEXT_PUBLIC_GA_ID;
+      if (measurementId && measurementId.startsWith('G-')) {
+        console.log("Attempting to use GA4 Measurement ID as fallback:", measurementId);
+        
+        // Let op: Dit is alleen een indicator dat we een measurement ID hebben
+        // De eigenlijke data-ophaal operatie moet aangepast worden om dit te gebruiken
+        // We geven de propertyId door als fallback, maar markeren dit in de client
+        return { 
+          analyticsDataClient: null, 
+          propertyId, 
+          useMeasurementProtocol: true,
+          measurementId 
+        };
+      }
+      
       throw new Error(`Failed to authenticate with Google Analytics API. Please check your credentials and permissions. Final error: ${defaultAuthError.message}`);
     }
   } catch (error: any) {
@@ -325,10 +342,34 @@ async function initializeAnalyticsClient() {
 
 async function fetchAnalyticsData({ startDate, endDate }: AnalyticsQueryParams) {
   try {
-    const { analyticsDataClient, propertyId } = await initializeAnalyticsClient();
+    const { analyticsDataClient, propertyId, useMeasurementProtocol, measurementId } = await initializeAnalyticsClient();
 
     console.log(`Initialized GA client with property ID: ${propertyId}`);
     
+    // Controleer of we de Analytics Data API of Measurement Protocol moeten gebruiken
+    if (useMeasurementProtocol) {
+      console.log(`Using GA4 Measurement Protocol with ID: ${measurementId}`);
+      
+      // Voor Measurement Protocol gebruiken we een vereenvoudigde implementatie
+      // met noodoplossing data omdat we geen directe API hebben
+      
+      // Log deze fallback
+      console.log("Measurement Protocol fallback doesn't have real data access capability");
+      console.log("This would require implementing the GA4 Measurement Protocol for data collection");
+      
+      // Geef mock data terug met duidelijke reden
+      return {
+        ...MOCK_DATA,
+        isMockData: true,
+        mockReason: "Using GA4 Measurement ID fallback (no API data access)"
+      };
+    }
+    
+    // Regular API path when we have a valid analytics client
+    if (!analyticsDataClient) {
+      throw new Error("Analytics Data Client could not be initialized");
+    }
+
     // Run reports in parallel for efficiency
     const [visitorStatsResponse, pagesResponse, deviceResponse, countryResponse] = await Promise.all([
       // Core metrics: visitors, pageviews, session duration, bounce rate
