@@ -1,61 +1,130 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FaUsers, FaClock, FaGlobe, FaMobileAlt, FaDesktop, FaTabletAlt } from 'react-icons/fa'
+import { FaUsers, FaClock, FaGlobe, FaMobileAlt, FaDesktop, FaTabletAlt, FaExclamationTriangle } from 'react-icons/fa'
+
+interface AnalyticsData {
+  visitors: number;
+  pageviews: number;
+  avgSessionDuration: number;
+  bounceRate: number;
+  topPages: Array<{ path: string; views: number; avgTime: number }>;
+  deviceBreakdown: {
+    mobile: number;
+    desktop: number;
+    tablet: number;
+  };
+  countries: Array<{ country: string; visitors: number }>;
+}
 
 export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [period, setPeriod] = useState('7d')
-  const [analytics, setAnalytics] = useState({
+  const [error, setError] = useState<string | null>(null)
+  const [analytics, setAnalytics] = useState<AnalyticsData>({
     visitors: 0,
     pageviews: 0,
     avgSessionDuration: 0,
     bounceRate: 0,
-    topPages: [] as Array<{path: string, views: number, avgTime: number}>,
+    topPages: [],
     deviceBreakdown: {
       mobile: 0,
       desktop: 0,
       tablet: 0
     },
-    countries: [] as Array<{country: string, visitors: number}>
+    countries: []
   })
 
-  useEffect(() => {
-    // Simuleer het laden van Google Analytics data
-    // In een productie omgeving zou je hier de Google Analytics API aanroepen
-    const timer = setTimeout(() => {
-      setAnalytics({
-        visitors: 2438,
-        pageviews: 8752,
-        avgSessionDuration: 124, // seconden
-        bounceRate: 42.8, // percentage
-        topPages: [
-          { path: '/', views: 3241, avgTime: 82 },
-          { path: '/shop', views: 1867, avgTime: 143 },
-          { path: '/about', views: 985, avgTime: 95 },
-          { path: '/events', views: 754, avgTime: 127 },
-          { path: '/contact', views: 532, avgTime: 68 }
-        ],
-        deviceBreakdown: {
-          mobile: 58,
-          desktop: 36,
-          tablet: 6
-        },
-        countries: [
-          { country: 'Netherlands', visitors: 1542 },
-          { country: 'Belgium', visitors: 431 },
-          { country: 'United Kingdom', visitors: 226 },
-          { country: 'Germany', visitors: 124 },
-          { country: 'United States', visitors: 115 }
-        ]
-      })
-      setIsLoading(false)
-    }, 1500)
+  // Convert period to actual date range
+  const getDateRange = (period: string): { startDate: string; endDate: string } => {
+    const today = new Date()
+    const endDate = today.toISOString().split('T')[0]
+    
+    let startDate: Date = new Date()
+    if (period === '7d') {
+      startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    } else if (period === '30d') {
+      startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+    } else if (period === '90d') {
+      startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000)
+    }
+    
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate
+    }
+  }
 
-    return () => clearTimeout(timer)
+  useEffect(() => {
+    const fetchGoogleAnalyticsData = async () => {
+      setIsLoading(true)
+      setError(null)
+      
+      try {
+        const { startDate, endDate } = getDateRange(period)
+        
+        // Make an API call to our backend endpoint that will fetch from GA4
+        const response = await fetch(`/api/analytics?startDate=${startDate}&endDate=${endDate}`)
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch analytics data: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        
+        // Update state with real data
+        setAnalytics({
+          visitors: data.visitors || 0,
+          pageviews: data.pageviews || 0,
+          avgSessionDuration: data.avgSessionDuration || 0,
+          bounceRate: data.bounceRate || 0,
+          topPages: data.topPages || [],
+          deviceBreakdown: {
+            mobile: data.deviceBreakdown?.mobile || 0,
+            desktop: data.deviceBreakdown?.desktop || 0,
+            tablet: data.deviceBreakdown?.tablet || 0
+          },
+          countries: data.countries || []
+        })
+      } catch (err: any) {
+        console.error('Error fetching Google Analytics data:', err)
+        setError(err.message || 'Failed to load analytics data')
+        
+        // Fallback to mock data in case of error
+        setAnalytics({
+          visitors: 2438,
+          pageviews: 8752,
+          avgSessionDuration: 124, // seconds
+          bounceRate: 42.8, // percentage
+          topPages: [
+            { path: '/', views: 3241, avgTime: 82 },
+            { path: '/shop', views: 1867, avgTime: 143 },
+            { path: '/about', views: 985, avgTime: 95 },
+            { path: '/events', views: 754, avgTime: 127 },
+            { path: '/contact', views: 532, avgTime: 68 }
+          ],
+          deviceBreakdown: {
+            mobile: 58,
+            desktop: 36,
+            tablet: 6
+          },
+          countries: [
+            { country: 'Netherlands', visitors: 1542 },
+            { country: 'Belgium', visitors: 431 },
+            { country: 'United Kingdom', visitors: 226 },
+            { country: 'Germany', visitors: 124 },
+            { country: 'United States', visitors: 115 }
+          ]
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchGoogleAnalyticsData()
   }, [period])
 
-  // Formatteren van seconden naar mm:ss
+  // Format seconds to mm:ss
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
@@ -73,7 +142,6 @@ export default function AnalyticsPage() {
               key={p}
               onClick={() => {
                 setPeriod(p)
-                setIsLoading(true)
               }}
               className={`rounded-md px-3 py-1 text-sm ${
                 period === p 
@@ -86,6 +154,16 @@ export default function AnalyticsPage() {
           ))}
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-md bg-red-900/30 border border-red-900 p-4 text-red-300">
+          <div className="flex items-center">
+            <FaExclamationTriangle className="h-5 w-5 text-red-400 mr-2" />
+            <p>{error}</p>
+          </div>
+          <p className="text-sm mt-2">Using fallback data. Please check your API configuration or try again later.</p>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
