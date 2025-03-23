@@ -207,8 +207,8 @@ function AdminLayoutWithPathname({
       </div>
 
       {/* Main content - adjusted for both mobile and desktop */}
-      <main className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16 pb-16' : ''}`}>
-        <div className="p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto pt-0 pb-0 md:pt-0">
+        <div className={`p-4 md:p-8 ${isMobile ? 'pt-20 pb-20' : ''}`}>
           <Suspense fallback={
             <div className="flex h-full items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
