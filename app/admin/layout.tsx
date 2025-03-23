@@ -176,47 +176,38 @@ function AdminLayoutWithPathname({
     </>
   )
 
+  // Simplified mobile navigation items (4 main items + menu button)
+  const mobileNavItems = [
+    { title: 'Dashboard', href: '/admin/dashboard', icon: <RiDashboardLine size={24} /> },
+    { title: 'Analytics', href: '/admin/analytics', icon: <FaChartLine size={24} /> },
+    { title: 'Errors', href: '/admin/errors', icon: <FaBug size={24} /> },
+    { title: 'Settings', href: '/admin/settings', icon: <RiSettings4Line size={24} /> },
+  ]
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#0A0A0A] overflow-hidden">
-      {/* Mobile header */}
+      {/* Mobile header - branding only */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-[#121212] p-4 border-b border-[#2A2A2A]">
         <div className="flex items-center space-x-2">
           <div className="h-8 w-8 rounded-full bg-amber-500" />
           <span className="text-xl font-bold text-white">Admin Panel</span>
         </div>
-        <div className="flex items-center">
-          <a href="mailto:info@example.com" className="text-white mr-4" aria-label="Email">
-            <FaEnvelope size={20} />
-          </a>
-          <a href="https://instagram.com/example" target="_blank" rel="noopener noreferrer" className="text-white mr-4" aria-label="Instagram">
-            <FaInstagram size={20} />
-          </a>
-          <button 
-            onClick={toggleMobileMenu}
-            className="text-white p-2"
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? <RiCloseLine size={24} /> : <RiMenuLine size={24} />}
-          </button>
-        </div>
+        <button 
+          onClick={toggleMobileMenu}
+          className="text-white p-2"
+          aria-label="Toggle menu"
+        >
+          {isMobileMenuOpen ? <RiCloseLine size={24} /> : <RiMenuLine size={24} />}
+        </button>
       </header>
 
-      {/* Mobile sidebar - overlay when open */}
-      {isMobile && isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-10" onClick={toggleMobileMenu} />
-      )}
-
-      {/* Sidebar - hidden on mobile unless menu is open */}
-      <div className={`
-        ${isMobile ? 'fixed z-20 top-0 bottom-0 left-0 w-64 transform transition-transform duration-300 ease-in-out pt-16' : 'w-64'} 
-        ${isMobileMenuOpen ? 'translate-x-0' : isMobile ? '-translate-x-full' : ''} 
-        bg-[#121212] p-4 overflow-y-auto
-      `}>
+      {/* Desktop sidebar */}
+      <div className="hidden md:block w-64 bg-[#121212] p-4 overflow-y-auto">
         {renderSidebarContent()}
       </div>
 
       {/* Main content - adjusted for both mobile and desktop */}
-      <main className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16' : ''}`}>
+      <main className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16 pb-16' : ''}`}>
         <div className="p-4 md:p-8">
           <Suspense fallback={
             <div className="flex h-full items-center justify-center">
@@ -227,6 +218,53 @@ function AdminLayoutWithPathname({
           </Suspense>
         </div>
       </main>
+
+      {/* Mobile bottom navigation bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#121212] border-t border-[#2A2A2A]">
+        <div className="flex items-center justify-around">
+          {mobileNavItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center justify-center py-3 px-2 ${
+                  isActive ? 'text-amber-500' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <div>{item.icon}</div>
+                <span className="text-xs mt-1">{item.title}</span>
+              </Link>
+            );
+          })}
+          <button
+            onClick={handleSignOut}
+            className="flex flex-col items-center justify-center py-3 px-2 text-gray-400 hover:text-white"
+          >
+            <RiLogoutBoxLine size={24} />
+            <span className="text-xs mt-1">Logout</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Full sidebar for mobile (shown when menu is open) */}
+      {isMobile && isMobileMenuOpen && (
+        <>
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={toggleMobileMenu} />
+          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-[#121212] p-4 overflow-y-auto transform transition-transform duration-300 ease-in-out">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center space-x-2">
+                <div className="h-8 w-8 rounded-full bg-amber-500" />
+                <span className="text-xl font-bold text-white">Admin Panel</span>
+              </div>
+              <button onClick={toggleMobileMenu} className="text-white p-2">
+                <RiCloseLine size={24} />
+              </button>
+            </div>
+            {renderSidebarContent()}
+          </div>
+        </>
+      )}
     </div>
   )
 }
