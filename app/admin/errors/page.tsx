@@ -131,7 +131,7 @@ export default function ErrorsPage() {
   }
 
   return (
-    <div className="p-6 pt-16">
+    <div className="p-6 pt-24 sm:pt-28 md:pt-32">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold text-white">Error Logs</h1>
         

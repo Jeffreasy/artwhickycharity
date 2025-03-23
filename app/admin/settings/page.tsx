@@ -90,7 +90,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 pt-16">
+    <div className="p-6 pt-24 sm:pt-28 md:pt-32">
       <div className="mb-8">
         <h1 className="mb-8 text-3xl font-bold text-white">Settings</h1>
 

@@ -95,7 +95,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 pt-16">
+    <div className="p-6 pt-24 sm:pt-28 md:pt-32">
       {isEmergencyAccess && (
         <div className="mb-6 rounded-md border-l-4 border-yellow-500 bg-yellow-50 p-4 text-yellow-700 shadow-md dark:bg-yellow-900/30 dark:text-yellow-200">
           <div className="flex items-center">
