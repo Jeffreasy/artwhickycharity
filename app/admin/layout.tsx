@@ -185,8 +185,8 @@ function AdminLayoutWithPathname({
   ]
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#0A0A0A]">
-      {/* Mobile header - branding only */}
+    <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
+      {/* Mobile header - only visible on small screens */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-[#121212] p-4 border-b border-[#2A2A2A]">
         <div className="flex items-center space-x-2">
           <div className="h-8 w-8 rounded-full bg-amber-500" />
@@ -201,30 +201,27 @@ function AdminLayoutWithPathname({
         </button>
       </header>
 
-      {/* Desktop header - fixed at top */}
-      <div className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-[#121212] border-b border-[#2A2A2A]">
-        <div className="flex items-center h-16 pl-72 pr-8">
-          <div className="text-xl font-bold text-white">Admin Panel</div>
+      {/* Desktop view - flex layout with sidebar and content */}
+      <div className="flex flex-1 pt-[80px] sm:pt-[100px] md:pt-[120px]">
+        {/* Desktop sidebar */}
+        <div className="hidden md:block w-64 bg-[#121212] border-r border-[#2A2A2A] p-4 mr-4">
+          {renderSidebarContent()}
         </div>
-      </div>
 
-      {/* Desktop sidebar */}
-      <div className="hidden md:block fixed top-0 left-0 bottom-0 w-64 bg-[#121212] p-4 overflow-y-auto z-40 border-r border-[#2A2A2A]">
-        {renderSidebarContent()}
+        {/* Main content area */}
+        <main className="flex-1 p-4 md:p-8">
+          {/* Wrap mobile view in padding for proper spacing */}
+          <div className={isMobile ? 'pt-12 pb-20' : ''}>
+            <Suspense fallback={
+              <div className="flex h-full items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+              </div>
+            }>
+              {children}
+            </Suspense>
+          </div>
+        </main>
       </div>
-
-      {/* Main content - adjusted for both mobile and desktop */}
-      <main className="flex-1 w-full md:pt-16 md:pl-64">
-        <div className={`p-4 md:p-8 ${isMobile ? 'pt-20 pb-20' : ''}`}>
-          <Suspense fallback={
-            <div className="flex h-full items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
-            </div>
-          }>
-            {children}
-          </Suspense>
-        </div>
-      </main>
 
       {/* Mobile bottom navigation bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#121212] border-t border-[#2A2A2A]">
