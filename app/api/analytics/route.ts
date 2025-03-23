@@ -123,39 +123,53 @@ function formatPrivateKey(key: string | undefined): string {
       formattedKey = formattedKey.substring(1, formattedKey.length - 1);
     }
     
-    // If the key is base64 without headers, add them
-    if (!formattedKey.includes('-----BEGIN')) {
-      // Clean the key: remove spaces and ensure no linebreaks in the base64 content
-      formattedKey = formattedKey.replace(/\s/g, '');
-      
-      // Add proper PEM format with linebreaks for proper parsing
-      formattedKey = '-----BEGIN PRIVATE KEY-----\n' + 
-                     formattedKey.match(/.{1,64}/g)?.join('\n') + 
-                     '\n-----END PRIVATE KEY-----';
-    } else {
-      // If the key already has headers but potentially incorrect formatting
-      // Extract the base64 content between the headers
-      const base64Content = formattedKey
-        .replace('-----BEGIN PRIVATE KEY-----', '')
-        .replace('-----END PRIVATE KEY-----', '')
-        .replace(/\s/g, '');
-      
-      // Re-format with proper line breaks (PEM requires lines of max 64 chars)
-      formattedKey = '-----BEGIN PRIVATE KEY-----\n' + 
-                     base64Content.match(/.{1,64}/g)?.join('\n') + 
-                     '\n-----END PRIVATE KEY-----';
+    // Replace escaped newlines with actual newlines
+    formattedKey = formattedKey.replace(/\\n/g, '\n');
+    
+    // Remove any extraneous whitespace
+    const cleanedLines = formattedKey.split('\n').map(line => line.trim()).filter(line => line);
+    
+    // Ensure proper PEM format
+    if (!cleanedLines[0].includes('BEGIN PRIVATE KEY')) {
+      // This is likely just the base64 content without headers
+      const base64Content = formattedKey.replace(/\s/g, '');
+      return `-----BEGIN PRIVATE KEY-----\n${base64Content.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----`;
     }
     
-    // Log details for debugging
-    console.log('Private key format check: Has header:', formattedKey.includes('-----BEGIN PRIVATE KEY-----'));
-    console.log('Private key format check: Has footer:', formattedKey.includes('-----END PRIVATE KEY-----'));
-    console.log('Private key format check: Number of lines:', formattedKey.split('\n').length);
-    console.log('Private key format check: Has newlines:', formattedKey.includes('\n'));
+    // If headers exist but format might be wrong, rebuild properly
+    // Extract just the base64 content between headers
+    const contentStart = formattedKey.indexOf('BEGIN PRIVATE KEY-----') + 24;
+    const contentEnd = formattedKey.indexOf('-----END PRIVATE KEY');
     
+    if (contentStart > 24 && contentEnd > contentStart) {
+      const base64Content = formattedKey.substring(contentStart, contentEnd).replace(/\s/g, '');
+      return `-----BEGIN PRIVATE KEY-----\n${base64Content.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----`;
+    }
+    
+    // Return as is if we can't improve it
     return formattedKey;
   } catch (error) {
     console.error('Error formatting private key:', error);
     return key || '';
+  }
+}
+
+// Function to simplify PEM key format (sometimes works better with certain Node versions)
+function simplifyPEMKey(key: string): string {
+  try {
+    // Extract just the base64 content (no headers, no line breaks)
+    const contentStart = key.indexOf('BEGIN PRIVATE KEY-----') + 24;
+    const contentEnd = key.indexOf('-----END PRIVATE KEY');
+    
+    if (contentStart > 24 && contentEnd > contentStart) {
+      const base64Content = key.substring(contentStart, contentEnd).replace(/\s/g, '');
+      // Return with minimal formatting - no line breaks in content
+      return `-----BEGIN PRIVATE KEY-----\n${base64Content}\n-----END PRIVATE KEY-----`;
+    }
+    return key;
+  } catch (error) {
+    console.error('Error simplifying PEM key:', error);
+    return key;
   }
 }
 
@@ -173,32 +187,7 @@ async function initializeAnalyticsClient() {
     throw new Error('Missing required Google Analytics property ID in environment variables');
   }
   
-  // Check if we have API key credentials
-  if (apiKey) {
-    console.log("Found API key, trying API key authentication first");
-    try {
-      // Create a client with API key
-      const apiKeyClient = new BetaAnalyticsDataClient({
-        apiKey: apiKey
-      });
-      
-      // Test connection with API key
-      await apiKeyClient.getMetadata({
-        name: `properties/${propertyId}`
-      });
-      
-      console.log("Successfully validated Google Analytics credentials using API key");
-      return { analyticsDataClient: apiKeyClient, propertyId };
-    } catch (apiKeyError: any) {
-      console.log("API key authentication failed:", apiKeyError.message);
-      // Continue with service account attempt if we have those credentials
-      if (!rawPrivateKey || !clientEmail) {
-        throw new Error('API key authentication failed and no service account credentials available');
-      }
-    }
-  }
-
-  // If we're here, we're using service account credentials
+  // We need to use service account because API keys are not supported
   if (!rawPrivateKey || !clientEmail) {
     throw new Error('Missing required Google Analytics service account credentials in environment variables');
   }
@@ -209,128 +198,74 @@ async function initializeAnalyticsClient() {
     // Format the private key correctly for the environment
     const privateKey = formatPrivateKey(rawPrivateKey);
     
-    console.log("Private key length:", privateKey.length);
-    console.log("First 10 chars of formatted key:", privateKey.substring(0, 10) + "...");
-    console.log("Last 10 chars of formatted key:", "..." + privateKey.substring(privateKey.length - 10));
+    // Log debugging info
+    console.log("Private key stats: Length:", privateKey.length);
+    console.log("Has BEGIN marker:", privateKey.includes("BEGIN PRIVATE KEY"));
+    console.log("Has END marker:", privateKey.includes("END PRIVATE KEY"));
+    console.log("Has newlines:", privateKey.includes("\n"));
+    console.log("Count of lines:", privateKey.split("\n").length);
     
-    // EXPERIMENTAL: Try a simpler key format with just the content, no PEM headers
-    // This might work better with certain Node versions and OpenSSL versions
-    const simplePEMKey = simplifyPEMKey(privateKey);
-    console.log("Using simplified PEM format as fallback");
-
-    // For testing with the hardcoded API key if needed (will be removed in production)
-    const hardcodedTestApiKey = "AIzaSyC3zPEHuuQvMmpSJJ_vRfgqniBJzzImeXQ";
-    const hasApiKey = !!apiKey;
-    const useHardcodedApiKey = !hasApiKey; // Set to true to use the hardcoded key for testing
-
+    // Try different approaches to create the client
     try {
-      // Attempt 1: Try API key authentication first if available, as it's the most reliable
-      if (apiKey || useHardcodedApiKey) {
-        console.log("Trying with API key authentication...");
-        const apiKeyToUse = apiKey || (useHardcodedApiKey ? hardcodedTestApiKey : undefined);
-        
-        const apiKeyClient = new BetaAnalyticsDataClient({
-          apiKey: apiKeyToUse,
+      // Approach 1: Using the standard GoogleAuth library directly
+      console.log("Trying with GoogleAuth approach...");
+      
+      // Using the google-auth-library directly to create JWT if available
+      try {
+        const { GoogleAuth } = require('google-auth-library');
+        const auth = new GoogleAuth({
+          credentials: {
+            client_email: clientEmail,
+            private_key: privateKey,
+          },
+          scopes: ['https://www.googleapis.com/auth/analytics.readonly']
         });
         
-        // Test API key authentication
-        await apiKeyClient.getMetadata({
+        // Create client with explicit auth
+        const authClient = await auth.getClient();
+        const analyticsDataClient = new BetaAnalyticsDataClient({
+          auth: authClient
+        });
+        
+        // Test connection
+        await analyticsDataClient.getMetadata({
           name: `properties/${propertyId}`
         });
         
-        console.log("Successfully validated Google Analytics credentials using API key");
-        return { analyticsDataClient: apiKeyClient, propertyId };
+        console.log("Successfully validated Google Analytics credentials using GoogleAuth");
+        return { analyticsDataClient, propertyId };
+      } catch (authLibError: any) {
+        if (authLibError.code === 'MODULE_NOT_FOUND') {
+          console.log("google-auth-library not available, skipping this approach");
+        } else {
+          console.error("GoogleAuth approach failed:", authLibError.message);
+        }
       }
       
-      // Attempt 2: Standard formatted key
-      console.log("Trying with formatted key...");
-      const analyticsDataClient = new BetaAnalyticsDataClient({
+      // Approach 2: Standard approach with credentials object
+      console.log("Trying standard credentials approach...");
+      const credentialsClient = new BetaAnalyticsDataClient({
         credentials: {
           client_email: clientEmail,
-          private_key: privateKey,
-        },
+          private_key: privateKey
+        }
       });
       
       // Test connection
-      await analyticsDataClient.getMetadata({
+      await credentialsClient.getMetadata({
         name: `properties/${propertyId}`
       });
       
-      console.log("Successfully validated Google Analytics credentials");
-      return { analyticsDataClient, propertyId };
-    } 
-    catch (primaryError: any) {
-      console.log("Primary auth method failed:", primaryError.message);
-      
-      try {
-        // Attempt 2: Simplified PEM key
-        console.log("Trying with simplified PEM key...");
-        const fallbackClient = new BetaAnalyticsDataClient({
-          credentials: {
-            client_email: clientEmail,
-            private_key: simplePEMKey,
-          },
-        });
-        
-        // Test connection with fallback
-        await fallbackClient.getMetadata({
-          name: `properties/${propertyId}`
-        });
-        
-        console.log("Successfully validated Google Analytics credentials using simplified PEM key");
-        return { analyticsDataClient: fallbackClient, propertyId };
-      }
-      catch (fallbackError: any) {
-        console.log("Both service account auth methods failed. Error:", fallbackError.message);
-        
-        // Attempt 3: Try using API key again if we haven't yet
-        if (apiKey) {
-          try {
-            console.log("Trying API key authentication as last resort...");
-            
-            // Create a client with API key
-            const apiKeyClient = new BetaAnalyticsDataClient({
-              apiKey: apiKey
-            });
-            
-            // Test connection with API key
-            await apiKeyClient.getMetadata({
-              name: `properties/${propertyId}`
-            });
-            
-            console.log("Successfully validated Google Analytics credentials using API key");
-            return { analyticsDataClient: apiKeyClient, propertyId };
-          }
-          catch (apiKeyError: any) {
-            console.error("All authentication methods failed. Final error:", apiKeyError.message);
-            throw new Error(`Failed to validate GA credentials. Please check your credentials and try again.`);
-          }
-        } else {
-          console.error("No API key available as fallback.");
-          throw new Error(`Failed to validate GA credentials: ${primaryError.message}`);
-        }
-      }
+      console.log("Successfully validated Google Analytics credentials using credentials object");
+      return { analyticsDataClient: credentialsClient, propertyId };
+    } catch (error: any) {
+      console.error("All authentication methods failed");
+      console.error("Final error:", error.message);
+      throw new Error(`Failed to validate GA credentials. Please check your credentials and permissions.`);
     }
   } catch (error) {
     console.error('Error initializing Google Analytics client:', error);
     throw error;
-  }
-}
-
-// New function to try a simpler key format for compatibility with different OpenSSL versions
-function simplifyPEMKey(key: string): string {
-  try {
-    // Extract just the base64 content without headers
-    const base64Content = key
-      .replace('-----BEGIN PRIVATE KEY-----', '')
-      .replace('-----END PRIVATE KEY-----', '')
-      .replace(/\s/g, '');
-    
-    // Return a simplified key format
-    return base64Content;
-  } catch (error) {
-    console.error("Error simplifying PEM key:", error);
-    return key;
   }
 }
 
