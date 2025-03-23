@@ -126,27 +126,35 @@ function formatPrivateKey(key: string | undefined): string {
     // Replace escaped newlines with actual newlines
     formattedKey = formattedKey.replace(/\\n/g, '\n');
     
-    // Remove any extraneous whitespace
-    const cleanedLines = formattedKey.split('\n').map(line => line.trim()).filter(line => line);
-    
-    // Ensure proper PEM format
-    if (!cleanedLines[0].includes('BEGIN PRIVATE KEY')) {
-      // This is likely just the base64 content without headers
+    // Check if the key already has the proper PEM format
+    if (formattedKey.includes('-----BEGIN PRIVATE KEY-----') && 
+        formattedKey.includes('-----END PRIVATE KEY-----')) {
+      
+      // Extract just the content between headers to recreate with proper format
+      const contentMatch = formattedKey.match(/-----BEGIN PRIVATE KEY-----\s*([A-Za-z0-9+/=\s]+)\s*-----END PRIVATE KEY-----/);
+      
+      if (contentMatch && contentMatch[1]) {
+        // Clean any extraneous whitespace from the base64 content
+        const base64Content = contentMatch[1].replace(/\s/g, '');
+        // Chunk the base64 into proper 64-character lines
+        const chunks = [];
+        for (let i = 0; i < base64Content.length; i += 64) {
+          chunks.push(base64Content.substring(i, i + 64));
+        }
+        return `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
+      }
+    } else {
+      // Assume it's just the raw base64 without headers
       const base64Content = formattedKey.replace(/\s/g, '');
-      return `-----BEGIN PRIVATE KEY-----\n${base64Content.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----`;
+      // Chunk the base64 into proper 64-character lines
+      const chunks = [];
+      for (let i = 0; i < base64Content.length; i += 64) {
+        chunks.push(base64Content.substring(i, i + 64));
+      }
+      return `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
     }
     
-    // If headers exist but format might be wrong, rebuild properly
-    // Extract just the base64 content between headers
-    const contentStart = formattedKey.indexOf('BEGIN PRIVATE KEY-----') + 24;
-    const contentEnd = formattedKey.indexOf('-----END PRIVATE KEY');
-    
-    if (contentStart > 24 && contentEnd > contentStart) {
-      const base64Content = formattedKey.substring(contentStart, contentEnd).replace(/\s/g, '');
-      return `-----BEGIN PRIVATE KEY-----\n${base64Content.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----`;
-    }
-    
-    // Return as is if we can't improve it
+    // If we couldn't format it properly, return as is
     return formattedKey;
   } catch (error) {
     console.error('Error formatting private key:', error);
@@ -204,13 +212,26 @@ async function initializeAnalyticsClient() {
     console.log("Has newlines:", privateKey.includes("\n"));
     console.log("Count of lines:", privateKey.split("\n").length);
     
-    // Create a simple credentials object for version 3.x of the library
-    console.log("Creating Analytics client with version 3.x compatible approach");
+    // Try using a more explicit credentials format for Node.js environments
+    console.log("Creating Analytics client with explicit JWT format");
+    
+    // Create a simple key object that specifies the key type explicitly
+    const keyData = {
+      type: "service_account",
+      project_id: "whisky4charity",
+      private_key_id: "4fc6b8abe6c7ab28814ae613b56a8a8e1fe14e5f",
+      private_key: privateKey,
+      client_email: clientEmail,
+      client_id: "110866566560065592416",
+      auth_uri: "https://accounts.google.com/o/oauth2/auth",
+      token_uri: "https://oauth2.googleapis.com/token",
+      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+      client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(clientEmail)}`
+    };
+    
+    // Create client with explicit key data
     const analyticsDataClient = new BetaAnalyticsDataClient({
-      credentials: {
-        client_email: clientEmail,
-        private_key: privateKey
-      }
+      credentials: keyData
     });
     
     // Test the connection with a simple metadata request
