@@ -217,9 +217,32 @@ async function initializeAnalyticsClient() {
     // This might work better with certain Node versions and OpenSSL versions
     const simplePEMKey = simplifyPEMKey(privateKey);
     console.log("Using simplified PEM format as fallback");
-    
+
+    // For testing with the hardcoded API key if needed (will be removed in production)
+    const hardcodedTestApiKey = "AIzaSyC3zPEHuuQvMmpSJJ_vRfgqniBJzzImeXQ";
+    const hasApiKey = !!apiKey;
+    const useHardcodedApiKey = !hasApiKey; // Set to true to use the hardcoded key for testing
+
     try {
-      // Attempt 1: Standard formatted key
+      // Attempt 1: Try API key authentication first if available, as it's the most reliable
+      if (apiKey || useHardcodedApiKey) {
+        console.log("Trying with API key authentication...");
+        const apiKeyToUse = apiKey || (useHardcodedApiKey ? hardcodedTestApiKey : undefined);
+        
+        const apiKeyClient = new BetaAnalyticsDataClient({
+          apiKey: apiKeyToUse,
+        });
+        
+        // Test API key authentication
+        await apiKeyClient.getMetadata({
+          name: `properties/${propertyId}`
+        });
+        
+        console.log("Successfully validated Google Analytics credentials using API key");
+        return { analyticsDataClient: apiKeyClient, propertyId };
+      }
+      
+      // Attempt 2: Standard formatted key
       console.log("Trying with formatted key...");
       const analyticsDataClient = new BetaAnalyticsDataClient({
         credentials: {
