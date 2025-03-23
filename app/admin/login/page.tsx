@@ -4,10 +4,9 @@ import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider'
 import { Loading } from '@/globalComponents/ui/Loading'
-import { FaUser, FaLock, FaExclamationTriangle, FaBug } from "react-icons/fa";
+import { FaUser, FaLock, FaExclamationTriangle, FaBug, FaShieldAlt } from "react-icons/fa";
 import Cookies from "js-cookie";
 
-// Component that uses router
 function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -18,10 +17,9 @@ function LoginPageContent() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [debugMsg, setDebugMsg] = useState('')
   const [showEmergencyAccess, setShowEmergencyAccess] = useState(false)
   const [showDebug, setShowDebug] = useState(false)
-  const [cookieInfo, setCookieInfo] = useState('')
+  const [debugInfo, setDebugInfo] = useState('')
 
   // Check for existing session and redirect if found
   useEffect(() => {
@@ -30,32 +28,28 @@ function LoginPageContent() {
     const now = Date.now();
     
     if (lastRedirectAttempt && now - parseInt(lastRedirectAttempt) < 5000) {
-      console.log('Recent redirect attempt detected, preventing loop');
-      sessionStorage.removeItem('lastRedirectAttempt');
       return;
     }
-
-    console.log('Session status:', user ? 'authenticated' : 'unauthenticated', 'Session:', session);
-    setDebugMsg(`Session status: ${user ? 'authenticated' : 'unauthenticated'}`);
 
     // Check for admin bypass cookie
     const hasEmergencyCookie = document.cookie.includes('admin_bypass=true');
     if (hasEmergencyCookie) {
-      setDebugMsg('Emergency access cookie detected. Redirecting to dashboard...');
-      
-      // Set redirecting timestamp
       sessionStorage.setItem('lastRedirectAttempt', now.toString());
-      
       window.location.href = '/admin/dashboard';
       return;
     }
     
     if (user && session) {
-      console.log('User is authenticated, redirecting to dashboard');
-      setDebugMsg('Authenticated! Redirecting to: ' + callbackUrl);
-      
-      // Set redirecting timestamp
       sessionStorage.setItem('lastRedirectAttempt', now.toString());
+      sessionStorage.setItem('isRedirecting', 'true');
+      
+      // Set login success cookie to help with redirect loops
+      Cookies.set('login_success', 'true', { 
+        expires: 1/48, // 30 minutes
+        path: '/',
+        secure: window.location.protocol === 'https:',
+        sameSite: 'lax'
+      });
       
       // Use direct navigation for most reliable method
       window.location.href = callbackUrl.startsWith('/') 
@@ -64,35 +58,33 @@ function LoginPageContent() {
     }
   }, [user, session, callbackUrl]);
 
-  // Check and display cookies for debugging
-  useEffect(() => {
-    if (showDebug) {
-      try {
-        const allCookies = document.cookie;
-        setCookieInfo(`Current cookies: ${allCookies || 'None'}`);
-        
-        // Check for auth errors in localStorage
-        const authErrors = localStorage.getItem('supabase.auth.error');
-        if (authErrors) {
-          setCookieInfo(prev => `${prev}\nAuth Errors: ${authErrors}`);
-        }
-      } catch (e: any) {
-        setCookieInfo(`Error reading cookies: ${e.message}`);
-      }
+  // Debug function
+  const collectDebugInfo = () => {
+    try {
+      const allCookies = document.cookie;
+      const sessionData = session ? JSON.stringify(session).substring(0, 100) + '...' : 'null';
+      const userData = user ? 'Authenticated' : 'Not authenticated';
+      const authErrors = localStorage.getItem('supabase.auth.error') || 'None';
+      
+      setDebugInfo(
+        `Status: ${userData}\n` +
+        `Session: ${sessionData}\n` +
+        `Cookies: ${allCookies || 'None'}\n` +
+        `Auth Errors: ${authErrors}\n` +
+        `URL: ${window.location.href}`
+      );
+    } catch (e: any) {
+      setDebugInfo(`Error collecting debug info: ${e.message}`);
     }
-  }, [showDebug]);
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
-    setDebugMsg('Attempting login...')
 
     // EMERGENCY ACCESS: Check for admin credentials directly
     if (email === "admin" && password === "admin123") {
-      console.log("EMERGENCY ACCESS GRANTED! Setting bypass cookie...");
-      setDebugMsg("EMERGENCY ACCESS GRANTED! Setting bypass cookie...");
-      
       // Set admin bypass cookie - expires in 2 hours
       Cookies.set('admin_bypass', 'true', { 
         expires: 1/12, 
@@ -111,73 +103,59 @@ function LoginPageContent() {
 
     try {
       // Email login with Supabase
-      setDebugMsg('Using Supabase auth with email: ' + email)
-      
       const { error: supabaseError } = await signIn(email, password)
       
       if (supabaseError) {
-        console.error('Supabase auth error:', supabaseError)
-        setError(supabaseError.message)
-        setDebugMsg('Login failed: ' + supabaseError.message)
+        const errorMessage = supabaseError.message === 'Invalid login credentials' 
+          ? 'Incorrect email or password'
+          : supabaseError.message;
+        
+        setError(errorMessage)
         setIsLoading(false)
         return
       }
       
-      setDebugMsg('Supabase login successful! Redirecting...')
-      
       // Set redirect timestamp
       sessionStorage.setItem('lastRedirectAttempt', Date.now().toString());
+      sessionStorage.setItem('isRedirecting', 'true');
+      
+      // Set login success cookie
+      Cookies.set('login_success', 'true', { 
+        expires: 1/48, // 30 minutes
+        path: '/',
+        secure: window.location.protocol === 'https:',
+        sameSite: 'lax'
+      });
       
       // Force page reload to dashboard after a short delay
       setTimeout(() => {
         window.location.href = '/admin/dashboard'
       }, 1000)
     } catch (error: any) {
-      console.error('Login error:', error)
-      setError('An error occurred during login')
-      setDebugMsg('Error during login: ' + (error.message || 'Unknown error'))
+      setError('Authentication service is unavailable. Please try again later.')
       setIsLoading(false)
     }
   }
 
-  const toggleEmergencyAccess = () => {
-    setShowEmergencyAccess(!showEmergencyAccess);
-  };
-
-  const toggleDebug = () => {
-    setShowDebug(!showDebug);
-  };
-
-  // Test for session directly
-  const testSession = async () => {
-    try {
-      const sessionData = session ? JSON.stringify(session) : 'No session';
-      const userData = user ? JSON.stringify(user) : 'No user';
-      setCookieInfo(`Session Test:\nSession: ${sessionData}\nUser: ${userData}`);
-    } catch (e: any) {
-      setCookieInfo(`Session Test Error: ${e.message}`);
-    }
-  };
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black py-12 px-4 pt-24 sm:pt-28 md:pt-32 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
-        <div>
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 rounded-full bg-amber-500 flex items-center justify-center">
+            <FaShieldAlt className="h-6 w-6 text-black" />
+          </div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-white">
-            Admin Login
+            Admin Portal
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
-            Login met je admin account of email
-          </p>
-          <p className="mt-2 text-center text-xs text-amber-500">
-            Callback URL: {callbackUrl}
+            Sign in to access the admin dashboard
           </p>
         </div>
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="-space-y-px rounded-md shadow-sm">
+        <div className="mt-8 bg-[#121212] rounded-lg p-6 shadow-lg border border-[#2A2A2A]">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="sr-only">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
                 Email
               </label>
               <div className="relative">
@@ -189,15 +167,16 @@ function LoginPageContent() {
                   name="email"
                   type="email"
                   required
-                  className="relative block w-full rounded-t-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
-                  placeholder="Email"
+                  className="block w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm"
+                  placeholder="admin@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
+            
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                 Password
               </label>
               <div className="relative">
@@ -210,88 +189,77 @@ function LoginPageContent() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="relative block w-full rounded-b-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6"
-                  placeholder="Password"
+                  className="block w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>
-          </div>
 
-          {error && (
-            <div className="text-red-500 text-sm text-center font-bold">{error}</div>
-          )}
-          
-          {/* Debug info */}
-          {debugMsg && (
-            <div className="text-amber-500 text-xs text-center">{debugMsg}</div>
-          )}
+            {error && (
+              <div className="bg-red-900/30 text-red-400 text-sm py-2 px-3 rounded-md border border-red-900">
+                {error}
+              </div>
+            )}
 
-          {showDebug && (
-            <div className="bg-gray-800 p-3 rounded text-xs text-gray-400 mt-2">
-              <div>Auth status: {user ? 'authenticated' : 'unauthenticated'}</div>
-              <div>Session data: {session ? JSON.stringify(session).substring(0, 100) + '...' : 'null'}</div>
-              <div>URL: {typeof window !== 'undefined' ? window.location.href : 'Server rendering'}</div>
-              <div>Host: {typeof window !== 'undefined' ? window.location.host : 'Unknown'}</div>
-              <div>{cookieInfo}</div>
-              <button 
-                onClick={testSession}
-                className="mt-2 px-2 py-1 bg-blue-700 text-white rounded text-xs"
-                type="button"
+            <div>
+              <button
+                type="submit"
+                disabled={isLoading || authLoading}
+                className="group relative flex w-full justify-center rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 disabled:opacity-70"
               >
-                Test Session 
+                {isLoading ? 'Signing in...' : 'Sign in'}
               </button>
             </div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading || authLoading}
-              className="group relative flex w-full justify-center rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 disabled:opacity-70"
-            >
-              {isLoading ? 'Inloggen...' : 'Login'}
-            </button>
-          </div>
+          </form>
           
           {/* Action buttons */}
-          <div className="flex justify-between text-xs mt-4">
+          <div className="flex justify-between text-xs mt-6 pt-4 border-t border-[#2A2A2A]">
             <button
-              onClick={toggleEmergencyAccess}
-              className="font-bold text-amber-500 hover:underline"
+              onClick={() => setShowEmergencyAccess(!showEmergencyAccess)}
+              className="text-gray-500 hover:text-amber-500"
               type="button"
             >
-              NOODTOEGANG
+              Emergency Access
             </button>
             
             <button
-              onClick={toggleDebug}
+              onClick={() => {
+                setShowDebug(!showDebug);
+                if (!showDebug) collectDebugInfo();
+              }}
               className="text-gray-500 hover:text-gray-400 flex items-center gap-1"
               type="button"
             >
               <FaBug className="h-3 w-3" />
-              {showDebug ? 'Hide Debug' : 'Show Debug'}
+              {showDebug ? 'Hide Debug' : 'Debug'}
             </button>
           </div>
-        </form>
+        </div>
 
         {showEmergencyAccess && (
-          <div className="mt-4 bg-gray-700 p-4 rounded-md">
+          <div className="mt-4 bg-[#1A1A1A] p-4 rounded-md border border-amber-900/50">
             <div className="flex items-center mb-2">
-              <FaExclamationTriangle className="text-yellow-500 mr-2" />
+              <FaExclamationTriangle className="text-amber-500 mr-2" />
               <span className="text-white font-bold">Emergency Access</span>
             </div>
             <p className="text-gray-300 text-sm mb-2">
               Use emergency credentials for urgent access when normal authentication is unavailable.
             </p>
-            <div className="text-gray-400 text-xs">
+            <div className="text-gray-400 text-xs bg-[#121212] p-3 rounded">
               <p>Username: admin</p>
               <p>Password: admin123</p>
-              <p className="mt-1 text-yellow-500">
-                Note: Emergency access has limited functionality and is monitored.
+              <p className="mt-1 text-amber-500 text-xs">
+                Note: Emergency access is logged and has limited functionality.
               </p>
             </div>
+          </div>
+        )}
+
+        {showDebug && (
+          <div className="mt-4 bg-[#1A1A1A] p-4 rounded-md border border-gray-800 text-xs font-mono text-gray-400 whitespace-pre-wrap">
+            {debugInfo}
           </div>
         )}
       </div>
