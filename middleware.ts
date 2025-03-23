@@ -16,6 +16,13 @@ export async function middleware(request: NextRequest) {
     return response;
   }
   
+  // Check for a login success cookie which indicates a recent successful login
+  const loginSuccess = request.cookies.get('login_success')
+  if (loginSuccess && loginSuccess.value === 'true' && path.startsWith('/admin/dashboard')) {
+    console.log(`[${requestId}] 🔑 Login success cookie found, allowing access to dashboard`);
+    return response;
+  }
+  
   // Always allow login and register pages
   if (path === '/admin/login' || path === '/admin/register') {
     console.log(`[${requestId}] 🔓 Auth page access (${path}), skipping auth check`);
@@ -55,16 +62,32 @@ export async function middleware(request: NextRequest) {
     if (session) {
       console.log(`[${requestId}] ✅ Supabase session found for user: ${session.user.email}, allowing access`);
       
-      // Add the session user ID to a new response header for debugging
+      // Set a cookie to indicate we have a valid session
       const newResponse = NextResponse.next({
         request: {
           headers: request.headers,
         },
       })
+      
+      // Add user info to response headers for debugging
       newResponse.headers.set('x-user-id', session.user.id)
+      newResponse.cookies.set('has_session', 'true', {
+        path: '/',
+        maxAge: 60 * 5, // 5 minutes
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      })
+      
       return newResponse;
     } else {
       console.log(`[${requestId}] ❓ No Supabase session found`);
+      
+      // Check the has_session cookie as a fallback
+      const hasSession = request.cookies.get('has_session')
+      if (hasSession && hasSession.value === 'true') {
+        console.log(`[${requestId}] 🔖 Session cookie found, allowing temporary access`);
+        return response;
+      }
     }
   } catch (error) {
     console.error(`[${requestId}] ❌ Error retrieving Supabase session:`, error);
@@ -83,6 +106,13 @@ export async function middleware(request: NextRequest) {
   const currentUrl = request.nextUrl.pathname
   if (currentUrl !== '/admin/login' && !currentUrl.includes('/api/')) {
     redirectUrl.searchParams.set('callbackUrl', request.url)
+  }
+  
+  // Check if we're about to create a redirect loop
+  const referer = request.headers.get('referer') || '';
+  if (referer.includes('/admin/login') && path.includes('/admin/dashboard')) {
+    console.log(`[${requestId}] 🔄 Potential login-dashboard loop, allowing through`);
+    return response;
   }
   
   console.log(`[${requestId}] 🔄 Redirecting to: ${redirectUrl.toString()}`);

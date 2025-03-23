@@ -112,6 +112,9 @@ function LoginPageContent() {
         sameSite: 'lax'
       }); 
       
+      // Set redirecting flag to prevent loops
+      sessionStorage.setItem('isRedirecting', 'true')
+      
       // Short delay to ensure cookie is set
       setTimeout(() => {
         // Redirect directly to dashboard
@@ -144,8 +147,14 @@ function LoginPageContent() {
         expires: 1/144 // 10 minutes
       });
       
-      // Force page reload to dashboard
-      window.location.href = '/admin/dashboard'
+      // Set redirecting flag to prevent loops
+      sessionStorage.setItem('isRedirecting', 'true')
+      sessionStorage.setItem('auth_timestamp', Date.now().toString())
+      
+      // Force page reload to dashboard after a short delay to make sure the session is set
+      setTimeout(() => {
+        window.location.href = '/admin/dashboard'
+      }, 1000)
     } catch (error: any) {
       console.error('Login error:', error)
       setError('An error occurred during login')

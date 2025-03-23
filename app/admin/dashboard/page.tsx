@@ -40,6 +40,21 @@ export default function DashboardPage() {
 
   // Protect dashboard route
   useEffect(() => {
+    // Clear the redirect flag when dashboard is loaded
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('isRedirecting')
+    }
+    
+    // Reset login_success cookie after successful login
+    const loginSuccess = Cookies.get('login_success')
+    if (loginSuccess === 'true') {
+      console.log('Login success cookie found, clearing after successful dashboard load')
+      // Wait a bit to ensure the page has loaded completely
+      setTimeout(() => {
+        Cookies.remove('login_success', { path: '/' })
+      }, 2000) 
+    }
+    
     if (!user && !session && !isEmergencyAccess) {
       console.log('User is not authenticated, redirecting to login');
       router.replace('/admin/login');
