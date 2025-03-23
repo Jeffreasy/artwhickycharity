@@ -198,6 +198,7 @@ function simplifyPEMKey(key: string): string {
 }
 
 async function initializeAnalyticsClient() {
+  // Property ID is het numerieke ID zonder 'properties/' prefix
   const propertyId = process.env.GA_PROPERTY_ID;
   
   console.log("GA Property ID:", propertyId);
@@ -205,6 +206,10 @@ async function initializeAnalyticsClient() {
   if (!propertyId) {
     throw new Error('Missing required Google Analytics property ID in environment variables');
   }
+  
+  // API verwacht een property ID in numeriek formaat
+  const numericPropertyId = propertyId.toString().replace(/\D/g, '');
+  console.log("Using numeric property ID for API calls:", numericPropertyId);
   
   try {
     // Stap 1: Probeer eerst de GA_CREDENTIALS JSON als specifieke service account credentials
@@ -232,11 +237,11 @@ async function initializeAnalyticsClient() {
             
             // Test de verbinding met een eenvoudige metadata request
             await analyticsDataClient.getMetadata({
-              name: `properties/${propertyId}`
+              name: `properties/${numericPropertyId}`
             });
             
             console.log("Successfully connected with service account credentials from GA_CREDENTIALS");
-            return { analyticsDataClient, propertyId };
+            return { analyticsDataClient, propertyId: numericPropertyId };
           } catch (authError: any) {
             console.error("Error authenticating with service account credentials:", authError.message);
             console.log("Error details:", authError?.details || "No details available");
@@ -287,11 +292,11 @@ async function initializeAnalyticsClient() {
         
         // Test de verbinding met een eenvoudige metadata request
         await analyticsDataClient.getMetadata({
-          name: `properties/${propertyId}`
+          name: `properties/${numericPropertyId}`
         });
         
         console.log("Successfully connected with GA_CLIENT_EMAIL and GA_PRIVATE_KEY credentials");
-        return { analyticsDataClient, propertyId };
+        return { analyticsDataClient, propertyId: numericPropertyId };
       } catch (authError: any) {
         console.error("Error authenticating with GA_CLIENT_EMAIL and GA_PRIVATE_KEY:", authError.message);
         console.log("Error details:", authError?.details || "No details available");
@@ -307,11 +312,11 @@ async function initializeAnalyticsClient() {
       
       // Test de verbinding met een eenvoudige metadata request
       await analyticsDataClient.getMetadata({
-        name: `properties/${propertyId}`
+        name: `properties/${numericPropertyId}`
       });
       
       console.log("Successfully connected with application default credentials");
-      return { analyticsDataClient, propertyId };
+      return { analyticsDataClient, propertyId: numericPropertyId };
     } catch (defaultAuthError: any) {
       console.error("Error authenticating with application default credentials:", defaultAuthError.message);
       console.log("Error details:", defaultAuthError?.details || "No details available");
@@ -326,7 +331,7 @@ async function initializeAnalyticsClient() {
         // We geven de propertyId door als fallback, maar markeren dit in de client
         return { 
           analyticsDataClient: null, 
-          propertyId, 
+          propertyId: numericPropertyId, 
           useMeasurementProtocol: true,
           measurementId 
         };
