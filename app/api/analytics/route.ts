@@ -101,50 +101,76 @@ function checkCredentials(): boolean {
   return !!process.env.GA_CREDENTIALS || (!!process.env.GA_PROPERTY_ID && !!process.env.GA_CLIENT_EMAIL && !!process.env.GA_PRIVATE_KEY);
 }
 
-// Function to properly format private key for different environments
+// Function to properly format private key specifically for Vercel environment
 function formatPrivateKey(key: string | undefined): string {
   if (!key) return '';
   
   try {
-    // Remove any surrounding quotes if present
+    console.log("Original key format (first 10 chars):", key.substring(0, 10) + "...");
+    console.log("Original key length:", key.length);
+    
+    // Step 1: Remove any surrounding quotes
     let formattedKey = key.trim();
     if ((formattedKey.startsWith('"') && formattedKey.endsWith('"')) || 
         (formattedKey.startsWith("'") && formattedKey.endsWith("'"))) {
       formattedKey = formattedKey.substring(1, formattedKey.length - 1);
+      console.log("Removed surrounding quotes");
     }
     
-    // Replace escaped newlines with actual newlines
-    formattedKey = formattedKey.replace(/\\n/g, '\n');
+    // Step 2: Replace escaped newlines with actual newlines
+    if (formattedKey.includes('\\n')) {
+      formattedKey = formattedKey.replace(/\\n/g, '\n');
+      console.log("Replaced escaped newlines");
+    }
     
-    // Check if the key already has the proper PEM format
-    if (formattedKey.includes('-----BEGIN PRIVATE KEY-----') && 
-        formattedKey.includes('-----END PRIVATE KEY-----')) {
+    // Step 3: Fix the PEM format if it's all in one line or malformed
+    if (!formattedKey.includes('\n') || 
+        !formattedKey.includes('-----BEGIN PRIVATE KEY-----') || 
+        !formattedKey.includes('-----END PRIVATE KEY-----')) {
       
-      // Extract just the content between headers to recreate with proper format
-      const contentMatch = formattedKey.match(/-----BEGIN PRIVATE KEY-----\s*([A-Za-z0-9+/=\s]+)\s*-----END PRIVATE KEY-----/);
+      // Try to extract the base64 content, ignoring headers if present
+      let base64Content = formattedKey;
       
-      if (contentMatch && contentMatch[1]) {
-        // Clean any extraneous whitespace from the base64 content
-        const base64Content = contentMatch[1].replace(/\s/g, '');
-        // Chunk the base64 into proper 64-character lines
-        const chunks = [];
-        for (let i = 0; i < base64Content.length; i += 64) {
-          chunks.push(base64Content.substring(i, i + 64));
+      // If headers are present but format is wrong
+      if (formattedKey.includes('PRIVATE KEY')) {
+        // Use a compatible regex without 's' flag
+        const beginIndex = formattedKey.indexOf('-----BEGIN PRIVATE KEY-----');
+        const endIndex = formattedKey.indexOf('-----END PRIVATE KEY-----');
+        
+        if (beginIndex !== -1 && endIndex !== -1 && endIndex > beginIndex) {
+          base64Content = formattedKey.substring(beginIndex + 27, endIndex).replace(/\s/g, '');
+        } else {
+          // Remove any potential header/footer fragments
+          base64Content = formattedKey
+            .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+            .replace(/-----END PRIVATE KEY-----/g, '')
+            .replace(/\s/g, '');
         }
-        return `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
       }
-    } else {
-      // Assume it's just the raw base64 without headers
-      const base64Content = formattedKey.replace(/\s/g, '');
-      // Chunk the base64 into proper 64-character lines
+      
+      // Clean any non-base64 characters
+      base64Content = base64Content.replace(/[^A-Za-z0-9+/=]/g, '');
+      
+      // Re-format with proper PEM structure
+      // Format into 64-character lines
       const chunks = [];
       for (let i = 0; i < base64Content.length; i += 64) {
         chunks.push(base64Content.substring(i, i + 64));
       }
-      return `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
+      
+      formattedKey = `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
+      console.log("Reformatted key to proper PEM format");
     }
     
-    // If we couldn't format it properly, return as is
+    // Log the structure of the reformatted key
+    console.log("Final key format check:");
+    console.log("- Contains BEGIN marker:", formattedKey.includes("BEGIN PRIVATE KEY"));
+    console.log("- Contains END marker:", formattedKey.includes("END PRIVATE KEY"));
+    console.log("- Contains newlines:", formattedKey.includes("\n"));
+    console.log("- Number of newlines:", (formattedKey.match(/\n/g) || []).length);
+    console.log("- First line:", formattedKey.split('\n')[0]);
+    console.log("- Last line:", formattedKey.split('\n').pop());
+    
     return formattedKey;
   } catch (error) {
     console.error('Error formatting private key:', error);
