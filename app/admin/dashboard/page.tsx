@@ -112,7 +112,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {isEmergencyAccess && (
-        <div className="mb-6 rounded-md border-l-4 border-yellow-500 bg-yellow-50 p-4 text-yellow-700 shadow-md dark:bg-yellow-900/30 dark:text-yellow-200">
+        <div className="rounded-md border-l-4 border-yellow-500 bg-yellow-50 p-4 text-yellow-700 shadow-md dark:bg-yellow-900/30 dark:text-yellow-200">
           <div className="flex items-center">
             <FaExclamationTriangle className="mr-2 text-yellow-500" />
             <p className="font-bold">EMERGENCY ACCESS MODE</p>

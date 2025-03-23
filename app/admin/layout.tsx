@@ -9,7 +9,7 @@ import { Loading } from '@/globalComponents/ui/Loading'
 
 // Icons
 import { RiDashboardLine, RiSettings4Line, RiLogoutBoxLine, RiUserAddLine, RiMenuLine, RiCloseLine } from 'react-icons/ri'
-import { FaChartLine, FaBug } from 'react-icons/fa'
+import { FaChartLine, FaBug, FaInstagram, FaEnvelope } from 'react-icons/fa'
 
 // Component that uses pathname
 function AdminLayoutWithPathname({
@@ -177,20 +177,29 @@ function AdminLayoutWithPathname({
   )
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#0A0A0A]">
+    <div className="flex flex-col md:flex-row h-screen bg-[#0A0A0A] overflow-hidden">
       {/* Mobile header */}
-      <div className="md:hidden flex items-center justify-between bg-[#121212] p-4 border-b border-[#2A2A2A]">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-[#121212] p-4 border-b border-[#2A2A2A]">
         <div className="flex items-center space-x-2">
           <div className="h-8 w-8 rounded-full bg-amber-500" />
           <span className="text-xl font-bold text-white">Admin Panel</span>
         </div>
-        <button 
-          onClick={toggleMobileMenu}
-          className="text-white p-2"
-        >
-          {isMobileMenuOpen ? <RiCloseLine size={24} /> : <RiMenuLine size={24} />}
-        </button>
-      </div>
+        <div className="flex items-center">
+          <a href="mailto:info@example.com" className="text-white mr-4" aria-label="Email">
+            <FaEnvelope size={20} />
+          </a>
+          <a href="https://instagram.com/example" target="_blank" rel="noopener noreferrer" className="text-white mr-4" aria-label="Instagram">
+            <FaInstagram size={20} />
+          </a>
+          <button 
+            onClick={toggleMobileMenu}
+            className="text-white p-2"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <RiCloseLine size={24} /> : <RiMenuLine size={24} />}
+          </button>
+        </div>
+      </header>
 
       {/* Mobile sidebar - overlay when open */}
       {isMobile && isMobileMenuOpen && (
@@ -199,7 +208,7 @@ function AdminLayoutWithPathname({
 
       {/* Sidebar - hidden on mobile unless menu is open */}
       <div className={`
-        ${isMobile ? 'fixed z-20 top-0 bottom-0 left-0 w-64 transform transition-transform duration-300 ease-in-out' : 'w-64'} 
+        ${isMobile ? 'fixed z-20 top-0 bottom-0 left-0 w-64 transform transition-transform duration-300 ease-in-out pt-16' : 'w-64'} 
         ${isMobileMenuOpen ? 'translate-x-0' : isMobile ? '-translate-x-full' : ''} 
         bg-[#121212] p-4 overflow-y-auto
       `}>
@@ -207,15 +216,17 @@ function AdminLayoutWithPathname({
       </div>
 
       {/* Main content - adjusted for both mobile and desktop */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 pt-4 md:pt-8">
-        <Suspense fallback={
-          <div className="flex h-full items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
-          </div>
-        }>
-          {children}
-        </Suspense>
-      </div>
+      <main className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16' : ''}`}>
+        <div className="p-4 md:p-8">
+          <Suspense fallback={
+            <div className="flex h-full items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+            </div>
+          }>
+            {children}
+          </Suspense>
+        </div>
+      </main>
     </div>
   )
 }
