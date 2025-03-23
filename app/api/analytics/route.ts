@@ -108,14 +108,31 @@ function checkGACredentials() {
 function formatPrivateKey(key: string | undefined): string {
   if (!key) return '';
   
-  // If key already contains actual newlines, it's properly formatted
-  if (key.includes('\n') && !key.includes('\\n')) {
-    return key;
+  try {
+    // Remove any surrounding quotes if present
+    let formattedKey = key;
+    if ((formattedKey.startsWith('"') && formattedKey.endsWith('"')) || 
+        (formattedKey.startsWith("'") && formattedKey.endsWith("'"))) {
+      formattedKey = formattedKey.substring(1, formattedKey.length - 1);
+    }
+    
+    // Replace escaped newlines with actual newlines
+    formattedKey = formattedKey.replace(/\\n/g, '\n');
+    
+    // Ensure the key has the proper PEM format
+    if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----')) {
+      console.log('Private key does not contain proper PEM header, attempting to fix...');
+      formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
+    }
+    
+    console.log('Private key format check: Has header:', formattedKey.includes('-----BEGIN PRIVATE KEY-----'));
+    console.log('Private key format check: Has newlines:', formattedKey.includes('\n'));
+    
+    return formattedKey;
+  } catch (error) {
+    console.error('Error formatting private key:', error);
+    return key || '';
   }
-  
-  // For Vercel and other platforms where newlines are escaped as strings
-  const formattedKey = key.replace(/\\n/g, '\n');
-  return formattedKey;
 }
 
 async function initializeAnalyticsClient() {
@@ -126,16 +143,19 @@ async function initializeAnalyticsClient() {
 
   console.log("GA Property ID:", propertyId);
   console.log("GA Client Email:", clientEmail?.substring(0, 5) + "..." + (clientEmail?.slice(-5) || ""));
-  console.log("GA Private Key (first 10 chars):", rawPrivateKey?.substring(0, 10) + "...");
-
+  
   if (!rawPrivateKey || !clientEmail || !propertyId) {
     throw new Error('Missing required Google Analytics credentials in environment variables');
   }
   
-  // Format the private key correctly for the environment
-  const privateKey = formatPrivateKey(rawPrivateKey);
-
   try {
+    // Format the private key correctly for the environment
+    const privateKey = formatPrivateKey(rawPrivateKey);
+    
+    console.log("Private key length:", privateKey.length);
+    console.log("First 10 chars of formatted key:", privateKey.substring(0, 10) + "...");
+    console.log("Last 10 chars of formatted key:", "..." + privateKey.substring(privateKey.length - 10));
+    
     // Create an authorized client
     const analyticsDataClient = new BetaAnalyticsDataClient({
       credentials: {
@@ -143,6 +163,17 @@ async function initializeAnalyticsClient() {
         private_key: privateKey,
       },
     });
+    
+    // Test the client with a simple API call to verify credentials
+    try {
+      await analyticsDataClient.getMetadata({
+        name: `properties/${propertyId}`
+      });
+      console.log("Successfully validated Google Analytics credentials");
+    } catch (apiError: any) {
+      console.error("Error validating Google Analytics client:", apiError);
+      throw new Error(`Failed to validate GA credentials: ${apiError.message}`);
+    }
     
     return { analyticsDataClient, propertyId };
   } catch (error) {
