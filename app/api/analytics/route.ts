@@ -100,8 +100,15 @@ function checkGACredentials() {
   const privateKey = process.env.GA_PRIVATE_KEY;
   const clientEmail = process.env.GA_CLIENT_EMAIL;
   const propertyId = process.env.GA_PROPERTY_ID;
+  const apiKey = process.env.GA_API_KEY;
 
-  return !!(privateKey && clientEmail && propertyId);
+  // We hebben een property ID nodig en ofwel service account credentials, ofwel een API sleutel
+  const hasServiceAccountCreds = !!(privateKey && clientEmail);
+  const hasApiKey = !!apiKey;
+
+  console.log(`Credentials check - Property ID: ${!!propertyId}, Service Account: ${hasServiceAccountCreds}, API Key: ${hasApiKey}`);
+
+  return !!(propertyId && (hasServiceAccountCreds || hasApiKey));
 }
 
 // Function to properly format private key for different environments
@@ -157,13 +164,46 @@ async function initializeAnalyticsClient() {
   const rawPrivateKey = process.env.GA_PRIVATE_KEY;
   const clientEmail = process.env.GA_CLIENT_EMAIL;
   const propertyId = process.env.GA_PROPERTY_ID;
+  const apiKey = process.env.GA_API_KEY;
 
   console.log("GA Property ID:", propertyId);
-  console.log("GA Client Email:", clientEmail?.substring(0, 5) + "..." + (clientEmail?.slice(-5) || ""));
   
-  if (!rawPrivateKey || !clientEmail || !propertyId) {
-    throw new Error('Missing required Google Analytics credentials in environment variables');
+  // If we don't have a property ID, we can't proceed
+  if (!propertyId) {
+    throw new Error('Missing required Google Analytics property ID in environment variables');
   }
+  
+  // Check if we have API key credentials
+  if (apiKey) {
+    console.log("Found API key, trying API key authentication first");
+    try {
+      // Create a client with API key
+      const apiKeyClient = new BetaAnalyticsDataClient({
+        apiKey: apiKey
+      });
+      
+      // Test connection with API key
+      await apiKeyClient.getMetadata({
+        name: `properties/${propertyId}`
+      });
+      
+      console.log("Successfully validated Google Analytics credentials using API key");
+      return { analyticsDataClient: apiKeyClient, propertyId };
+    } catch (apiKeyError: any) {
+      console.log("API key authentication failed:", apiKeyError.message);
+      // Continue with service account attempt if we have those credentials
+      if (!rawPrivateKey || !clientEmail) {
+        throw new Error('API key authentication failed and no service account credentials available');
+      }
+    }
+  }
+
+  // If we're here, we're using service account credentials
+  if (!rawPrivateKey || !clientEmail) {
+    throw new Error('Missing required Google Analytics service account credentials in environment variables');
+  }
+  
+  console.log("GA Client Email:", clientEmail?.substring(0, 5) + "..." + (clientEmail?.slice(-5) || ""));
   
   try {
     // Format the private key correctly for the environment
@@ -173,43 +213,101 @@ async function initializeAnalyticsClient() {
     console.log("First 10 chars of formatted key:", privateKey.substring(0, 10) + "...");
     console.log("Last 10 chars of formatted key:", "..." + privateKey.substring(privateKey.length - 10));
     
-    // FALLBACK: Use a hard-coded key for testing purposes if the formatted one fails
-    // WARNING: This should be removed in production or only kept temporarily for debugging
-    const useHardcodedKeyAsLastResort = false; // Set to true only for debugging in development
-    const testKey = useHardcodedKeyAsLastResort ? 
-      `-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCtcwHAkkdq1eSq
-zvs4mWXN4SsJsJutcE0IU4bS/vovXJ05c8rEa9pI6xWbYjNj8SL8Cnn0+j/Jy8jb
-nwA1l26uCXGUOg+HVLdSFEcfPwLQY0xnGw2bKCfmFsTQ36S3T7qp9b1gkCgQIqDw
-TfWovRRPVbzR7sBMDEQ7JSgPzT47vRRV1qXmIjrOsvvVx5+/Sw7fR8YRlXzQQpIc
-cQk8TiKQPNebx0rKO0xHavCZE0B5mCPy7d7YnfWz/iNN62dTdlpkEOD+GnCsw6y1
-NxP/vbMp66TA5kRdciZVd33cYGI0VqJ8L05hAkRDrz8O3av3+QjLKe5/9CzixKH+
-nD9O6YppAgMBAAECggEABLWjkbI3xQMtzmjOFP4jCbWIfMKq1c7xlAmLEXVJXbhS
------END PRIVATE KEY-----` : null;
+    // EXPERIMENTAL: Try a simpler key format with just the content, no PEM headers
+    // This might work better with certain Node versions and OpenSSL versions
+    const simplePEMKey = simplifyPEMKey(privateKey);
+    console.log("Using simplified PEM format as fallback");
     
-    // Create an authorized client with the formatted key or testKey if testing
-    const analyticsDataClient = new BetaAnalyticsDataClient({
-      credentials: {
-        client_email: clientEmail,
-        private_key: testKey || privateKey,
-      },
-    });
-    
-    // Test the client with a simple API call to verify credentials
     try {
+      // Attempt 1: Standard formatted key
+      console.log("Trying with formatted key...");
+      const analyticsDataClient = new BetaAnalyticsDataClient({
+        credentials: {
+          client_email: clientEmail,
+          private_key: privateKey,
+        },
+      });
+      
+      // Test connection
       await analyticsDataClient.getMetadata({
         name: `properties/${propertyId}`
       });
+      
       console.log("Successfully validated Google Analytics credentials");
-    } catch (apiError: any) {
-      console.error("Error validating Google Analytics client:", apiError);
-      throw new Error(`Failed to validate GA credentials: ${apiError.message}`);
+      return { analyticsDataClient, propertyId };
+    } 
+    catch (primaryError: any) {
+      console.log("Primary auth method failed:", primaryError.message);
+      
+      try {
+        // Attempt 2: Simplified PEM key
+        console.log("Trying with simplified PEM key...");
+        const fallbackClient = new BetaAnalyticsDataClient({
+          credentials: {
+            client_email: clientEmail,
+            private_key: simplePEMKey,
+          },
+        });
+        
+        // Test connection with fallback
+        await fallbackClient.getMetadata({
+          name: `properties/${propertyId}`
+        });
+        
+        console.log("Successfully validated Google Analytics credentials using simplified PEM key");
+        return { analyticsDataClient: fallbackClient, propertyId };
+      }
+      catch (fallbackError: any) {
+        console.log("Both service account auth methods failed. Error:", fallbackError.message);
+        
+        // Attempt 3: Try using API key again if we haven't yet
+        if (apiKey) {
+          try {
+            console.log("Trying API key authentication as last resort...");
+            
+            // Create a client with API key
+            const apiKeyClient = new BetaAnalyticsDataClient({
+              apiKey: apiKey
+            });
+            
+            // Test connection with API key
+            await apiKeyClient.getMetadata({
+              name: `properties/${propertyId}`
+            });
+            
+            console.log("Successfully validated Google Analytics credentials using API key");
+            return { analyticsDataClient: apiKeyClient, propertyId };
+          }
+          catch (apiKeyError: any) {
+            console.error("All authentication methods failed. Final error:", apiKeyError.message);
+            throw new Error(`Failed to validate GA credentials. Please check your credentials and try again.`);
+          }
+        } else {
+          console.error("No API key available as fallback.");
+          throw new Error(`Failed to validate GA credentials: ${primaryError.message}`);
+        }
+      }
     }
-    
-    return { analyticsDataClient, propertyId };
   } catch (error) {
     console.error('Error initializing Google Analytics client:', error);
     throw error;
+  }
+}
+
+// New function to try a simpler key format for compatibility with different OpenSSL versions
+function simplifyPEMKey(key: string): string {
+  try {
+    // Extract just the base64 content without headers
+    const base64Content = key
+      .replace('-----BEGIN PRIVATE KEY-----', '')
+      .replace('-----END PRIVATE KEY-----', '')
+      .replace(/\s/g, '');
+    
+    // Return a simplified key format
+    return base64Content;
+  } catch (error) {
+    console.error("Error simplifying PEM key:", error);
+    return key;
   }
 }
 
