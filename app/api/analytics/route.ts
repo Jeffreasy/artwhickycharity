@@ -176,103 +176,123 @@ async function initializeAnalyticsClient() {
   
   console.log("GA Property ID:", propertyId);
   
+  if (!propertyId) {
+    throw new Error('Missing required Google Analytics property ID in environment variables');
+  }
+  
   try {
-    // First try to use the JSON credentials file if available
+    // Stap 1: Probeer eerst de GA_CREDENTIALS JSON als specifieke service account credentials
     if (process.env.GA_CREDENTIALS) {
-      console.log("Using GA_CREDENTIALS JSON file approach");
+      console.log("Trying with explicit service account JSON credentials via GA_CREDENTIALS...");
       
       try {
-        // Parse the credentials JSON
+        // Parse de credentials JSON - Zorg ervoor dat het een valide JSON object is
         const credentials = JSON.parse(process.env.GA_CREDENTIALS);
         
-        // Check if this is a OAuth2 client credentials or a service account
-        if (credentials.web) {
-          // This is an OAuth2 client credentials file
-          console.log("Detected OAuth2 client credentials");
+        // Controleer of het een service account credentials object is
+        if (credentials.type === "service_account") {
+          console.log("Valid service account credentials found");
+          console.log("Service account client email:", credentials.client_email);
           
-          // OAuth2 needs additional setup with refresh tokens that we'll need to handle separately
-          throw new Error("OAuth2 client credentials require a refresh token. Please use a service account instead.");
-        } else if (credentials.type === "service_account") {
-          // This is a service account credentials file
-          console.log("Detected service account credentials");
-          
-          // Create client with service account credentials JSON
-          const analyticsDataClient = new BetaAnalyticsDataClient({
-            credentials: credentials
-          });
-          
-          // Test the connection
-          await analyticsDataClient.getMetadata({
-            name: `properties/${propertyId}`
-          });
-          
-          console.log("Successfully validated Google Analytics credentials using JSON file");
-          return { analyticsDataClient, propertyId };
+          try {
+            // Gebruik de service account credentials expliciet
+            const analyticsDataClient = new BetaAnalyticsDataClient({
+              projectId: credentials.project_id,
+              credentials: {
+                client_email: credentials.client_email,
+                private_key: credentials.private_key
+              }
+            });
+            
+            // Test de verbinding met een eenvoudige metadata request
+            await analyticsDataClient.getMetadata({
+              name: `properties/${propertyId}`
+            });
+            
+            console.log("Successfully connected with service account credentials from GA_CREDENTIALS");
+            return { analyticsDataClient, propertyId };
+          } catch (authError: any) {
+            console.error("Error authenticating with service account credentials:", authError.message);
+            console.log("Error details:", authError?.details || "No details available");
+          }
         } else {
-          throw new Error("Unknown credentials format in GA_CREDENTIALS");
+          console.error("GA_CREDENTIALS does not contain a valid service account (type should be 'service_account')");
         }
-      } catch (jsonError: any) {
-        console.error("Error using GA_CREDENTIALS:", jsonError.message);
-        console.log("Falling back to individual credential environment variables");
+      } catch (parseError) {
+        console.error("Error parsing GA_CREDENTIALS JSON:", parseError);
       }
     }
     
-    // Fall back to individual environment variables if JSON approach failed
-    const rawPrivateKey = process.env.GA_PRIVATE_KEY;
-    const clientEmail = process.env.GA_CLIENT_EMAIL;
-    
-    if (!propertyId) {
-      throw new Error('Missing required Google Analytics property ID in environment variables');
+    // Stap 2: Gebruik de individuele environment variables als fallback
+    if (process.env.GA_CLIENT_EMAIL && process.env.GA_PRIVATE_KEY) {
+      console.log("Trying with individual GA_CLIENT_EMAIL and GA_PRIVATE_KEY credentials...");
+      const clientEmail = process.env.GA_CLIENT_EMAIL;
+      const rawPrivateKey = process.env.GA_PRIVATE_KEY;
+      
+      // Toon een gedeelte van de client email voor debugging
+      console.log("Client email:", clientEmail.substring(0, 5) + "..." + clientEmail.slice(-5));
+      
+      // Formatteer de private key correct voor de omgeving
+      const privateKey = formatPrivateKey(rawPrivateKey);
+      
+      // Log debug info over de private key
+      console.log("Private key format check:");
+      console.log("- Length:", privateKey.length);
+      console.log("- Has BEGIN marker:", privateKey.includes("BEGIN PRIVATE KEY"));
+      console.log("- Has END marker:", privateKey.includes("END PRIVATE KEY"));
+      console.log("- Has newlines:", privateKey.includes("\n"));
+      console.log("- Count of newlines:", (privateKey.match(/\n/g) || []).length);
+      
+      try {
+        // Creëer een volledig service account object in het formaat dat Google verwacht
+        const serviceAccountAuth = {
+          type: "service_account",
+          project_id: "whisky4charity",
+          private_key: privateKey,
+          client_email: clientEmail,
+          token_uri: "https://oauth2.googleapis.com/token",
+        };
+        
+        // Gebruik zeer expliciete credentials opzet
+        const analyticsDataClient = new BetaAnalyticsDataClient({
+          credentials: serviceAccountAuth,
+          projectId: "whisky4charity"
+        });
+        
+        // Test de verbinding met een eenvoudige metadata request
+        await analyticsDataClient.getMetadata({
+          name: `properties/${propertyId}`
+        });
+        
+        console.log("Successfully connected with GA_CLIENT_EMAIL and GA_PRIVATE_KEY credentials");
+        return { analyticsDataClient, propertyId };
+      } catch (authError: any) {
+        console.error("Error authenticating with GA_CLIENT_EMAIL and GA_PRIVATE_KEY:", authError.message);
+        console.log("Error details:", authError?.details || "No details available");
+      }
     }
     
-    if (!rawPrivateKey || !clientEmail) {
-      throw new Error('Missing required Google Analytics service account credentials in environment variables');
-    }
-    
-    console.log("GA Client Email:", clientEmail?.substring(0, 5) + "..." + (clientEmail?.slice(-5) || ""));
-    
-    // Format the private key correctly for the environment
-    const privateKey = formatPrivateKey(rawPrivateKey);
-    
-    // Log debugging info
-    console.log("Private key stats: Length:", privateKey.length);
-    console.log("Has BEGIN marker:", privateKey.includes("BEGIN PRIVATE KEY"));
-    console.log("Has END marker:", privateKey.includes("END PRIVATE KEY"));
-    console.log("Has newlines:", privateKey.includes("\n"));
-    console.log("Count of lines:", privateKey.split("\n").length);
-    
-    // Create a service account JSON object
-    const keyData = {
-      type: "service_account",
-      project_id: "whisky4charity",
-      private_key_id: "4fc6b8abe6c7ab28814ae613b56a8a8e1fe14e5f",
-      private_key: privateKey,
-      client_email: clientEmail,
-      client_id: "110866566560065592416",
-      auth_uri: "https://accounts.google.com/o/oauth2/auth",
-      token_uri: "https://oauth2.googleapis.com/token",
-      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-      client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(clientEmail)}`
-    };
-    
-    // Create client with explicit key data
-    const analyticsDataClient = new BetaAnalyticsDataClient({
-      credentials: keyData
-    });
-    
-    // Test the connection with a simple metadata request
+    // Stap 3: Als laatste optie, probeer de environment variable GOOGLE_APPLICATION_CREDENTIALS
+    console.log("Trying with application default credentials...");
     try {
+      // Gebruik de standaard authentication zonder expliciete credentials
+      // Dit probeert automatisch te authenticeren met ADC (Application Default Credentials)
+      const analyticsDataClient = new BetaAnalyticsDataClient();
+      
+      // Test de verbinding met een eenvoudige metadata request
       await analyticsDataClient.getMetadata({
         name: `properties/${propertyId}`
       });
-      console.log("Successfully validated Google Analytics credentials");
+      
+      console.log("Successfully connected with application default credentials");
       return { analyticsDataClient, propertyId };
-    } catch (error: any) {
-      console.error("Error during connection test:", error.message);
-      throw error;
+    } catch (defaultAuthError: any) {
+      console.error("Error authenticating with application default credentials:", defaultAuthError.message);
+      console.log("Error details:", defaultAuthError?.details || "No details available");
+      throw new Error(`Failed to authenticate with Google Analytics API. Please check your credentials and permissions. Final error: ${defaultAuthError.message}`);
     }
-  } catch (error) {
-    console.error('Error initializing Google Analytics client:', error);
+  } catch (error: any) {
+    console.error("All authentication methods failed for Google Analytics:", error);
     throw error;
   }
 }
