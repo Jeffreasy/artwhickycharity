@@ -1,138 +1,180 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { Session, User } from '@supabase/supabase-js'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode
+} from 'react'
+import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import Cookies from 'js-cookie'
 
-type SupabaseAuthState = {
+// Define the auth context type
+interface SupabaseAuthContextType {
   user: User | null
   session: Session | null
   isLoading: boolean
-  signUp: (email: string, password: string) => Promise<{
-    error: any | null
-    data: any | null
-  }>
   signIn: (email: string, password: string) => Promise<{
-    error: any | null
-    data: any | null
+    error: Error | null
   }>
   signOut: () => Promise<void>
-  resetPassword: (email: string) => Promise<{
-    error: any | null
-    data: any | null
-  }>
 }
 
-const SupabaseAuthContext = createContext<SupabaseAuthState | undefined>(
-  undefined
-)
+// Create the auth context
+const SupabaseAuthContext = createContext<SupabaseAuthContextType>({
+  user: null,
+  session: null,
+  isLoading: true,
+  signIn: async () => ({ error: null }),
+  signOut: async () => {}
+})
 
-export function SupabaseAuthProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+// Provider component for auth
+export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
+  // Initialize session on mount
   useEffect(() => {
-    // Reset redirect flag from sessionStorage on provider mount
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('isRedirecting')
-    }
-    
-    // Fetch initial session
-    const getSession = async () => {
+    // First, check for the session in Supabase
+    const initialize = async () => {
       try {
+        // Get the current session
         const { data, error } = await supabase.auth.getSession()
+        
         if (error) {
           console.error('Error getting session:', error)
-          setSession(null)
-          setUser(null)
-        } else {
-          setSession(data.session)
-          setUser(data.session?.user || null)
+          setIsLoading(false)
+          return
         }
-      } catch (err) {
-        console.error('Failed to get session:', err)
-        setSession(null)
-        setUser(null)
-      } finally {
+        
+        // If we have a session, set it
+        if (data.session) {
+          setSession(data.session)
+          setUser(data.session.user)
+          
+          // Set the has_session cookie as backup
+          Cookies.set('has_session', 'true', { 
+            path: '/',
+            secure: window.location.protocol === 'https:',
+            sameSite: 'lax',
+            expires: 1/48 // 30 minutes
+          })
+        }
+        
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error initializing auth:', error)
         setIsLoading(false)
       }
     }
+    
+    initialize()
+    
+    // Listen for authentication state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
+        
+        if (session) {
+          setSession(session)
+          setUser(session.user)
+          
+          // Set the has_session cookie on auth changes as backup
+          Cookies.set('has_session', 'true', { 
+            path: '/',
+            secure: window.location.protocol === 'https:',
+            sameSite: 'lax',
+            expires: 1/48 // 30 minutes
+          })
+        } else {
+          setSession(null)
+          setUser(null)
+          
+          // Clean up the has_session cookie
+          Cookies.remove('has_session', { path: '/' })
+        }
+        
+        setIsLoading(false)
+      }
+    )
 
-    getSession()
-
-    // Set up listener for auth changes
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session ? 'Session exists' : 'No session')
-      setSession(session)
-      setUser(session?.user || null)
-      setIsLoading(false)
-    })
-
+    // Clean up the listener
     return () => {
-      data.subscription.unsubscribe()
+      authListener?.subscription.unsubscribe()
     }
   }, [])
 
-  const signUp = async (email: string, password: string) => {
-    return await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-  }
-
+  // Sign in function
   const signIn = async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-  }
-
-  const signOut = async () => {
-    // First sign out from Supabase
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error('Error signing out:', error)
-    }
-    
-    // Manually clear the session and user state
-    setSession(null)
-    setUser(null)
-    
-    // Clear any auth-related cookies
-    if (typeof document !== 'undefined') {
-      document.cookie.split(';').forEach(cookie => {
-        const [name] = cookie.trim().split('=')
-        if (name.includes('supabase') || name.includes('sb-') || name.includes('auth')) {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
-        }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       })
+      
+      if (!error) {
+        // Set login success cookie for middleware
+        Cookies.set('login_success', 'true', { 
+          path: '/',
+          secure: window.location.protocol === 'https:',
+          sameSite: 'lax',
+          expires: 1/144 // 10 minutes
+        })
+      }
+      
+      return { error }
+    } catch (error) {
+      console.error('Error during sign in:', error)
+      return { error: error as Error }
     }
-    
-    return Promise.resolve()
   }
 
-  const resetPassword = async (email: string) => {
-    return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    })
+  // Sign out function
+  const signOut = async () => {
+    try {
+      // Set a flag to prevent redirect loops
+      sessionStorage.setItem('isSigningOut', 'true')
+      
+      // Clear all auth-related cookies first
+      Cookies.remove('has_session', { path: '/' })
+      Cookies.remove('login_success', { path: '/' })
+      Cookies.remove('admin_bypass', { path: '/' })
+      
+      // Remove all Supabase-related local storage
+      if (typeof window !== 'undefined') {
+        Object.keys(localStorage)
+          .filter(key => key.includes('supabase') || key.includes('artwhisky'))
+          .forEach(key => localStorage.removeItem(key))
+      }
+      
+      // Then sign out from Supabase
+      await supabase.auth.signOut({ scope: 'local' })
+      
+      // Clear state
+      setUser(null)
+      setSession(null)
+      
+      console.log('Successfully signed out')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    } finally {
+      // Clear the flag after a short delay
+      setTimeout(() => {
+        sessionStorage.removeItem('isSigningOut')
+      }, 1000)
+    }
   }
 
   const value = {
     user,
     session,
     isLoading,
-    signUp,
     signIn,
-    signOut,
-    resetPassword,
+    signOut
   }
 
   return (
@@ -142,9 +184,10 @@ export function SupabaseAuthProvider({
   )
 }
 
+// Hook for using auth context
 export const useSupabaseAuth = () => {
   const context = useContext(SupabaseAuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useSupabaseAuth must be used within a SupabaseAuthProvider')
   }
   return context

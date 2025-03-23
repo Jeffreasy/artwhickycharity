@@ -25,11 +25,14 @@ function LoginPageContent() {
 
   // Check for existing session and redirect if found
   useEffect(() => {
-    // Avoid redirect loops by setting a flag in sessionStorage
-    const isRedirecting = sessionStorage.getItem('isRedirecting')
-    if (isRedirecting === 'true') {
-      console.log('Already redirecting, preventing loop')
-      return
+    // Avoid redirect loops by checking timing
+    const lastRedirectAttempt = sessionStorage.getItem('lastRedirectAttempt');
+    const now = Date.now();
+    
+    if (lastRedirectAttempt && now - parseInt(lastRedirectAttempt) < 5000) {
+      console.log('Recent redirect attempt detected, preventing loop');
+      sessionStorage.removeItem('lastRedirectAttempt');
+      return;
     }
 
     console.log('Session status:', user ? 'authenticated' : 'unauthenticated', 'Session:', session);
@@ -40,8 +43,8 @@ function LoginPageContent() {
     if (hasEmergencyCookie) {
       setDebugMsg('Emergency access cookie detected. Redirecting to dashboard...');
       
-      // Set redirecting flag
-      sessionStorage.setItem('isRedirecting', 'true')
+      // Set redirecting timestamp
+      sessionStorage.setItem('lastRedirectAttempt', now.toString());
       
       window.location.href = '/admin/dashboard';
       return;
@@ -51,27 +54,13 @@ function LoginPageContent() {
       console.log('User is authenticated, redirecting to dashboard');
       setDebugMsg('Authenticated! Redirecting to: ' + callbackUrl);
       
-      // Set redirecting flag
-      sessionStorage.setItem('isRedirecting', 'true')
+      // Set redirecting timestamp
+      sessionStorage.setItem('lastRedirectAttempt', now.toString());
       
-      // Use setTimeout to ensure state updates complete before navigation
-      setTimeout(() => {
-        try {
-          // Direct navigation for most reliable method
-          window.location.href = callbackUrl.startsWith('/') 
-            ? callbackUrl 
-            : decodeURIComponent(callbackUrl);
-        } catch (e) {
-          console.error('Redirect error:', e);
-          // If there's an error with the callbackUrl, go to dashboard
-          window.location.href = '/admin/dashboard';
-        }
-      }, 100);
-    }
-    
-    // Clean up redirecting flag when component unmounts
-    return () => {
-      sessionStorage.removeItem('isRedirecting')
+      // Use direct navigation for most reliable method
+      window.location.href = callbackUrl.startsWith('/') 
+        ? callbackUrl 
+        : decodeURIComponent(callbackUrl);
     }
   }, [user, session, callbackUrl]);
 
@@ -112,14 +101,11 @@ function LoginPageContent() {
         sameSite: 'lax'
       }); 
       
-      // Set redirecting flag to prevent loops
-      sessionStorage.setItem('isRedirecting', 'true')
+      // Set redirect timestamp
+      sessionStorage.setItem('lastRedirectAttempt', Date.now().toString());
       
-      // Short delay to ensure cookie is set
-      setTimeout(() => {
-        // Redirect directly to dashboard
-        window.location.href = '/admin/dashboard';
-      }, 500);
+      // Redirect directly to dashboard
+      window.location.href = '/admin/dashboard';
       return;
     }
 
@@ -139,19 +125,10 @@ function LoginPageContent() {
       
       setDebugMsg('Supabase login successful! Redirecting...')
       
-      // Set a flag cookie to help with redirects
-      Cookies.set('login_success', 'true', { 
-        path: '/',
-        secure: window.location.protocol === 'https:',
-        sameSite: 'lax',
-        expires: 1/144 // 10 minutes
-      });
+      // Set redirect timestamp
+      sessionStorage.setItem('lastRedirectAttempt', Date.now().toString());
       
-      // Set redirecting flag to prevent loops
-      sessionStorage.setItem('isRedirecting', 'true')
-      sessionStorage.setItem('auth_timestamp', Date.now().toString())
-      
-      // Force page reload to dashboard after a short delay to make sure the session is set
+      // Force page reload to dashboard after a short delay
       setTimeout(() => {
         window.location.href = '/admin/dashboard'
       }, 1000)
