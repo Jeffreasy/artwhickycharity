@@ -4,7 +4,7 @@ import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider'
 import { Loading } from '@/globalComponents/ui/Loading'
-import { FaUser, FaLock, FaExclamationTriangle, FaBug, FaShieldAlt } from "react-icons/fa";
+import { FaUser, FaLock, FaShieldAlt } from "react-icons/fa";
 import Cookies from "js-cookie";
 
 function LoginPageContent() {
@@ -17,10 +17,7 @@ function LoginPageContent() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [showEmergencyAccess, setShowEmergencyAccess] = useState(false)
-  const [showDebug, setShowDebug] = useState(false)
-  const [debugInfo, setDebugInfo] = useState('')
-
+  
   // Check for existing session and redirect if found
   useEffect(() => {
     // Avoid redirect loops by checking timing
@@ -30,15 +27,8 @@ function LoginPageContent() {
     if (lastRedirectAttempt && now - parseInt(lastRedirectAttempt) < 5000) {
       return;
     }
-
-    // Check for admin bypass cookie
-    const hasEmergencyCookie = document.cookie.includes('admin_bypass=true');
-    if (hasEmergencyCookie) {
-      sessionStorage.setItem('lastRedirectAttempt', now.toString());
-      window.location.href = '/admin/dashboard';
-      return;
-    }
     
+    // Check for active session
     if (user && session) {
       sessionStorage.setItem('lastRedirectAttempt', now.toString());
       sessionStorage.setItem('isRedirecting', 'true');
@@ -57,49 +47,11 @@ function LoginPageContent() {
         : decodeURIComponent(callbackUrl);
     }
   }, [user, session, callbackUrl]);
-
-  // Debug function
-  const collectDebugInfo = () => {
-    try {
-      const allCookies = document.cookie;
-      const sessionData = session ? JSON.stringify(session).substring(0, 100) + '...' : 'null';
-      const userData = user ? 'Authenticated' : 'Not authenticated';
-      const authErrors = localStorage.getItem('supabase.auth.error') || 'None';
-      
-      setDebugInfo(
-        `Status: ${userData}\n` +
-        `Session: ${sessionData}\n` +
-        `Cookies: ${allCookies || 'None'}\n` +
-        `Auth Errors: ${authErrors}\n` +
-        `URL: ${window.location.href}`
-      );
-    } catch (e: any) {
-      setDebugInfo(`Error collecting debug info: ${e.message}`);
-    }
-  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
-
-    // EMERGENCY ACCESS: Check for admin credentials directly
-    if (email === "admin" && password === "admin123") {
-      // Set admin bypass cookie - expires in 2 hours
-      Cookies.set('admin_bypass', 'true', { 
-        expires: 1/12, 
-        path: '/',
-        secure: window.location.protocol === 'https:',
-        sameSite: 'lax'
-      }); 
-      
-      // Set redirect timestamp
-      sessionStorage.setItem('lastRedirectAttempt', Date.now().toString());
-      
-      // Redirect directly to dashboard
-      window.location.href = '/admin/dashboard';
-      return;
-    }
 
     try {
       // Email login with Supabase
@@ -139,16 +91,16 @@ function LoginPageContent() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-amber-500 flex items-center justify-center">
-            <FaShieldAlt className="h-6 w-6 text-black" />
+          <div className="mx-auto h-14 w-14 rounded-full bg-amber-500 flex items-center justify-center">
+            <FaShieldAlt className="h-7 w-7 text-black" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-white">
             Admin Portal
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
-            Sign in to access the admin dashboard
+            Sign in to access the dashboard
           </p>
         </div>
         
@@ -213,55 +165,7 @@ function LoginPageContent() {
               </button>
             </div>
           </form>
-          
-          {/* Action buttons */}
-          <div className="flex justify-between text-xs mt-6 pt-4 border-t border-[#2A2A2A]">
-            <button
-              onClick={() => setShowEmergencyAccess(!showEmergencyAccess)}
-              className="text-gray-500 hover:text-amber-500"
-              type="button"
-            >
-              Emergency Access
-            </button>
-            
-            <button
-              onClick={() => {
-                setShowDebug(!showDebug);
-                if (!showDebug) collectDebugInfo();
-              }}
-              className="text-gray-500 hover:text-gray-400 flex items-center gap-1"
-              type="button"
-            >
-              <FaBug className="h-3 w-3" />
-              {showDebug ? 'Hide Debug' : 'Debug'}
-            </button>
-          </div>
         </div>
-
-        {showEmergencyAccess && (
-          <div className="mt-4 bg-[#1A1A1A] p-4 rounded-md border border-amber-900/50">
-            <div className="flex items-center mb-2">
-              <FaExclamationTriangle className="text-amber-500 mr-2" />
-              <span className="text-white font-bold">Emergency Access</span>
-            </div>
-            <p className="text-gray-300 text-sm mb-2">
-              Use emergency credentials for urgent access when normal authentication is unavailable.
-            </p>
-            <div className="text-gray-400 text-xs bg-[#121212] p-3 rounded">
-              <p>Username: admin</p>
-              <p>Password: admin123</p>
-              <p className="mt-1 text-amber-500 text-xs">
-                Note: Emergency access is logged and has limited functionality.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {showDebug && (
-          <div className="mt-4 bg-[#1A1A1A] p-4 rounded-md border border-gray-800 text-xs font-mono text-gray-400 whitespace-pre-wrap">
-            {debugInfo}
-          </div>
-        )}
       </div>
     </div>
   )
