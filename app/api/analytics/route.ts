@@ -101,18 +101,17 @@ function checkCredentials(): boolean {
   return !!process.env.GA_CREDENTIALS || (!!process.env.GA_PROPERTY_ID && !!process.env.GA_CLIENT_EMAIL && !!process.env.GA_PRIVATE_KEY);
 }
 
-function formatPrivateKey(rawKey: string): string {
+function formatPrivateKey(rawKey: string): { standard: string; simplified: string } {
   console.log("Original key length:", rawKey?.length);
-  console.log("Key starts with:", rawKey?.substring(0, 10) + "...");
   
   if (!rawKey) {
     console.error("Empty private key provided");
-    return '';
+    return { standard: '', simplified: '' };
   }
   
   let formattedKey = rawKey;
   
-  // Verwijder quotes aan begin en eind indien aanwezig (komt vaak voor in environment variables)
+  // Verwijder quotes aan begin en eind indien aanwezig
   if ((formattedKey.startsWith('"') && formattedKey.endsWith('"')) || 
       (formattedKey.startsWith("'") && formattedKey.endsWith("'"))) {
     formattedKey = formattedKey.substring(1, formattedKey.length - 1);
@@ -123,21 +122,45 @@ function formatPrivateKey(rawKey: string): string {
   formattedKey = formattedKey.replace(/\\n/g, '\n');
   console.log("After replacing escape sequences, key length:", formattedKey.length);
   
-  // Controleer of de sleutel het juiste PEM-formaat heeft
-  const hasPemMarkers = formattedKey.includes('-----BEGIN PRIVATE KEY-----') && 
-                       formattedKey.includes('-----END PRIVATE KEY-----');
-  
-  // Als de PEM headers ontbreken, voeg ze toe
-  if (!hasPemMarkers) {
+  // If the key has PEM markers but in one line, add proper line breaks
+  if (formattedKey.includes('-----BEGIN PRIVATE KEY-----') && 
+      formattedKey.includes('-----END PRIVATE KEY-----') &&
+      formattedKey.split('\n').length < 3) {
+    
+    console.log("Key has PEM markers but insufficient line breaks, reformatting");
+    
+    // Extract just the base64 content
+    const contentStart = formattedKey.indexOf('-----BEGIN PRIVATE KEY-----') + 27;
+    const contentEnd = formattedKey.indexOf('-----END PRIVATE KEY-----');
+    
+    if (contentStart > 27 && contentEnd > contentStart) {
+      const base64Content = formattedKey.substring(contentStart, contentEnd).trim();
+      
+      // Recreate with proper line breaks
+      let rebuiltKey = '-----BEGIN PRIVATE KEY-----\n';
+      
+      // Add content in 64-character chunks
+      for (let i = 0; i < base64Content.length; i += 64) {
+        rebuiltKey += base64Content.substring(i, i + 64) + '\n';
+      }
+      
+      rebuiltKey += '-----END PRIVATE KEY-----\n';
+      formattedKey = rebuiltKey;
+    }
+  }
+  // If the key is missing PEM markers entirely, add them
+  else if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----') || 
+           !formattedKey.includes('-----END PRIVATE KEY-----')) {
+    
     console.log("Key missing PEM markers, reformatting to proper PEM structure");
     
-    // Verwijder eventuele niet-base64 karakters
+    // Remove any non-base64 characters
     const cleanKey = formattedKey.replace(/[^a-zA-Z0-9+/=]/g, '');
     
-    // Maak het juiste PEM formaat met begin/eind markers en 64-karakter regels
+    // Create proper PEM format with begin/end markers and 64-character lines
     let pemKey = '-----BEGIN PRIVATE KEY-----\n';
     
-    // Splits in regels van 64 karakters
+    // Split into lines of 64 characters
     for (let i = 0; i < cleanKey.length; i += 64) {
       pemKey += cleanKey.substring(i, i + 64) + '\n';
     }
@@ -146,14 +169,39 @@ function formatPrivateKey(rawKey: string): string {
     formattedKey = pemKey;
   }
   
-  // Controleer het resulterende formaat
+  // Log detailed key structure for debugging
   console.log("Final key structure:");
   console.log("- Has BEGIN marker:", formattedKey.includes("BEGIN PRIVATE KEY"));
   console.log("- Has END marker:", formattedKey.includes("END PRIVATE KEY"));
   console.log("- Has newlines:", formattedKey.includes("\n"));
-  console.log("- Count of newlines:", (formattedKey.match(/\n/g) || []).length);
+  console.log("- Number of line breaks:", (formattedKey.match(/\n/g) || []).length);
+  console.log("- First few characters:", formattedKey.substring(0, 30).replace(/\n/g, '\\n') + '...');
   
-  return formattedKey;
+  // Try a simpler format as fallback if we encounter errors later
+  try {
+    // Create a simplified version that uses minimal formatting
+    // This can sometimes work better with older Node.js versions
+    const simplifiedKey = '-----BEGIN PRIVATE KEY-----\n' + 
+      formattedKey
+        .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+        .replace(/-----END PRIVATE KEY-----/g, '')
+        .replace(/\s/g, '')
+        .match(/.{1,64}/g)?.join('\n') + 
+      '\n-----END PRIVATE KEY-----\n';
+    
+    // Make both versions available
+    return { 
+      standard: formattedKey,
+      simplified: simplifiedKey
+    };
+  } catch (e) {
+    console.log("Error creating simplified key:", e);
+    // If simplification fails, return the standard version
+    return { 
+      standard: formattedKey,
+      simplified: formattedKey
+    };
+  }
 }
 
 // Function to simplify PEM key format (sometimes works better with certain Node versions)
@@ -238,7 +286,7 @@ async function initializeAnalyticsClient() {
       const clientEmail = process.env.GA_CLIENT_EMAIL;
       const rawPrivateKey = process.env.GA_PRIVATE_KEY;
       
-      // Toon een gedeelte van de client email voor debugging (zonder volledige email te lekken)
+      // Toon een gedeelte van de client email voor debugging
       if (clientEmail.includes('@')) {
         const emailParts = clientEmail.split('@');
         const username = emailParts[0].length > 3 
@@ -249,42 +297,73 @@ async function initializeAnalyticsClient() {
       }
       
       // Formatteer de private key correct voor de omgeving
-      const privateKey = formatPrivateKey(rawPrivateKey);
+      const formattedKeyObj = formatPrivateKey(rawPrivateKey);
       
-      // Log debug info over de private key (zonder de inhoud te lekken)
+      // Log debug info over de private key
       console.log("Private key format check:");
-      console.log("- Length:", privateKey.length);
-      console.log("- Has BEGIN marker:", privateKey.includes("BEGIN PRIVATE KEY"));
-      console.log("- Has END marker:", privateKey.includes("END PRIVATE KEY"));
-      console.log("- Has newlines:", privateKey.includes("\n"));
-      console.log("- Count of newlines:", (privateKey.match(/\n/g) || []).length);
+      console.log("- Standard key length:", formattedKeyObj.standard.length);
+      console.log("- Simplified key available:", !!formattedKeyObj.simplified);
       
       try {
-        // Creëer een volledig service account object in het formaat dat Google verwacht
-        const serviceAccountAuth = {
-          type: "service_account",
-          project_id: "whisky4charity",
-          private_key: privateKey,
-          client_email: clientEmail,
-          token_uri: "https://oauth2.googleapis.com/token",
-        };
-        
-        // Gebruik zeer expliciete credentials opzet
-        const analyticsDataClient = new BetaAnalyticsDataClient({
-          credentials: serviceAccountAuth,
-          projectId: "whisky4charity"
-        });
-        
-        // Test de verbinding met een eenvoudige metadata request
-        await analyticsDataClient.getMetadata({
-          name: `properties/${numericPropertyId}`
-        });
-        
-        console.log("Successfully connected with GA_CLIENT_EMAIL and GA_PRIVATE_KEY credentials");
-        return { analyticsDataClient, propertyId: numericPropertyId };
+        // Try each authentication method in sequence until one works
+        console.log("ATTEMPT 1: Using standard key format");
+        try {
+          // Use the standard formatted key first
+          const serviceAccountAuth = {
+            type: "service_account",
+            project_id: "whisky4charity",
+            private_key: formattedKeyObj.standard,
+            client_email: clientEmail,
+            token_uri: "https://oauth2.googleapis.com/token",
+          };
+          
+          const analyticsDataClient = new BetaAnalyticsDataClient({
+            credentials: serviceAccountAuth,
+            projectId: "whisky4charity"
+          });
+          
+          // Test the connection with a simple metadata request
+          await analyticsDataClient.getMetadata({
+            name: `properties/${numericPropertyId}`
+          });
+          
+          console.log("Successfully connected with GA_CLIENT_EMAIL and standard key format");
+          return { analyticsDataClient, propertyId: numericPropertyId };
+        } catch (error1: any) {
+          console.log("Standard key format failed, error:", error1.message);
+          
+          // Fall back to simplified key if standard fails
+          console.log("ATTEMPT 2: Using simplified key format");
+          try {
+            const serviceAccountAuth = {
+              type: "service_account",
+              project_id: "whisky4charity",
+              private_key: formattedKeyObj.simplified,
+              client_email: clientEmail,
+              token_uri: "https://oauth2.googleapis.com/token",
+            };
+            
+            const analyticsDataClient = new BetaAnalyticsDataClient({
+              credentials: serviceAccountAuth,
+              projectId: "whisky4charity"
+            });
+            
+            // Test the connection
+            await analyticsDataClient.getMetadata({
+              name: `properties/${numericPropertyId}`
+            });
+            
+            console.log("Successfully connected with GA_CLIENT_EMAIL and simplified key format");
+            return { analyticsDataClient, propertyId: numericPropertyId };
+          } catch (error2: any) {
+            console.log("Simplified key format failed, error:", error2.message);
+            throw error2;
+          }
+        }
       } catch (authError: any) {
         console.error("Error authenticating with GA_CLIENT_EMAIL and GA_PRIVATE_KEY:", authError.message);
         console.log("Error details:", authError?.details || "No details available");
+        throw authError;
       }
     }
     
