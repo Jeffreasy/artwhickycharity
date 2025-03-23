@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     }
 
     // Check if we have the necessary environment variables
-    const hasCredentials = checkGACredentials();
+    const hasCredentials = checkCredentials();
     
     // Log environment variable status
     console.log(`GA API credentials status - GA_PROPERTY_ID: ${!!process.env.GA_PROPERTY_ID}, GA_CLIENT_EMAIL: ${!!process.env.GA_CLIENT_EMAIL}, GA_PRIVATE_KEY: ${!!process.env.GA_PRIVATE_KEY}`);
@@ -96,19 +96,9 @@ function getDefaultDateRange() {
   return { startDate, endDate };
 }
 
-function checkGACredentials() {
-  const privateKey = process.env.GA_PRIVATE_KEY;
-  const clientEmail = process.env.GA_CLIENT_EMAIL;
-  const propertyId = process.env.GA_PROPERTY_ID;
-  const apiKey = process.env.GA_API_KEY;
-
-  // We hebben een property ID nodig en ofwel service account credentials, ofwel een API sleutel
-  const hasServiceAccountCreds = !!(privateKey && clientEmail);
-  const hasApiKey = !!apiKey;
-
-  console.log(`Credentials check - Property ID: ${!!propertyId}, Service Account: ${hasServiceAccountCreds}, API Key: ${hasApiKey}`);
-
-  return !!(propertyId && (hasServiceAccountCreds || hasApiKey));
+function checkCredentials(): boolean {
+  // Check if we have Google Analytics credentials either in the service account or OAuth JSON file
+  return !!process.env.GA_CREDENTIALS || (!!process.env.GA_PROPERTY_ID && !!process.env.GA_CLIENT_EMAIL && !!process.env.GA_PRIVATE_KEY);
 }
 
 // Function to properly format private key for different environments
@@ -182,26 +172,65 @@ function simplifyPEMKey(key: string): string {
 }
 
 async function initializeAnalyticsClient() {
-  // Check if we have the necessary environment variables
-  const rawPrivateKey = process.env.GA_PRIVATE_KEY;
-  const clientEmail = process.env.GA_CLIENT_EMAIL;
   const propertyId = process.env.GA_PROPERTY_ID;
-
+  
   console.log("GA Property ID:", propertyId);
   
-  // If we don't have a property ID, we can't proceed
-  if (!propertyId) {
-    throw new Error('Missing required Google Analytics property ID in environment variables');
-  }
-  
-  // We need to use service account because API keys are not supported
-  if (!rawPrivateKey || !clientEmail) {
-    throw new Error('Missing required Google Analytics service account credentials in environment variables');
-  }
-  
-  console.log("GA Client Email:", clientEmail?.substring(0, 5) + "..." + (clientEmail?.slice(-5) || ""));
-  
   try {
+    // First try to use the JSON credentials file if available
+    if (process.env.GA_CREDENTIALS) {
+      console.log("Using GA_CREDENTIALS JSON file approach");
+      
+      try {
+        // Parse the credentials JSON
+        const credentials = JSON.parse(process.env.GA_CREDENTIALS);
+        
+        // Check if this is a OAuth2 client credentials or a service account
+        if (credentials.web) {
+          // This is an OAuth2 client credentials file
+          console.log("Detected OAuth2 client credentials");
+          
+          // OAuth2 needs additional setup with refresh tokens that we'll need to handle separately
+          throw new Error("OAuth2 client credentials require a refresh token. Please use a service account instead.");
+        } else if (credentials.type === "service_account") {
+          // This is a service account credentials file
+          console.log("Detected service account credentials");
+          
+          // Create client with service account credentials JSON
+          const analyticsDataClient = new BetaAnalyticsDataClient({
+            credentials: credentials
+          });
+          
+          // Test the connection
+          await analyticsDataClient.getMetadata({
+            name: `properties/${propertyId}`
+          });
+          
+          console.log("Successfully validated Google Analytics credentials using JSON file");
+          return { analyticsDataClient, propertyId };
+        } else {
+          throw new Error("Unknown credentials format in GA_CREDENTIALS");
+        }
+      } catch (jsonError: any) {
+        console.error("Error using GA_CREDENTIALS:", jsonError.message);
+        console.log("Falling back to individual credential environment variables");
+      }
+    }
+    
+    // Fall back to individual environment variables if JSON approach failed
+    const rawPrivateKey = process.env.GA_PRIVATE_KEY;
+    const clientEmail = process.env.GA_CLIENT_EMAIL;
+    
+    if (!propertyId) {
+      throw new Error('Missing required Google Analytics property ID in environment variables');
+    }
+    
+    if (!rawPrivateKey || !clientEmail) {
+      throw new Error('Missing required Google Analytics service account credentials in environment variables');
+    }
+    
+    console.log("GA Client Email:", clientEmail?.substring(0, 5) + "..." + (clientEmail?.slice(-5) || ""));
+    
     // Format the private key correctly for the environment
     const privateKey = formatPrivateKey(rawPrivateKey);
     
@@ -212,10 +241,7 @@ async function initializeAnalyticsClient() {
     console.log("Has newlines:", privateKey.includes("\n"));
     console.log("Count of lines:", privateKey.split("\n").length);
     
-    // Try using a more explicit credentials format for Node.js environments
-    console.log("Creating Analytics client with explicit JWT format");
-    
-    // Create a simple key object that specifies the key type explicitly
+    // Create a service account JSON object
     const keyData = {
       type: "service_account",
       project_id: "whisky4charity",
