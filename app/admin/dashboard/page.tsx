@@ -72,15 +72,15 @@ export default function DashboardPage() {
         await signOut();
       }
       
-      // Redirect to login page after a small delay to ensure cookies are cleared
+      // Use direct window location change instead of router for a clean redirect
       setTimeout(() => {
         console.log('Redirecting to login page...');
-        router.push('/admin/login');
-      }, 500);
+        window.location.href = '/admin/login';
+      }, 800);
     } catch (error) {
       console.error('Error during logout:', error);
       // Redirect anyway as fallback
-      router.push('/admin/login');
+      window.location.href = '/admin/login';
     }
   };
 

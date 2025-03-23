@@ -61,8 +61,23 @@ function AdminLayoutWithPathname({
   ]
 
   const handleSignOut = async () => {
-    await signOut()
-    window.location.href = '/admin/login'
+    try {
+      // Clear any emergency access cookie
+      if (typeof document !== 'undefined') {
+        document.cookie = 'admin_bypass=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      }
+      
+      // Sign out of Supabase
+      await signOut()
+      
+      // Use timeout to ensure all state is cleared before redirecting
+      setTimeout(() => {
+        window.location.href = '/admin/login'
+      }, 800)
+    } catch (error) {
+      console.error('Error during sign out:', error)
+      window.location.href = '/admin/login'
+    }
   }
 
   return (

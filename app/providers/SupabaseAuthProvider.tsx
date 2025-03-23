@@ -77,7 +77,27 @@ export function SupabaseAuthProvider({
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    // First sign out from Supabase
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error('Error signing out:', error)
+    }
+    
+    // Manually clear the session and user state
+    setSession(null)
+    setUser(null)
+    
+    // Clear any auth-related cookies
+    if (typeof document !== 'undefined') {
+      document.cookie.split(';').forEach(cookie => {
+        const [name] = cookie.trim().split('=')
+        if (name.includes('supabase') || name.includes('sb-') || name.includes('auth')) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+        }
+      })
+    }
+    
+    return Promise.resolve()
   }
 
   const resetPassword = async (email: string) => {
