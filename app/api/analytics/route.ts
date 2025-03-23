@@ -101,81 +101,59 @@ function checkCredentials(): boolean {
   return !!process.env.GA_CREDENTIALS || (!!process.env.GA_PROPERTY_ID && !!process.env.GA_CLIENT_EMAIL && !!process.env.GA_PRIVATE_KEY);
 }
 
-// Function to properly format private key specifically for Vercel environment
-function formatPrivateKey(key: string | undefined): string {
-  if (!key) return '';
+function formatPrivateKey(rawKey: string): string {
+  console.log("Original key length:", rawKey?.length);
+  console.log("Key starts with:", rawKey?.substring(0, 10) + "...");
   
-  try {
-    console.log("Original key format (first 10 chars):", key.substring(0, 10) + "...");
-    console.log("Original key length:", key.length);
-    
-    // Step 1: Remove any surrounding quotes
-    let formattedKey = key.trim();
-    if ((formattedKey.startsWith('"') && formattedKey.endsWith('"')) || 
-        (formattedKey.startsWith("'") && formattedKey.endsWith("'"))) {
-      formattedKey = formattedKey.substring(1, formattedKey.length - 1);
-      console.log("Removed surrounding quotes");
-    }
-    
-    // Step 2: Replace escaped newlines with actual newlines
-    if (formattedKey.includes('\\n')) {
-      formattedKey = formattedKey.replace(/\\n/g, '\n');
-      console.log("Replaced escaped newlines");
-    }
-    
-    // Step 3: Fix the PEM format if it's all in one line or malformed
-    if (!formattedKey.includes('\n') || 
-        !formattedKey.includes('-----BEGIN PRIVATE KEY-----') || 
-        !formattedKey.includes('-----END PRIVATE KEY-----')) {
-      
-      // Try to extract the base64 content, ignoring headers if present
-      let base64Content = formattedKey;
-      
-      // If headers are present but format is wrong
-      if (formattedKey.includes('PRIVATE KEY')) {
-        // Use a compatible regex without 's' flag
-        const beginIndex = formattedKey.indexOf('-----BEGIN PRIVATE KEY-----');
-        const endIndex = formattedKey.indexOf('-----END PRIVATE KEY-----');
-        
-        if (beginIndex !== -1 && endIndex !== -1 && endIndex > beginIndex) {
-          base64Content = formattedKey.substring(beginIndex + 27, endIndex).replace(/\s/g, '');
-        } else {
-          // Remove any potential header/footer fragments
-          base64Content = formattedKey
-            .replace(/-----BEGIN PRIVATE KEY-----/g, '')
-            .replace(/-----END PRIVATE KEY-----/g, '')
-            .replace(/\s/g, '');
-        }
-      }
-      
-      // Clean any non-base64 characters
-      base64Content = base64Content.replace(/[^A-Za-z0-9+/=]/g, '');
-      
-      // Re-format with proper PEM structure
-      // Format into 64-character lines
-      const chunks = [];
-      for (let i = 0; i < base64Content.length; i += 64) {
-        chunks.push(base64Content.substring(i, i + 64));
-      }
-      
-      formattedKey = `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----`;
-      console.log("Reformatted key to proper PEM format");
-    }
-    
-    // Log the structure of the reformatted key
-    console.log("Final key format check:");
-    console.log("- Contains BEGIN marker:", formattedKey.includes("BEGIN PRIVATE KEY"));
-    console.log("- Contains END marker:", formattedKey.includes("END PRIVATE KEY"));
-    console.log("- Contains newlines:", formattedKey.includes("\n"));
-    console.log("- Number of newlines:", (formattedKey.match(/\n/g) || []).length);
-    console.log("- First line:", formattedKey.split('\n')[0]);
-    console.log("- Last line:", formattedKey.split('\n').pop());
-    
-    return formattedKey;
-  } catch (error) {
-    console.error('Error formatting private key:', error);
-    return key || '';
+  if (!rawKey) {
+    console.error("Empty private key provided");
+    return '';
   }
+  
+  let formattedKey = rawKey;
+  
+  // Verwijder quotes aan begin en eind indien aanwezig (komt vaak voor in environment variables)
+  if ((formattedKey.startsWith('"') && formattedKey.endsWith('"')) || 
+      (formattedKey.startsWith("'") && formattedKey.endsWith("'"))) {
+    formattedKey = formattedKey.substring(1, formattedKey.length - 1);
+    console.log("Removed surrounding quotes");
+  }
+  
+  // Vervang escaped newlines door echte newlines
+  formattedKey = formattedKey.replace(/\\n/g, '\n');
+  console.log("After replacing escape sequences, key length:", formattedKey.length);
+  
+  // Controleer of de sleutel het juiste PEM-formaat heeft
+  const hasPemMarkers = formattedKey.includes('-----BEGIN PRIVATE KEY-----') && 
+                       formattedKey.includes('-----END PRIVATE KEY-----');
+  
+  // Als de PEM headers ontbreken, voeg ze toe
+  if (!hasPemMarkers) {
+    console.log("Key missing PEM markers, reformatting to proper PEM structure");
+    
+    // Verwijder eventuele niet-base64 karakters
+    const cleanKey = formattedKey.replace(/[^a-zA-Z0-9+/=]/g, '');
+    
+    // Maak het juiste PEM formaat met begin/eind markers en 64-karakter regels
+    let pemKey = '-----BEGIN PRIVATE KEY-----\n';
+    
+    // Splits in regels van 64 karakters
+    for (let i = 0; i < cleanKey.length; i += 64) {
+      pemKey += cleanKey.substring(i, i + 64) + '\n';
+    }
+    
+    pemKey += '-----END PRIVATE KEY-----\n';
+    formattedKey = pemKey;
+  }
+  
+  // Controleer het resulterende formaat
+  console.log("Final key structure:");
+  console.log("- Has BEGIN marker:", formattedKey.includes("BEGIN PRIVATE KEY"));
+  console.log("- Has END marker:", formattedKey.includes("END PRIVATE KEY"));
+  console.log("- Has newlines:", formattedKey.includes("\n"));
+  console.log("- Count of newlines:", (formattedKey.match(/\n/g) || []).length);
+  
+  return formattedKey;
 }
 
 // Function to simplify PEM key format (sometimes works better with certain Node versions)
@@ -198,54 +176,21 @@ function simplifyPEMKey(key: string): string {
 }
 
 async function initializeAnalyticsClient() {
-  // Property ID is het numerieke ID zonder 'properties/' prefix
+  // Property ID is numeriek en komt uit environment variables
   const propertyId = process.env.GA_PROPERTY_ID;
-  
-  console.log("GA Property ID:", propertyId);
   
   if (!propertyId) {
     throw new Error('Missing required Google Analytics property ID in environment variables');
   }
+  
+  console.log("GA Property ID:", propertyId);
   
   // API verwacht een property ID in numeriek formaat
   const numericPropertyId = propertyId.toString().replace(/\D/g, '');
   console.log("Using numeric property ID for API calls:", numericPropertyId);
   
   try {
-    // Stap 1: Probeer eerst met het correcte key ID dat we in de screenshots zien
-    console.log("Trying with known key ID: 4fc6b8abe6c7ab28814ae613b56a8a8e1fe14e5f");
-    const clientEmail = process.env.GA_CLIENT_EMAIL || 'w4c-623@whisky4charity.iam.gserviceaccount.com';
-    const rawPrivateKey = process.env.GA_PRIVATE_KEY;
-    
-    if (clientEmail && rawPrivateKey) {
-      try {
-        // Formatteer de private key correct voor de omgeving
-        const privateKey = formatPrivateKey(rawPrivateKey);
-        
-        // Gebruik zeer expliciete credentials opzet en specificeer keyId
-        const analyticsDataClient = new BetaAnalyticsDataClient({
-          credentials: {
-            client_email: clientEmail,
-            private_key: privateKey,
-            private_key_id: '4fc6b8abe6c7ab28814ae613b56a8a8e1fe14e5f',
-            type: 'service_account',
-            project_id: 'whisky4charity'
-          }
-        });
-        
-        // Test de verbinding met een eenvoudige metadata request
-        await analyticsDataClient.getMetadata({
-          name: `properties/${numericPropertyId}`
-        });
-        
-        console.log("Successfully connected with known key ID and credentials");
-        return { analyticsDataClient, propertyId: numericPropertyId };
-      } catch (authError: any) {
-        console.error("Error authenticating with known key ID:", authError.message);
-      }
-    }
-    
-    // Stap 2: Probeer eerst de GA_CREDENTIALS JSON als specifieke service account credentials
+    // Stap 1: Probeer eerst de GA_CREDENTIALS JSON als specifieke service account credentials
     if (process.env.GA_CREDENTIALS) {
       console.log("Trying with explicit service account JSON credentials via GA_CREDENTIALS...");
       
@@ -287,19 +232,26 @@ async function initializeAnalyticsClient() {
       }
     }
     
-    // Stap 3: Gebruik de individuele environment variables als fallback
+    // Stap 2: Gebruik de individuele environment variables als fallback
     if (process.env.GA_CLIENT_EMAIL && process.env.GA_PRIVATE_KEY) {
       console.log("Trying with individual GA_CLIENT_EMAIL and GA_PRIVATE_KEY credentials...");
       const clientEmail = process.env.GA_CLIENT_EMAIL;
       const rawPrivateKey = process.env.GA_PRIVATE_KEY;
       
-      // Toon een gedeelte van de client email voor debugging
-      console.log("Client email:", clientEmail.substring(0, 5) + "..." + clientEmail.slice(-5));
+      // Toon een gedeelte van de client email voor debugging (zonder volledige email te lekken)
+      if (clientEmail.includes('@')) {
+        const emailParts = clientEmail.split('@');
+        const username = emailParts[0].length > 3 
+          ? emailParts[0].substring(0, 3) + '...' 
+          : emailParts[0];
+        const domain = emailParts[1];
+        console.log("Client email format: " + username + "@" + domain);
+      }
       
       // Formatteer de private key correct voor de omgeving
       const privateKey = formatPrivateKey(rawPrivateKey);
       
-      // Log debug info over de private key
+      // Log debug info over de private key (zonder de inhoud te lekken)
       console.log("Private key format check:");
       console.log("- Length:", privateKey.length);
       console.log("- Has BEGIN marker:", privateKey.includes("BEGIN PRIVATE KEY"));
@@ -336,7 +288,7 @@ async function initializeAnalyticsClient() {
       }
     }
     
-    // Stap 4: Als laatste optie, probeer de environment variable GOOGLE_APPLICATION_CREDENTIALS
+    // Stap 3: Als laatste optie, probeer de environment variable GOOGLE_APPLICATION_CREDENTIALS
     console.log("Trying with application default credentials...");
     try {
       // Gebruik de standaard authentication zonder expliciete credentials
@@ -354,14 +306,11 @@ async function initializeAnalyticsClient() {
       console.error("Error authenticating with application default credentials:", defaultAuthError.message);
       console.log("Error details:", defaultAuthError?.details || "No details available");
       
-      // Stap 5: Als noodoplossing, check of we de measurement ID kunnen gebruiken (werkt alleen voor basic rapportage)
+      // Stap 4: Als noodoplossing, check of we de measurement ID kunnen gebruiken (werkt alleen voor basic rapportage)
       const measurementId = process.env.NEXT_PUBLIC_GA_ID;
       if (measurementId && measurementId.startsWith('G-')) {
         console.log("Attempting to use GA4 Measurement ID as fallback:", measurementId);
         
-        // Let op: Dit is alleen een indicator dat we een measurement ID hebben
-        // De eigenlijke data-ophaal operatie moet aangepast worden om dit te gebruiken
-        // We geven de propertyId door als fallback, maar markeren dit in de client
         return { 
           analyticsDataClient: null, 
           propertyId: numericPropertyId, 
