@@ -185,7 +185,7 @@ function AdminLayoutWithPathname({
   ]
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#0A0A0A] overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#0A0A0A]">
       {/* Mobile header - branding only */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-[#121212] p-4 border-b border-[#2A2A2A]">
         <div className="flex items-center space-x-2">
@@ -202,8 +202,8 @@ function AdminLayoutWithPathname({
       </header>
 
       {/* Desktop header - fixed at top */}
-      <div className="hidden md:block fixed top-0 left-0 right-0 z-30 bg-[#121212] border-b border-[#2A2A2A]">
-        <div className="flex items-center h-[80px] pl-72 pr-8">
+      <div className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-[#121212] border-b border-[#2A2A2A]">
+        <div className="flex items-center h-16 pl-72 pr-8">
           <div className="text-xl font-bold text-white">Admin Panel</div>
         </div>
       </div>
@@ -214,7 +214,7 @@ function AdminLayoutWithPathname({
       </div>
 
       {/* Main content - adjusted for both mobile and desktop */}
-      <main className="flex-1 w-full overflow-y-auto md:pt-[80px] md:pl-64">
+      <main className="flex-1 w-full md:pt-16 md:pl-64">
         <div className={`p-4 md:p-8 ${isMobile ? 'pt-20 pb-20' : ''}`}>
           <Suspense fallback={
             <div className="flex h-full items-center justify-center">
