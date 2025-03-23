@@ -212,7 +212,40 @@ async function initializeAnalyticsClient() {
   console.log("Using numeric property ID for API calls:", numericPropertyId);
   
   try {
-    // Stap 1: Probeer eerst de GA_CREDENTIALS JSON als specifieke service account credentials
+    // Stap 1: Probeer eerst met het correcte key ID dat we in de screenshots zien
+    console.log("Trying with known key ID: 4fc6b8abe6c7ab28814ae613b56a8a8e1fe14e5f");
+    const clientEmail = process.env.GA_CLIENT_EMAIL || 'w4c-623@whisky4charity.iam.gserviceaccount.com';
+    const rawPrivateKey = process.env.GA_PRIVATE_KEY;
+    
+    if (clientEmail && rawPrivateKey) {
+      try {
+        // Formatteer de private key correct voor de omgeving
+        const privateKey = formatPrivateKey(rawPrivateKey);
+        
+        // Gebruik zeer expliciete credentials opzet en specificeer keyId
+        const analyticsDataClient = new BetaAnalyticsDataClient({
+          credentials: {
+            client_email: clientEmail,
+            private_key: privateKey,
+            private_key_id: '4fc6b8abe6c7ab28814ae613b56a8a8e1fe14e5f',
+            type: 'service_account',
+            project_id: 'whisky4charity'
+          }
+        });
+        
+        // Test de verbinding met een eenvoudige metadata request
+        await analyticsDataClient.getMetadata({
+          name: `properties/${numericPropertyId}`
+        });
+        
+        console.log("Successfully connected with known key ID and credentials");
+        return { analyticsDataClient, propertyId: numericPropertyId };
+      } catch (authError: any) {
+        console.error("Error authenticating with known key ID:", authError.message);
+      }
+    }
+    
+    // Stap 2: Probeer eerst de GA_CREDENTIALS JSON als specifieke service account credentials
     if (process.env.GA_CREDENTIALS) {
       console.log("Trying with explicit service account JSON credentials via GA_CREDENTIALS...");
       
@@ -254,7 +287,7 @@ async function initializeAnalyticsClient() {
       }
     }
     
-    // Stap 2: Gebruik de individuele environment variables als fallback
+    // Stap 3: Gebruik de individuele environment variables als fallback
     if (process.env.GA_CLIENT_EMAIL && process.env.GA_PRIVATE_KEY) {
       console.log("Trying with individual GA_CLIENT_EMAIL and GA_PRIVATE_KEY credentials...");
       const clientEmail = process.env.GA_CLIENT_EMAIL;
@@ -303,7 +336,7 @@ async function initializeAnalyticsClient() {
       }
     }
     
-    // Stap 3: Als laatste optie, probeer de environment variable GOOGLE_APPLICATION_CREDENTIALS
+    // Stap 4: Als laatste optie, probeer de environment variable GOOGLE_APPLICATION_CREDENTIALS
     console.log("Trying with application default credentials...");
     try {
       // Gebruik de standaard authentication zonder expliciete credentials
@@ -321,7 +354,7 @@ async function initializeAnalyticsClient() {
       console.error("Error authenticating with application default credentials:", defaultAuthError.message);
       console.log("Error details:", defaultAuthError?.details || "No details available");
       
-      // Stap 4: Als noodoplossing, check of we de measurement ID kunnen gebruiken (werkt alleen voor basic rapportage)
+      // Stap 5: Als noodoplossing, check of we de measurement ID kunnen gebruiken (werkt alleen voor basic rapportage)
       const measurementId = process.env.NEXT_PUBLIC_GA_ID;
       if (measurementId && measurementId.startsWith('G-')) {
         console.log("Attempting to use GA4 Measurement ID as fallback:", measurementId);
