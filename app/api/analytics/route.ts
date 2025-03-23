@@ -178,7 +178,6 @@ async function initializeAnalyticsClient() {
   const rawPrivateKey = process.env.GA_PRIVATE_KEY;
   const clientEmail = process.env.GA_CLIENT_EMAIL;
   const propertyId = process.env.GA_PROPERTY_ID;
-  const apiKey = process.env.GA_API_KEY;
 
   console.log("GA Property ID:", propertyId);
   
@@ -205,63 +204,25 @@ async function initializeAnalyticsClient() {
     console.log("Has newlines:", privateKey.includes("\n"));
     console.log("Count of lines:", privateKey.split("\n").length);
     
-    // Try different approaches to create the client
-    try {
-      // Approach 1: Using the standard GoogleAuth library directly
-      console.log("Trying with GoogleAuth approach...");
-      
-      // Using the google-auth-library directly to create JWT if available
-      try {
-        const { GoogleAuth } = require('google-auth-library');
-        const auth = new GoogleAuth({
-          credentials: {
-            client_email: clientEmail,
-            private_key: privateKey,
-          },
-          scopes: ['https://www.googleapis.com/auth/analytics.readonly']
-        });
-        
-        // Create client with explicit auth
-        const authClient = await auth.getClient();
-        const analyticsDataClient = new BetaAnalyticsDataClient({
-          auth: authClient
-        });
-        
-        // Test connection
-        await analyticsDataClient.getMetadata({
-          name: `properties/${propertyId}`
-        });
-        
-        console.log("Successfully validated Google Analytics credentials using GoogleAuth");
-        return { analyticsDataClient, propertyId };
-      } catch (authLibError: any) {
-        if (authLibError.code === 'MODULE_NOT_FOUND') {
-          console.log("google-auth-library not available, skipping this approach");
-        } else {
-          console.error("GoogleAuth approach failed:", authLibError.message);
-        }
+    // Create a simple credentials object for version 3.x of the library
+    console.log("Creating Analytics client with version 3.x compatible approach");
+    const analyticsDataClient = new BetaAnalyticsDataClient({
+      credentials: {
+        client_email: clientEmail,
+        private_key: privateKey
       }
-      
-      // Approach 2: Standard approach with credentials object
-      console.log("Trying standard credentials approach...");
-      const credentialsClient = new BetaAnalyticsDataClient({
-        credentials: {
-          client_email: clientEmail,
-          private_key: privateKey
-        }
-      });
-      
-      // Test connection
-      await credentialsClient.getMetadata({
+    });
+    
+    // Test the connection with a simple metadata request
+    try {
+      await analyticsDataClient.getMetadata({
         name: `properties/${propertyId}`
       });
-      
-      console.log("Successfully validated Google Analytics credentials using credentials object");
-      return { analyticsDataClient: credentialsClient, propertyId };
+      console.log("Successfully validated Google Analytics credentials");
+      return { analyticsDataClient, propertyId };
     } catch (error: any) {
-      console.error("All authentication methods failed");
-      console.error("Final error:", error.message);
-      throw new Error(`Failed to validate GA credentials. Please check your credentials and permissions.`);
+      console.error("Error during connection test:", error.message);
+      throw error;
     }
   } catch (error) {
     console.error('Error initializing Google Analytics client:', error);
