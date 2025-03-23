@@ -201,13 +201,20 @@ function AdminLayoutWithPathname({
         </button>
       </header>
 
+      {/* Desktop header - fixed at top */}
+      <div className="hidden md:block fixed top-0 left-0 right-0 z-30 bg-[#121212] border-b border-[#2A2A2A]">
+        <div className="flex items-center h-[80px] pl-72 pr-8">
+          <div className="text-xl font-bold text-white">Admin Panel</div>
+        </div>
+      </div>
+
       {/* Desktop sidebar */}
-      <div className="hidden md:block w-64 bg-[#121212] p-4 overflow-y-auto">
+      <div className="hidden md:block fixed top-0 left-0 bottom-0 w-64 bg-[#121212] p-4 overflow-y-auto z-40 border-r border-[#2A2A2A]">
         {renderSidebarContent()}
       </div>
 
       {/* Main content - adjusted for both mobile and desktop */}
-      <main className="flex-1 overflow-y-auto pt-0 pb-0 md:pt-0">
+      <main className="flex-1 w-full overflow-y-auto md:pt-[80px] md:pl-64">
         <div className={`p-4 md:p-8 ${isMobile ? 'pt-20 pb-20' : ''}`}>
           <Suspense fallback={
             <div className="flex h-full items-center justify-center">
