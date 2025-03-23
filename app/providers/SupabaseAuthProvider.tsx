@@ -37,18 +37,37 @@ export function SupabaseAuthProvider({
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    // Reset redirect flag from sessionStorage on provider mount
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('isRedirecting')
+    }
+    
     // Fetch initial session
     const getSession = async () => {
-      const { data, error } = await supabase.auth.getSession()
-      setSession(data.session)
-      setUser(data.session?.user || null)
-      setIsLoading(false)
+      try {
+        const { data, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('Error getting session:', error)
+          setSession(null)
+          setUser(null)
+        } else {
+          setSession(data.session)
+          setUser(data.session?.user || null)
+        }
+      } catch (err) {
+        console.error('Failed to get session:', err)
+        setSession(null)
+        setUser(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     getSession()
 
     // Set up listener for auth changes
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session ? 'Session exists' : 'No session')
       setSession(session)
       setUser(session?.user || null)
       setIsLoading(false)

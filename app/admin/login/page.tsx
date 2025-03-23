@@ -25,6 +25,13 @@ function LoginPageContent() {
 
   // Check for existing session and redirect if found
   useEffect(() => {
+    // Avoid redirect loops by setting a flag in sessionStorage
+    const isRedirecting = sessionStorage.getItem('isRedirecting')
+    if (isRedirecting === 'true') {
+      console.log('Already redirecting, preventing loop')
+      return
+    }
+
     console.log('Session status:', user ? 'authenticated' : 'unauthenticated', 'Session:', session);
     setDebugMsg(`Session status: ${user ? 'authenticated' : 'unauthenticated'}`);
 
@@ -32,6 +39,10 @@ function LoginPageContent() {
     const hasEmergencyCookie = document.cookie.includes('admin_bypass=true');
     if (hasEmergencyCookie) {
       setDebugMsg('Emergency access cookie detected. Redirecting to dashboard...');
+      
+      // Set redirecting flag
+      sessionStorage.setItem('isRedirecting', 'true')
+      
       window.location.href = '/admin/dashboard';
       return;
     }
@@ -39,6 +50,9 @@ function LoginPageContent() {
     if (user && session) {
       console.log('User is authenticated, redirecting to dashboard');
       setDebugMsg('Authenticated! Redirecting to: ' + callbackUrl);
+      
+      // Set redirecting flag
+      sessionStorage.setItem('isRedirecting', 'true')
       
       // Use setTimeout to ensure state updates complete before navigation
       setTimeout(() => {
@@ -49,12 +63,17 @@ function LoginPageContent() {
             : decodeURIComponent(callbackUrl);
         } catch (e) {
           console.error('Redirect error:', e);
-          // Fallback
+          // If there's an error with the callbackUrl, go to dashboard
           window.location.href = '/admin/dashboard';
         }
       }, 100);
     }
-  }, [user, session, callbackUrl])
+    
+    // Clean up redirecting flag when component unmounts
+    return () => {
+      sessionStorage.removeItem('isRedirecting')
+    }
+  }, [user, session, callbackUrl]);
 
   // Check and display cookies for debugging
   useEffect(() => {
