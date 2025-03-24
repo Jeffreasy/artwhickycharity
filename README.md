@@ -22,7 +22,6 @@ Een moderne, interactieve website voor het Art Whisky Charity project, gebouwd m
 
 ### Analytics & Monitoring
 - **Vercel Analytics**: Geïntegreerde website metrics
-- **Google Analytics**: Uitgebreide gebruikersanalyse
 - **Sentry Integration**: Error tracking en performance monitoring
 - **GDPR-Compliant**: Cookie consent en data privacy controls
 
@@ -73,9 +72,6 @@ NEXT_PUBLIC_CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
 # Sentry configuratie
 NEXT_PUBLIC_SENTRY_ENVIRONMENT=development
-
-# Analytics configuratie
-NEXT_PUBLIC_GA_ID=your_google_analytics_id
 ```
 
 ## 🏃‍♂️ Gebruik
@@ -180,7 +176,6 @@ artwhickycharity/
 
 - **Analytics & Monitoring**:
   - [Vercel Analytics](https://vercel.com/analytics) - Geïntegreerde web analytics
-  - [Google Analytics](https://analytics.google.com/) - Uitgebreide gebruikersanalyse
   - [Sentry](https://sentry.io/) - Error tracking en performance monitoring
 
 - **Hosting & Infrastructuur**:
@@ -269,12 +264,7 @@ De website is uitgerust met moderne monitoring tools:
    - User journey analyses
    - Performance metrics
 
-2. **Google Analytics**:
-   - Gedetailleerde gebruikersgegevens
-   - Conversion tracking
-   - Event monitoring
-
-3. **Sentry**:
+2. **Sentry**:
    - Error tracking
    - Performance monitoring
    - Issue alerts
