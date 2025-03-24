@@ -7,9 +7,7 @@ import { CartProvider } from '@/contexts/CartContext'
 import { Footer } from '@/globalComponents/ui/Footer/footer'
 import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
-import { Analytics } from '@vercel/analytics/react'
 import { CookieBanner } from '@/globalComponents/ui/CookieConsent'
-import { GoogleAnalyticsScript } from '@/globalComponents/ui/Analytics'
 import { SupabaseAuthProviderWrapper } from '@/app/providers/SupabaseAuthProviderWrapper'
 import SupabaseListener from '@/app/components/SupabaseListener'
 import { Suspense } from 'react'
@@ -52,8 +50,6 @@ export default function RootLayout({
               <HomeButton />
               <Footer />
               <CartButton />
-              <Analytics />
-              <GoogleAnalyticsScript />
               <CookieBanner />
             </CartProvider>
           </MenuProvider>

@@ -63,7 +63,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Simuleer het laden van data
-    // In een echte applicatie zou je hier API calls maken naar Google Analytics en Sentry
+    // In een echte applicatie zou je hier API calls maken naar Sentry
     const timer = setTimeout(() => {
       setStats({
         visitors: 1254,
@@ -169,16 +169,6 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Link
-            href="/admin/analytics"
-            className="flex items-center justify-between rounded-lg bg-[#1A1A1A] p-4 transition-colors hover:bg-[#252525]"
-          >
-            <div>
-              <h3 className="text-lg font-medium text-white">View Analytics</h3>
-              <p className="text-sm text-gray-400">Check website performance metrics</p>
-            </div>
-            <FaChartLine className="h-8 w-8 text-amber-500" />
-          </Link>
           <Link
             href="/admin/errors"
             className="flex items-center justify-between rounded-lg bg-[#1A1A1A] p-4 transition-colors hover:bg-[#252525]"
