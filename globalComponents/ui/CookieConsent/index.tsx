@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import CookieConsent from 'react-cookie-consent';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { updateAnalyticsConsent, hasAnalyticsConsent } from '@/utils/analytics';
 
 export const CookieBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -24,12 +23,12 @@ export const CookieBanner = () => {
 
   const handleAccept = () => {
     setIsVisible(false);
-    updateAnalyticsConsent(true);
+    localStorage.setItem('cookieConsent', 'true');
   };
 
   const handleDecline = () => {
     setIsVisible(false);
-    updateAnalyticsConsent(false);
+    localStorage.setItem('cookieConsent', 'false');
   };
 
   if (!isVisible) return null;
@@ -54,7 +53,7 @@ export const CookieBanner = () => {
       <div className="flex items-start md:items-center flex-col md:flex-row pr-8">
         <div className="text-amber-500 font-bold text-xl mr-2">Cookies</div>
         <p className="text-sm text-gray-300">
-          Deze website gebruikt cookies en Google Analytics om uw surfervaring te verbeteren en voor analytische doeleinden.
+          Deze website gebruikt cookies om uw surfervaring te verbeteren.
         </p>
       </div>
       <button 
