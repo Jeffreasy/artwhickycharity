@@ -12,6 +12,7 @@ import { SupabaseAuthProviderWrapper } from '@/app/providers/SupabaseAuthProvide
 import SupabaseListener from '@/app/components/SupabaseListener'
 import { Suspense } from 'react'
 import { Loading } from '@/globalComponents/ui/Loading'
+import { MatomoProvider } from '@/app/providers/MatomoProvider'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -37,23 +38,25 @@ export default function RootLayout({
           'h-full bg-black text-white antialiased font-sans'
         )}
       >
-        <SupabaseAuthProviderWrapper>
-          <SupabaseListener />
-          <MenuProvider>
-            <CartProvider>
-              <Navigation />
-              <main>
-                <Suspense fallback={<Loading />}>
-                  {children}
-                </Suspense>
-              </main>
-              <HomeButton />
-              <Footer />
-              <CartButton />
-              <CookieBanner />
-            </CartProvider>
-          </MenuProvider>
-        </SupabaseAuthProviderWrapper>
+        <MatomoProvider>
+          <SupabaseAuthProviderWrapper>
+            <SupabaseListener />
+            <MenuProvider>
+              <CartProvider>
+                <Navigation />
+                <main>
+                  <Suspense fallback={<Loading />}>
+                    {children}
+                  </Suspense>
+                </main>
+                <HomeButton />
+                <Footer />
+                <CartButton />
+                <CookieBanner />
+              </CartProvider>
+            </MenuProvider>
+          </SupabaseAuthProviderWrapper>
+        </MatomoProvider>
       </body>
     </html>
   )
