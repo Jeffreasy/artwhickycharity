@@ -30,11 +30,17 @@ export function MatomoProvider({ children }: { children: React.ReactNode }) {
   // Track page views
   useEffect(() => {
     if (MATOMO_CONFIG.ENABLE_TRACKING && window._mtm) {
-      window._mtm.push({
-        'event': 'page_view',
-        'page_path': pathname,
-        'page_search': searchParams.toString()
-      });
+      // Add a small delay to ensure the page has fully loaded
+      const timeoutId = setTimeout(() => {
+        window._mtm.push({
+          'event': 'page_view',
+          'page_path': pathname,
+          'page_search': searchParams.toString(),
+          'page_url': window.location.href
+        });
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [pathname, searchParams]);
 
