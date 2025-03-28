@@ -166,7 +166,7 @@ export async function POST(request: Request) {
           price: item.price
         }
       }),
-      notify_admin: false,
+      notify_admin: true,
       admin_email: process.env.WFC_ADMIN_EMAIL || 'laventejeffrey@gmail.com',
       site_url: process.env.WFC_SITE_URL || 'https://whiskyforcharity.com',
       template_type: "wfc_order_confirmation"
