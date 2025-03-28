@@ -5,20 +5,22 @@ import type { Order } from '@/types/order'
 export const adminEmail = 'info@whiskyforcharity.com'
 const noreplyEmail = 'noreply@whiskyforcharity.com'
 
-// Configureer nodemailer transporter
+// Configureer nodemailer transporter - configuratie gebaseerd op Argeweb DNS
 const transporter = nodemailer.createTransport({
-  host: 'arg-plplcl14.argewebhosting.nl',
+  host: 'maildrop1.argewebhosting.nl', // Gebruik primaire MX-record
   port: 465,
-  secure: true, // true voor 465, false voor andere poorten
+  secure: true,
   auth: {
-    user: 'noreply@whiskyforcharity.com', // volledige e-mailadres inclusief domein
-    pass: 'Oprotten@12',
+    user: noreplyEmail, // Volledige e-mailadres
+    pass: 'Oprotten@12' // Wachtwoord
   },
-  logger: true, // meer logs voor debugging
-  debug: true, // voor ontwikkelomgeving
+  pool: true, // Gebruik connection pooling
+  maxConnections: 5, // Maximum aantal gelijktijdige verbindingen
+  maxMessages: 100, // Maximum aantal berichten per verbinding
+  rateDelta: 1000, // Tijd tussen opeenvolgende berichten
+  rateLimit: 5, // Maximum aantal berichten per seconde
   tls: {
-    rejectUnauthorized: false, // certificaat validatie uitschakelen
-    ciphers: 'SSLv3'
+    rejectUnauthorized: false // Accepteer zelf-ondertekende certificaten
   }
 })
 
