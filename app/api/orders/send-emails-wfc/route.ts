@@ -150,6 +150,10 @@ export async function POST(request: Request) {
       order_id: order.id,
       customer_name: customer.name,
       customer_email: customer.email,
+      customer_address: customer.address,
+      customer_postal: customer.postalCode,
+      customer_city: customer.city,
+      customer_country: customer.country,
       total_amount: order.total_amount,
       items: orderItems.map((item: any) => {
         const product = products.find((p: any) => p.id === item.product_id)
@@ -165,7 +169,7 @@ export async function POST(request: Request) {
       notify_admin: true,
       admin_email: process.env.WFC_ADMIN_EMAIL || 'laventejeffrey@gmail.com',
       site_url: process.env.WFC_SITE_URL || 'https://whiskyforcharity.com',
-      template_type: "wfc_order"
+      template_type: "wfc_order_confirmation"
     }
     
     // Log de aanvraag body voor debugging
