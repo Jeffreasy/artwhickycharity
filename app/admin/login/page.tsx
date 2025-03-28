@@ -18,39 +18,50 @@ export default function AdminLogin() {
   const logoRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   
+  const [isHydrated, setIsHydrated] = useState(false)
+  
+  // Set hydrated state
   useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+  
+  useEffect(() => {
+    if (!isHydrated) return // Skip animations until hydrated
+    
     if (user) {
       router.push('/admin/dashboard')
     } else {
       // Animaties voor login pagina
       const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
       
-      timeline
-        .fromTo(
-          logoRef.current,
-          { scale: 0, opacity: 0 },
-          { scale: 1, opacity: 1, duration: 0.8 }
-        )
-        .fromTo(
-          titleRef.current,
-          { y: -20, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.6 },
-          '-=0.4'
-        )
-        .fromTo(
-          '.form-field',
-          { y: 20, opacity: 0 },
-          { y: 0, opacity: 1, stagger: 0.15, duration: 0.6 },
-          '-=0.3'
-        )
-        .fromTo(
-          '.login-btn',
-          { y: 20, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.6 },
-          '-=0.2'
-        )
+      if (logoRef.current && titleRef.current) {
+        timeline
+          .fromTo(
+            logoRef.current,
+            { scale: 0, opacity: 0 },
+            { scale: 1, opacity: 1, duration: 0.8 }
+          )
+          .fromTo(
+            titleRef.current,
+            { y: -20, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.6 },
+            '-=0.4'
+          )
+          .fromTo(
+            '.form-field',
+            { y: 20, opacity: 0 },
+            { y: 0, opacity: 1, stagger: 0.15, duration: 0.6 },
+            '-=0.3'
+          )
+          .fromTo(
+            '.login-btn',
+            { y: 20, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.6 },
+            '-=0.2'
+          )
+      }
     }
-  }, [user, router])
+  }, [isHydrated, user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,18 +77,18 @@ export default function AdminLogin() {
       setIsLoading(true)
       
       // GSAP animatie voor login attempt
-      gsap.to('.login-btn', {
-        scale: 0.95,
-        duration: 0.2,
-        yoyo: true,
-        repeat: 1
-      })
-      
-      const { error } = await signIn(email, password)
-      
-      if (error) {
-        throw new Error(error.message || 'Login failed')
+      if (isHydrated) {
+        gsap.to('.login-btn', {
+          scale: 0.95,
+          duration: 0.2,
+          yoyo: true,
+          repeat: 1
+        })
       }
+      
+      // Aanroepen van signIn zonder verwachting van een return waarde (void)
+      // De redirect wordt afgehandeld in de AuthProvider
+      await signIn(email, password)
       
       // Navigatie gebeurt automatisch in useEffect als gebruiker is ingelogd
       
@@ -92,22 +103,24 @@ export default function AdminLogin() {
   
   // Schud formulier bij error
   const shakeForm = () => {
-    gsap.fromTo(
-      formRef.current,
-      { x: -10 },
-      { x: 0, duration: 0.1, repeat: 3, yoyo: true }
-    )
+    if (isHydrated && formRef.current) {
+      gsap.fromTo(
+        formRef.current,
+        { x: -10 },
+        { x: 0, duration: 0.1, repeat: 3, yoyo: true }
+      )
+    }
   }
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4">
-      <div ref={logoRef} className="mb-6 w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
+      <div ref={logoRef} className={`mb-6 w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center shadow-lg ${!isHydrated ? 'opacity-0' : ''}`}>
         <span className="text-white font-bold text-xl">WFC</span>
       </div>
       
       <div className="w-full max-w-md">
         <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl shadow-xl border border-gray-700/50">
-          <h1 ref={titleRef} className="text-2xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">
+          <h1 ref={titleRef} className={`text-2xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300 ${!isHydrated ? 'opacity-0' : ''}`}>
             Admin Login
           </h1>
           
@@ -118,7 +131,7 @@ export default function AdminLogin() {
           )}
           
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-            <div className="form-field">
+            <div className={`form-field ${!isHydrated ? 'opacity-0' : ''}`}>
               <label className="block text-gray-400 mb-2 text-sm font-medium" htmlFor="email">
                 Email Address
               </label>
@@ -139,7 +152,7 @@ export default function AdminLogin() {
               </div>
             </div>
             
-            <div className="form-field">
+            <div className={`form-field ${!isHydrated ? 'opacity-0' : ''}`}>
               <label className="block text-gray-400 mb-2 text-sm font-medium" htmlFor="password">
                 Password
               </label>
@@ -163,7 +176,7 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={isLoading}
-              className="login-btn w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-blue-700/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-70 disabled:cursor-not-allowed"
+              className={`login-btn w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-blue-700/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-70 disabled:cursor-not-allowed ${!isHydrated ? 'opacity-0' : ''}`}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
