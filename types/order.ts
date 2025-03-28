@@ -18,6 +18,7 @@ export interface Order {
   items: OrderItem[]
   status: 'pending' | 'paid' | 'completed' | 'cancelled'
   payment_reference?: string
+  emails_sent?: boolean
   created_at: string
   updated_at: string
 }
@@ -37,6 +38,7 @@ create table orders (
   total_amount numeric not null,
   status text not null default 'pending',
   payment_reference text,
+  emails_sent boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -74,4 +76,7 @@ before insert on orders
 for each row
 when (new.order_number is null)
 execute function generate_order_number();
+
+-- SQL voor het toevoegen van emails_sent kolom aan bestaande tabel:
+-- ALTER TABLE orders ADD COLUMN IF NOT EXISTS emails_sent boolean default false;
 */ 

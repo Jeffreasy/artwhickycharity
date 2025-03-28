@@ -39,6 +39,12 @@ export function CheckoutModal({
   const [success, setSuccess] = useState<boolean>(false)
   const [orderNumber, setOrderNumber] = useState<string>('')
   const [isDownloading, setIsDownloading] = useState(false)
+  const [isSendingEmails, setIsSendingEmails] = useState(false)
+  const [emailStatus, setEmailStatus] = useState<{
+    sent: boolean,
+    customerEmailSent?: boolean,
+    adminEmailSent?: boolean
+  } | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -64,6 +70,9 @@ export function CheckoutModal({
       // Set the order number from Supabase
       setOrderNumber(order.order_number)
       
+      // Send confirmation emails
+      await sendOrderEmails(order.id)
+      
       // Show success message
       setSuccess(true)
 
@@ -72,6 +81,42 @@ export function CheckoutModal({
       setError('Something went wrong processing your order. Please try again.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const sendOrderEmails = async (orderId: string) => {
+    try {
+      setIsSendingEmails(true)
+      
+      const response = await fetch('/api/orders/send-emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId }),
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Email sending error:', error)
+        setEmailStatus({ sent: false })
+        return
+      }
+      
+      const result = await response.json()
+      setEmailStatus({
+        sent: true,
+        customerEmailSent: result.customerEmailSent,
+        adminEmailSent: result.adminEmailSent
+      })
+      
+      console.log('Emails sent:', result)
+      
+    } catch (error) {
+      console.error('Failed to send confirmation emails:', error)
+      setEmailStatus({ sent: false })
+    } finally {
+      setIsSendingEmails(false)
     }
   }
 
@@ -175,6 +220,14 @@ export function CheckoutModal({
             <h2 className="text-2xl font-bold uppercase">Whisky For Charity</h2>
             <h3 className="text-xl mt-2">INVOICE</h3>
           </div>
+          
+          {emailStatus && (
+            <div className={`mb-4 p-3 rounded ${emailStatus.sent ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'}`}>
+              {emailStatus.sent 
+                ? `A confirmation email has been sent to ${formData.email}.` 
+                : 'We were unable to send a confirmation email. Please save this invoice for your records.'}
+            </div>
+          )}
           
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
