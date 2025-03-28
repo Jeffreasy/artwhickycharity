@@ -147,48 +147,10 @@ export async function POST(request: Request) {
     
     // Prepare data for WFC email service
     const backendRequestData = {
-      OrderID: order.id,                     // Exact volgens struct format
-      OrderNumber: order.order_number,
-      CustomerName: customer.name,
-      CustomerEmail: customer.email,
-      
-      // Lowercase versies
-      orderID: order.id,
-      orderId: order.id, 
-      orderid: order.id,
-      
-      customerName: customer.name,
-      customername: customer.name,
-      
-      customerEmail: customer.email,
-      customeremail: customer.email,
-      
-      CustomerAddress: customer.address,
-      customerAddress: customer.address,
-      
-      CustomerCity: customer.city,
-      customerCity: customer.city,
-      
-      CustomerPostalCode: customer.postalCode,
-      customerPostalCode: customer.postalCode,
-      
-      CustomerCountry: customer.country,
-      customerCountry: customer.country,
-      
-      TotalAmount: order.total_amount,
-      totalAmount: order.total_amount,
-      
-      Items: orderItems.map((item: any) => {
-        const product = products.find((p: any) => p.id === item.product_id)
-        return {
-          ID: item.id || `item_${Math.random().toString(36).substr(2, 9)}`,
-          OrderID: order.id,
-          ProductID: item.product_id || '',
-          ProductName: product?.name || 'Unknown Product',
-          Quantity: item.quantity,
-          Price: item.price
-        }
-      }),
+      order_id: order.id,
+      customer_name: customer.name,
+      customer_email: customer.email,
+      total_amount: order.total_amount,
       items: orderItems.map((item: any) => {
         const product = products.find((p: any) => p.id === item.product_id)
         return {
@@ -200,15 +162,10 @@ export async function POST(request: Request) {
           price: item.price
         }
       }),
-      
-      NotifyAdmin: true,
-      notifyAdmin: true,
-      
-      AdminEmail: process.env.WFC_ADMIN_EMAIL || 'laventejeffrey@gmail.com',
-      adminEmail: process.env.WFC_ADMIN_EMAIL || 'laventejeffrey@gmail.com',
-      
-      SiteURL: process.env.WFC_SITE_URL || 'https://whiskyforcharity.com',
-      siteURL: process.env.WFC_SITE_URL || 'https://whiskyforcharity.com'
+      notify_admin: true,
+      admin_email: process.env.WFC_ADMIN_EMAIL || 'laventejeffrey@gmail.com',
+      site_url: process.env.WFC_SITE_URL || 'https://whiskyforcharity.com',
+      template_type: "order_confirmation"
     }
     
     // Log de aanvraag body voor debugging
