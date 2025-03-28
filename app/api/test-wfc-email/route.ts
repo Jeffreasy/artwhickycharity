@@ -34,11 +34,11 @@ async function sendTestEmailWithWFC() {
     const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
     
     try {
-      const response = await fetch(`${backendUrl}${endpoint}`, {
+      const apiKey = process.env.WFC_API_KEY || 'wfc_email_api_key_2025'
+      const response = await fetch(`${backendUrl}${endpoint}?apiKey=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.WFC_API_KEY || 'wfc_email_api_key_2025'}`,
         },
         body: JSON.stringify(testData),
         signal: controller.signal

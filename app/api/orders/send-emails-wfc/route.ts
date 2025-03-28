@@ -22,11 +22,11 @@ async function sendOrderEmailWithWFC(orderData: any) {
     
     try {
       console.log('Sending email through WFC email service:', `${backendUrl}${endpoint}`)
-      const response = await fetch(`${backendUrl}${endpoint}`, {
+      const apiKey = process.env.WFC_API_KEY || 'wfc_email_api_key_2025'
+      const response = await fetch(`${backendUrl}${endpoint}?apiKey=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.WFC_API_KEY || 'wfc_email_api_key_2025'}`,
         },
         body: JSON.stringify(orderData),
         signal: controller.signal
