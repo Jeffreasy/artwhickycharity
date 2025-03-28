@@ -1,39 +1,13 @@
-import nodemailer from 'nodemailer'
+import sgMail from '@sendgrid/mail'
 import type { Order } from '@/types/order'
+
+// Configureer SendGrid met API key
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || "SG.YOUR_API_KEY";
+sgMail.setApiKey(SENDGRID_API_KEY)
 
 // E-mail configuratie
 export const adminEmail = 'info@whiskyforcharity.com'
 const noreplyEmail = 'noreply@whiskyforcharity.com'
-
-// Configureer nodemailer transporter
-const transporter = nodemailer.createTransport({
-  host: 'arg-plplcl14.argewebhosting.nl',
-  port: 465,
-  secure: true, // true voor 465, false voor andere poorten
-  auth: {
-    user: 'noreply@whiskyforcharity.com', // volledige e-mailadres inclusief domein
-    pass: 'Oprotten@12',
-  },
-  logger: true, // meer logs voor debugging
-  debug: true, // voor ontwikkelomgeving
-  tls: {
-    rejectUnauthorized: false, // certificaat validatie uitschakelen
-    ciphers: 'SSLv3'
-  }
-})
-
-// Controleer of de email is geconfigureerd en werkt
-export async function verifyEmailConfig() {
-  try {
-    console.log('Verifying email configuration...')
-    const result = await transporter.verify()
-    console.log('Email service is ready to take messages')
-    return true
-  } catch (error) {
-    console.error('Error verifying email configuration:', error)
-    return false
-  }
-}
 
 // Functie om datum in NL format te formatteren
 function formatDate(date: Date): string {
@@ -211,15 +185,20 @@ export async function sendCustomerOrderConfirmation(order: Order): Promise<boole
     // Genereer HTML
     const htmlContent = generateCustomerEmailHTML(order)
     
-    // Verstuur e-mail
-    const info = await transporter.sendMail({
-      from: `"Whisky for Charity" <${noreplyEmail}>`,
+    // Verstuur e-mail via SendGrid
+    const msg = {
       to: order.customer_email,
+      from: {
+        email: noreplyEmail,
+        name: 'Whisky for Charity'
+      },
       subject: `Order Confirmation - ${order.order_number}`,
-      html: htmlContent
-    })
+      html: htmlContent,
+    }
     
-    console.log('Customer confirmation email sent:', info.messageId)
+    console.log('Sending customer email via SendGrid...')
+    await sgMail.send(msg)
+    console.log('Customer confirmation email sent successfully')
     return true
   } catch (error) {
     console.error('Error sending customer confirmation email:', error)
@@ -233,15 +212,20 @@ export async function sendAdminOrderNotification(order: Order): Promise<boolean>
     // Genereer HTML
     const htmlContent = generateAdminEmailHTML(order)
     
-    // Verstuur e-mail
-    const info = await transporter.sendMail({
-      from: `"Whisky for Charity System" <${noreplyEmail}>`,
+    // Verstuur e-mail via SendGrid
+    const msg = {
       to: adminEmail,
+      from: {
+        email: noreplyEmail,
+        name: 'Whisky for Charity System'
+      },
       subject: `New Order Received - ${order.order_number}`,
-      html: htmlContent
-    })
+      html: htmlContent,
+    }
     
-    console.log('Admin notification email sent:', info.messageId)
+    console.log('Sending admin email via SendGrid...')
+    await sgMail.send(msg)
+    console.log('Admin notification email sent successfully')
     return true
   } catch (error) {
     console.error('Error sending admin notification email:', error)
@@ -260,5 +244,29 @@ export async function sendOrderEmails(order: Order): Promise<{
   return {
     customerEmailSent,
     adminEmailSent
+  }
+}
+
+// Test functie voor SendGrid
+export async function testSendgrid(): Promise<boolean> {
+  try {
+    const msg = {
+      to: 'laventejeffrey@gmail.com',
+      from: {
+        email: noreplyEmail,
+        name: 'Whisky for Charity Test'
+      },
+      subject: 'Test Email from SendGrid',
+      text: 'This is a test email sent via SendGrid',
+      html: '<strong>This is a test email sent via SendGrid</strong>',
+    }
+    
+    console.log('Sending test email via SendGrid...')
+    await sgMail.send(msg)
+    console.log('Test email sent successfully')
+    return true
+  } catch (error) {
+    console.error('SendGrid test failed:', error)
+    return false
   }
 } 

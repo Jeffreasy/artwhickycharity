@@ -9,13 +9,15 @@ const testTransporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: noreplyEmail,
+    user: 'noreply@whiskyforcharity.com', // volledige e-mailadres inclusief domein
     pass: 'Oprotten@12',
   },
+  logger: true, // meer logs voor debugging
+  debug: true, // voor ontwikkelomgeving
   tls: {
-    rejectUnauthorized: false
-  },
-  debug: true
+    rejectUnauthorized: false, // certificaat validatie uitschakelen
+    ciphers: 'SSLv3'
+  }
 })
 
 // API route om e-mailconfiguratie te testen

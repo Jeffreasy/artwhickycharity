@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { sendOrderEmails } from '@/lib/email'
+import { sendOrderEmails } from '@/lib/email-sendgrid'
 import { Order, OrderItem } from '@/types/order'
 
 interface OrderItemDB {
@@ -128,7 +128,8 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // E-mails versturen
+    // E-mails versturen via SendGrid
+    console.log('Sending emails using SendGrid...')
     const { customerEmailSent, adminEmailSent } = await sendOrderEmails(orderData)
     
     // Log resultaten en reageer met status
