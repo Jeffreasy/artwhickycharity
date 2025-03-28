@@ -85,10 +85,6 @@ export default function AdminDashboard() {
     return null
   }
   
-  const openGoogleAnalytics = () => {
-    window.open('https://analytics.google.com/analytics/web', '_blank')
-  }
-
   // Calculate dashboard stats
   const totalOrders = orders.length
   const totalProducts = products.length
@@ -108,12 +104,6 @@ export default function AdminDashboard() {
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white transition-colors"
           >
             Analytics
-          </button>
-          <button
-            onClick={openGoogleAnalytics}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md text-white transition-colors"
-          >
-            Google Analytics
           </button>
           <button
             onClick={() => signOut()}
