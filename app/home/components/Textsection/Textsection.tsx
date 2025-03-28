@@ -158,7 +158,11 @@ export function TextSection({ initialSections }: TextSectionProps) {
         return (
           <div 
             key={`line-${lineIndex}`} 
-            className={`h-8 sm:h-10 md:h-12 w-full`}
+            className={`w-full ${
+              styleType === 'main' || styleType === 'purpose'
+                ? 'h-10 sm:h-12 md:h-16'
+                : 'h-6 sm:h-8 md:h-10'
+            }`}
           />
         )
       }
@@ -166,15 +170,16 @@ export function TextSection({ initialSections }: TextSectionProps) {
       // Split de lijn in woorden
       const words = line.split(' ')
       
-      // Bepaal de lijnhoogtes per type
-      const lineHeightClass = styleType === 'main' || styleType === 'purpose'
-        ? 'leading-tight'  // Strakker voor grote tekst
-        : 'leading-relaxed'  // Ruimer voor kleine tekst
-      
       return (
         <div 
           key={`line-${lineIndex}`} 
-          className={`flex flex-wrap ${lineHeightClass} mb-1 sm:mb-2 md:mb-3`}
+          className={`
+            flex flex-wrap 
+            ${styleType === 'main' || styleType === 'purpose'
+              ? 'mb-2 sm:mb-3 md:mb-5 leading-[1.15] sm:leading-[1.2] md:leading-[1.25]'
+              : 'mb-1 sm:mb-2 md:mb-3 leading-[1.3] sm:leading-[1.4] md:leading-[1.5]'
+            }
+          `}
         >
           {words.map((word, wordIndex) => {
             // Skip lege woorden
@@ -185,9 +190,15 @@ export function TextSection({ initialSections }: TextSectionProps) {
               return (
                 <span 
                   key={`word-${lineIndex}-${wordIndex}`}
-                  className="text-gray-500 block h-4 sm:h-5 md:h-6 w-full my-3 sm:my-4 md:my-5"
+                  className={`
+                    text-gray-500 block w-full 
+                    ${styleType === 'main' || styleType === 'purpose'
+                      ? 'my-6 sm:my-7 md:my-8 h-[2px] sm:h-[3px] md:h-[4px]'
+                      : 'my-4 sm:my-5 md:my-6 h-[1px] sm:h-[2px] md:h-[3px]'
+                    }
+                  `}
                 >
-                  -
+                  <div className="w-full h-full bg-gray-500 opacity-40"></div>
                 </span>
               )
             }
@@ -199,14 +210,14 @@ export function TextSection({ initialSections }: TextSectionProps) {
                   className={`
                     ${styleType}-word 
                     word-span
-                    inline-block 
+                    inline-flex 
+                    items-center
                     ${styleType === 'main' || styleType === 'purpose'
                       ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
                       : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
                     } 
                     tracking-wide
                     cursor-default
-                    align-baseline
                   `}
                 >
                   {word}
@@ -215,14 +226,14 @@ export function TextSection({ initialSections }: TextSectionProps) {
                 {wordIndex < words.length - 1 && (
                   <span 
                     className={`
-                      inline-block 
-                      align-baseline
+                      inline-block
                       ${styleType === 'main' || styleType === 'purpose'
-                        ? 'w-2 sm:w-2.5 md:w-3 text-xl sm:text-2xl md:text-[2.75rem]'
-                        : 'w-1.5 sm:w-2 md:w-2.5 text-base sm:text-lg md:text-xl'
+                        ? 'w-2 sm:w-2.5 md:w-3'
+                        : 'w-1.5 sm:w-2 md:w-2.5'
                       }
                     `}
-                  >&nbsp;</span>
+                    aria-hidden="true"
+                  ></span>
                 )}
               </React.Fragment>
             )
@@ -238,7 +249,7 @@ export function TextSection({ initialSections }: TextSectionProps) {
         {sections?.map((section) => (
           <div 
             key={section.id}
-            className={`mb-20 sm:mb-28 md:mb-36 ${
+            className={`mb-24 sm:mb-32 md:mb-40 ${
               section.style_type === 'impact' || section.style_type === 'sip' 
                 ? 'flex justify-end' 
                 : ''
