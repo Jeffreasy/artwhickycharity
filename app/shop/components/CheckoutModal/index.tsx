@@ -88,12 +88,23 @@ export function CheckoutModal({
     try {
       setIsSendingEmails(true)
       
-      const response = await fetch('/api/orders/send-emails', {
+      // Using the DKL Email Service instead of our previous email approach
+      const response = await fetch('/api/orders/send-emails-dkl', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify({ 
+          orderId,
+          customer: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            address: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+            country: formData.country
+          }
+        }),
       })
       
       if (!response.ok) {
@@ -110,7 +121,7 @@ export function CheckoutModal({
         adminEmailSent: result.adminEmailSent
       })
       
-      console.log('Emails sent:', result)
+      console.log('Emails sent via DKL Email Service:', result)
       
     } catch (error) {
       console.error('Failed to send confirmation emails:', error)

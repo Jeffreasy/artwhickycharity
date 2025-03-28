@@ -1,99 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
 
-// Configuratie voor testen
-const testEmail = async () => {
+// This function skips actual email sending during build time
+export async function GET() {
+  // Detect if we're in a build environment (Vercel)
+  const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
+  
+  if (isBuildTime) {
+    console.log('Skipping email test during build time')
+    return NextResponse.json({
+      message: 'Email test skipped during build',
+      skipped: true
+    })
+  }
+  
   try {
-    console.log('Setting up email test with Argeweb configuration...');
+    console.log('Starting email test...')
+    console.log('Setting up email test with Argeweb configuration...')
     
-    // Configureer transporter met Argeweb MX record
-    const transporter = nodemailer.createTransport({
-      host: 'maildrop1.argewebhosting.nl', // Primaire MX-record
+    // Only require these modules when not in build time to prevent blocking
+    const nodemailer = await import('nodemailer')
+    
+    // Create a test transporter
+    const transporter = nodemailer.default.createTransport({
+      host: process.env.SMTP_HOST || 'maildrop1.argewebhosting.nl',
       port: 465,
       secure: true,
       auth: {
-        user: 'noreply@whiskyforcharity.com',
-        pass: 'Oprotten@12'
+        user: 'info@whiskyforcharity.com',
+        pass: process.env.SMTP_PASSWORD || 'Oprotten@12'
       },
-      tls: {
-        rejectUnauthorized: false // Accepteer zelf-ondertekende certificaten
-      },
-      debug: true, // Debug logging voor ontwikkeling
-      logger: true // Meer gedetailleerde logs
-    });
-
-    // Verbinding verifiëren
-    console.log('Verifying SMTP connection...');
-    await transporter.verify();
-    console.log('SMTP connection successfully verified!');
-
-    // Testgegevens voor e-mail
-    const testTo = 'laventejeffrey@gmail.com';
-    const testHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h1 style="color: #333;">Test Email van Whisky for Charity</h1>
-        <p>Dit is een test e-mail verzonden op: ${new Date().toLocaleString('nl-NL')}</p>
-        <p>Als je deze e-mail ontvangt, betekent dit dat de e-mailconfiguratie correct werkt!</p>
-        <div style="margin-top: 20px; padding: 15px; background-color: #f8f8f8; border-radius: 5px;">
-          <p style="margin: 0;">Met vriendelijke groet,<br>Whisky for Charity Team</p>
-        </div>
-      </div>
-    `;
-
-    // Verstuur test e-mail
-    console.log(`Sending test email to ${testTo}...`);
-    const info = await transporter.sendMail({
-      from: '"Whisky for Charity Test" <noreply@whiskyforcharity.com>',
-      to: testTo,
-      subject: 'Test Email Configuratie',
-      text: 'Als je dit kunt lezen, werkt de e-mailconfiguratie correct!',
-      html: testHtml
-    });
-
-    console.log('Email sent successfully!');
-    console.log('Message ID:', info.messageId);
+      connectionTimeout: 5000, // 5 seconds timeout
+      greetingTimeout: 5000,
+      socketTimeout: 5000
+    })
     
-    // Preview URL voor Ethereal
-    if (info.messageId && nodemailer.getTestMessageUrl(info)) {
-      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    console.log('Verifying SMTP connection...')
+    
+    try {
+      // Set a timeout for the verify operation
+      const verifyPromise = transporter.verify()
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SMTP verification timed out')), 5000)
+      )
+      
+      await Promise.race([verifyPromise, timeoutPromise])
+      console.log('SMTP connection verified successfully')
+    } catch (error) {
+      console.error('SMTP Verification failed:', error)
+      return NextResponse.json({
+        error: 'Failed to verify SMTP connection',
+        details: (error as Error).message
+      }, { status: 500 })
     }
     
-    return { 
-      success: true, 
-      messageId: info.messageId,
-      previewUrl: nodemailer.getTestMessageUrl(info) || undefined 
-    };
-  } catch (error: any) {
-    console.error('SMTP error:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Unknown error',
-      stack: error.stack,
-      code: error.code
-    };
-  }
-};
-
-// API route om e-mailconfiguratie te testen
-export async function GET(request: NextRequest) {
-  try {
-    console.log('Starting email test...');
-    const result = await testEmail();
-    
-    return NextResponse.json({
-      success: result.success,
-      message: result.success ? 'E-mail test succesvol' : 'E-mail test mislukt',
-      details: result
-    });
+    // Try to send a test email
+    try {
+      console.log('Sending test email...')
+      const info = await transporter.sendMail({
+        from: 'info@whiskyforcharity.com',
+        to: 'laventejeffrey@gmail.com',
+        subject: 'Test Email from Whisky For Charity',
+        text: 'This is a test email from the Whisky For Charity website.',
+        html: '<p>This is a test email from the <b>Whisky For Charity</b> website.</p>'
+      })
+      
+      console.log('Email sent successfully:', info.messageId)
+      
+      return NextResponse.json({
+        message: 'Test email sent successfully',
+        messageId: info.messageId
+      })
+    } catch (error) {
+      console.error('Failed to send test email:', error)
+      return NextResponse.json({
+        error: 'Failed to send test email',
+        details: (error as Error).message
+      }, { status: 500 })
+    }
   } catch (error) {
-    console.error('Test email failed:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        details: error
-      },
-      { status: 500 }
-    );
+    console.error('Error in test-email API route:', error)
+    return NextResponse.json({
+      error: 'An unexpected error occurred',
+      details: (error as Error).message
+    }, { status: 500 })
   }
 } 
