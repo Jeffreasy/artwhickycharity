@@ -34,7 +34,7 @@ async function sendTestEmailWithWFC() {
     const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
     
     try {
-      const apiKey = process.env.WFC_API_KEY || 'wfc_email_api_key_2025'
+      const apiKey = process.env.WFC_API_KEY || 'dkl_metrics_api_key_2025'
       
       const response = await fetch(`${backendUrl}${endpoint}`, {
         method: 'POST',
