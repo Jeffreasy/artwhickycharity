@@ -98,12 +98,20 @@ export default function AdminDashboard() {
           <h1 className="text-2xl font-bold mb-2">Admin Dashboard</h1>
           <p className="text-gray-400">Logged in as: {user.email}</p>
         </div>
-        <button
-          onClick={() => signOut()}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md text-white transition-colors"
-        >
-          Sign Out
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.push('/admin/analytics')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white transition-colors"
+          >
+            Analytics
+          </button>
+          <button
+            onClick={() => signOut()}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md text-white transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
       
       {error && (
