@@ -13,12 +13,12 @@ async function sendOrderEmailWithWFC(orderData: any) {
   }
   
   try {
-    // Use the backend URL or default to localhost for development
-    const backendUrl = process.env.WFC_BACKEND_URL || 'http://localhost:3001'
+    // Use the backend URL or default to the Render.com hosted service
+    const backendUrl = process.env.WFC_BACKEND_URL || 'https://dklemailservice.onrender.com'
     const endpoint = '/api/wfc/order-email'
     
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
     
     try {
       console.log('Sending email through WFC email service:', `${backendUrl}${endpoint}`)
@@ -43,7 +43,7 @@ async function sendOrderEmailWithWFC(orderData: any) {
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.error('WFC Email Service request timed out')
-        throw new Error('Request to WFC Email Service timed out after 5 seconds')
+        throw new Error('Request to WFC Email Service timed out after 10 seconds')
       }
       throw error
     }

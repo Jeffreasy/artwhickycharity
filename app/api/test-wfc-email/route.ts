@@ -15,8 +15,8 @@ async function sendTestEmailWithWFC() {
   }
   
   try {
-    // Use the backend URL or default to localhost for development
-    const backendUrl = process.env.WFC_BACKEND_URL || 'http://localhost:3001'
+    // Use the backend URL or default to the Render.com hosted service
+    const backendUrl = process.env.WFC_BACKEND_URL || 'https://dklemailservice.onrender.com'
     const endpoint = '/api/wfc/test-email'
     
     // Create a test order for email
