@@ -76,6 +76,12 @@ NEXT_PUBLIC_SENTRY_ENVIRONMENT=development
 
 # Analytics configuratie
 NEXT_PUBLIC_GA_ID=your_google_analytics_id
+
+# WFC Email Service configuratie
+WFC_BACKEND_URL=https://dklemailservice.onrender.com
+WFC_API_KEY=your_wfc_api_key
+WFC_ADMIN_EMAIL=admin@whiskyforcharity.com
+WFC_SITE_URL=https://whiskyforcharity.com
 ```
 
 ## 🏃‍♂️ Gebruik
@@ -167,6 +173,59 @@ artwhickycharity/
 └── vercel.json         # Vercel configuratie
 ```
 
+## 📧 Email Service
+
+De applicatie maakt gebruik van een custom email service genaamd Whisky For Charity (WFC) Email Service voor het versturen van orderbevestigingen en administratieve notificaties.
+
+### Email Architectuur
+- **Dual Email Service**: De applicatie ondersteunt zowel de WFC Email Service als een legacy DKL Email Service
+- **Modulaire Opzet**: Email functionaliteit is geïsoleerd in dedicated API routes voor eenvoudige uitbreidbaarheid
+- **Template-Based**: Emails worden gegenereerd met HTML templates voor consistente styling
+- **Error Handling**: Uitgebreide error handling en logging voor betrouwbare email operaties
+- **Admin Notificaties**: Zowel klanten als administrators ontvangen notificaties bij nieuwe bestellingen
+
+### WFC Email Service
+- **API Routes**:
+  - `/api/orders/send-emails-wfc`: Primaire route voor het versturen van orderbevestigingen
+  - `/api/test-wfc-email`: Test endpoint voor het testen van de email service
+  
+- **Data Flow**:
+  1. Bij bestelling wordt `CheckoutModal` component geactiveerd
+  2. Formuliergegevens worden verzameld en opgeslagen in Supabase
+  3. De email service wordt aangeroepen met order ID en klantgegevens
+  4. Volledige ordergegevens worden opgehaald uit Supabase
+  5. Data wordt geformatteerd volgens backend specificaties (snake_case)
+  6. Request wordt verzonden naar de WFC backend service
+  7. Backend genereert en verzendt emails op basis van HTML templates
+  8. Ordergegevens worden gemarkeerd als 'emails_sent' in de database
+
+- **Configuratie**:
+  - WFC_BACKEND_URL: URL van de WFC email service backend
+  - WFC_API_KEY: Authenticatie sleutel voor de WFC API
+  - WFC_ADMIN_EMAIL: Email voor administratieve notificaties
+  - WFC_SITE_URL: Website URL voor linkgeneratie in emails
+
+- **Email Templates**:
+  - Customer Template: `wfc_order_confirmation.html`
+  - Admin Template: `wfc_order_admin.html`
+  - Beide templates ondersteunen dynamische data en responsive design
+
+- **Security Features**:
+  - API Key authenticatie via headers
+  - Timeout mechanisme voor request beveiliging (10 seconden)
+  - Build-time skipping voor Vercel deployment integriteit
+
+### Email Service Integratie
+- **Supabase Integratie**: Email service haalt order- en productgegevens op uit Supabase
+- **Vercel Compatibiliteit**: Speciale afhandeling voor build-time en productie-omgevingen
+- **Queue Mechanisme**: Asynchroon versturen van emails om UI responsiviteit te behouden
+- **Email Status Tracking**: Frontend geeft emailstatus weer aan gebruikers
+
+### Email Interface
+- **Gebruikersweergave**: Succes/fout meldingen in de UI na bestelling
+- **Admin Dashboard**: Toegang tot emailstatus en verzendhistorie
+- **Debugging Tools**: Logging en error informatie voor ontwikkeling
+
 ## 🛠️ Belangrijkste Technologieën
 
 - **Frontend**:
@@ -226,6 +285,13 @@ artwhickycharity/
    - Winkelwagen bekijken en bewerken
    - Afronden van bestelling
 
+6. **Bestelproces & Bevestiging**:
+   - Invoeren van klantgegevens in checkout modal
+   - Bevestigen van bestelling
+   - Ontvangen van bevestigingsemail
+   - Bekijken en downloaden van factuur als PDF
+   - Email ontvangstbevestiging voor klant en admin
+
 ## 📱 Responsive Design
 
 De website is volledig responsief en geoptimaliseerd voor:
@@ -259,6 +325,10 @@ De applicatie bevat API routes onder `/app/api/`:
 - `/api/about-content` - Content voor about pagina
 - `/api/checkout` - E-commerce checkout functionaliteit
 - `/api/circle-hero` - Data voor hero sectie
+- `/api/orders/send-emails-wfc` - WFC Email Service voor orderbevestigingen
+- `/api/orders/send-emails-dkl` - Legacy DKL Email Service (backup)
+- `/api/test-wfc-email` - Test endpoint voor de WFC Email Service
+- `/api/generate-pdf` - PDF generatie voor facturen
 
 ## 📊 Analytics & Monitoring
 
