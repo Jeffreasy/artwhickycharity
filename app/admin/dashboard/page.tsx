@@ -24,7 +24,7 @@ interface Product {
   name: string
   price: number
   stock: number
-  is_active: boolean
+  is_active: boolean | string
 }
 
 export default function AdminDashboard() {
@@ -63,6 +63,10 @@ export default function AdminDashboard() {
           .select('*')
           
         if (productsError) throw productsError
+        
+        // Debug logging
+        console.log('Product data from Supabase:', productsData);
+        console.log('Product is_active values:', productsData.map(p => ({ id: p.id, name: p.name, is_active: p.is_active, type: typeof p.is_active })));
         
         setOrders(ordersData)
         setProducts(productsData)
@@ -164,7 +168,22 @@ export default function AdminDashboard() {
   // Calculate dashboard stats
   const totalOrders = orders.length
   const totalProducts = products.length
-  const activeProducts = products.filter(p => p.is_active).length
+
+  // Verbeterde functie voor het bepalen van actieve producten
+  const isProductActive = (product: Product): boolean => {
+    // Controleer verschillende mogelijke representaties
+    if (typeof product.is_active === 'boolean') {
+      return product.is_active;
+    }
+    if (typeof product.is_active === 'string') {
+      return product.is_active.toLowerCase() === 'true';
+    }
+    // Als het een andere waarde is, log deze voor debugging
+    console.log('Onbekend is_active type:', product.id, product.name, product.is_active, typeof product.is_active);
+    return false;
+  };
+
+  const activeProducts = products.filter(isProductActive).length;
   const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total_amount), 0)
 
   return (
