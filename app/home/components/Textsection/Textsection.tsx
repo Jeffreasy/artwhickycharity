@@ -174,12 +174,18 @@ export function TextSection({ initialSections }: TextSectionProps) {
         <div 
           key={`line-${lineIndex}`} 
           className={`
+            w-full
             flex flex-wrap 
             ${styleType === 'main' || styleType === 'purpose'
-              ? 'mb-2 sm:mb-3 md:mb-5 leading-[1.15] sm:leading-[1.2] md:leading-[1.25]'
-              : 'mb-1 sm:mb-2 md:mb-3 leading-[1.3] sm:leading-[1.4] md:leading-[1.5]'
+              ? 'mb-3 sm:mb-4 md:mb-6 leading-[1.2] sm:leading-[1.25] md:leading-[1.3]'
+              : 'mb-2 sm:mb-3 md:mb-4 leading-[1.4] sm:leading-[1.5] md:leading-[1.6]'
             }
           `}
+          style={{
+            hyphens: 'auto',
+            overflowWrap: 'break-word',
+            wordWrap: 'break-word'
+          }}
         >
           {words.map((word, wordIndex) => {
             // Skip lege woorden
@@ -212,6 +218,7 @@ export function TextSection({ initialSections }: TextSectionProps) {
                     word-span
                     inline-flex 
                     items-center
+                    break-words
                     ${styleType === 'main' || styleType === 'purpose'
                       ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
                       : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
@@ -226,7 +233,6 @@ export function TextSection({ initialSections }: TextSectionProps) {
                 {wordIndex < words.length - 1 && (
                   <span 
                     className={`
-                      inline-block
                       ${styleType === 'main' || styleType === 'purpose'
                         ? 'w-2 sm:w-2.5 md:w-3'
                         : 'w-1.5 sm:w-2 md:w-2.5'
@@ -260,9 +266,10 @@ export function TextSection({ initialSections }: TextSectionProps) {
                 textRefs.current[section.section_key] = el
               }}
               className={`
+                overflow-hidden
                 ${section.style_type === 'main' || section.style_type === 'purpose'
-                  ? 'max-w-[300px] sm:max-w-md md:max-w-2xl mx-4 sm:ml-12 md:ml-24'
-                  : 'max-w-[260px] sm:max-w-sm md:max-w-lg mx-4 sm:mr-12 md:mr-24 text-right'
+                  ? 'max-w-[280px] sm:max-w-md md:max-w-xl mx-4 sm:ml-12 md:ml-24'
+                  : 'max-w-[240px] sm:max-w-sm md:max-w-md mx-4 sm:mr-12 md:mr-24 text-right'
                 }
               `}
             >
