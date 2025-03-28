@@ -17,6 +17,7 @@
     "@supabase/auth-js": "^2.69.1",
     "@supabase/supabase-js": "^2.49.3",
     "@types/html-pdf": "^3.0.3",
+    "@types/uuid": "^10.0.0",
     "cloudinary": "^2.5.1",
     "clsx": "^2.1.0",
     "date-fns": "^4.1.0",
@@ -31,7 +32,8 @@
     "react-dom": "^18.2.0",
     "react-icons": "^5.4.0",
     "swiper": "^11.1.15",
-    "tailwind-merge": "^2.2.1"
+    "tailwind-merge": "^2.2.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
