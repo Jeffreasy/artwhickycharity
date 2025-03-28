@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import puppeteer from 'puppeteer'
 import fs from 'fs/promises'
 import path from 'path'
 
+// Serverless-friendly HTML to PDF conversion
 export async function POST(request: Request) {
-  let browser = null
-  
   try {
     const data = await request.json()
     const { html, orderNumber } = data
@@ -14,7 +12,7 @@ export async function POST(request: Request) {
       throw new Error('HTML content is required')
     }
 
-    console.log('Starting PDF generation for order:', orderNumber)
+    console.log('Starting serverless PDF generation for order:', orderNumber)
 
     // Read the CSS file
     const cssPath = path.join(process.cwd(), 'app/shop/components/CheckoutModal/invoice-pdf.css')
@@ -23,33 +21,9 @@ export async function POST(request: Request) {
       return '/* Default CSS if file not found */'
     })
 
-    // Launch Puppeteer with more explicit options for serverless environments
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--font-render-hinting=none'
-      ]
-    })
-    
-    console.log('Puppeteer browser launched')
-    
-    const page = await browser.newPage()
-    
-    // Set viewport for A4 size
-    await page.setViewport({
-      width: 800,
-      height: 1130,
-      deviceScaleFactor: 2
-    })
+    console.log('CSS loaded, preparing HTML content')
 
-    console.log('Setting page content')
-
-    // Set a simple HTML content that doesn't rely on external resources
+    // Complete HTML document with embedded styles
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -70,53 +44,84 @@ export async function POST(request: Request) {
           </style>
         </head>
         <body>
-          ${html.replace(/src="[^"]+"/g, 'src=""')} <!-- Remove image sources to avoid loading issues -->
+          ${html.replace(/src="[^"]+"/g, 'src=""')}
         </body>
       </html>
     `
 
-    await page.setContent(htmlContent, {
-      waitUntil: 'networkidle0'
-    })
+    console.log('HTML content prepared, generating PDF')
 
-    console.log('Generating PDF')
+    // Using the API mode for serverless environments
+    const apiKey = process.env.HTML_TO_PDF_API_KEY || '';
+    const endpoint = 'https://api.html2pdf.app/v1/generate';
 
-    // Generate PDF with simpler settings
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true
-    })
+    const pdfResponse = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        html: htmlContent,
+        apiKey: apiKey,
+        options: {
+          format: 'A4',
+          margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' }
+        }
+      })
+    });
 
-    console.log('PDF generated successfully, size:', pdf.length)
-
-    if (browser) {
-      await browser.close()
-      console.log('Browser closed')
+    if (!pdfResponse.ok) {
+      const errorData = await pdfResponse.text();
+      console.error('PDF Service Error:', pdfResponse.status, errorData);
+      throw new Error(`PDF service error: ${pdfResponse.status}`);
     }
 
+    const pdfBuffer = await pdfResponse.arrayBuffer();
+    console.log('PDF generated successfully, size:', pdfBuffer.byteLength);
+
     // Return the PDF directly with proper headers
-    return new NextResponse(pdf, {
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="invoice-${orderNumber}.pdf"`
       }
-    })
+    });
 
   } catch (error: any) {
-    console.error('PDF Generation Error:', error.message || error)
-    // Make sure to close the browser in case of error
-    if (browser) {
-      await browser.close().catch(err => console.error('Error closing browser:', err))
-    }
+    console.error('PDF Generation Error:', error.message || error);
     
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to generate PDF',
-        details: error.message || String(error)
-      },
-      { status: 500 }
-    )
+    // Fallback: Instead of failing, return a simple text-based invoice
+    try {
+      const { html, orderNumber } = await request.json();
+
+      // Create plain text version from HTML
+      let plainText = "INVOICE - WHISKY FOR CHARITY\n\n";
+      plainText += `Order Number: ${orderNumber}\n`;
+      plainText += `Date: ${new Date().toLocaleDateString()}\n\n`;
+      plainText += "We couldn't generate a PDF invoice at this time.\n";
+      plainText += "Please contact support for assistance.\n\n";
+      plainText += "Whisky For Charity © 2025\n";
+
+      return new NextResponse(plainText, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Disposition': `attachment; filename="invoice-${orderNumber}.txt"`
+        }
+      });
+    } catch (fallbackError) {
+      console.error('Even fallback failed:', fallbackError);
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Failed to generate PDF',
+          details: error.message || String(error)
+        },
+        { status: 500 }
+      );
+    }
   }
 } 

@@ -82,6 +82,9 @@ WFC_BACKEND_URL=https://dklemailservice.onrender.com
 WFC_API_KEY=your_wfc_api_key
 WFC_ADMIN_EMAIL=admin@whiskyforcharity.com
 WFC_SITE_URL=https://whiskyforcharity.com
+
+# PDF Service configuratie
+HTML_TO_PDF_API_KEY=your_html2pdf_api_key
 ```
 
 ## 🏃‍♂️ Gebruik

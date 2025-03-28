@@ -161,48 +161,89 @@ export function CheckoutModal({
       if (!response.ok) {
         let errorText = 'Failed to generate PDF'
         try {
+          // Try to parse JSON error
           const errorData = await response.json()
           errorText = errorData.error || errorText
           console.error('Error details:', errorData)
         } catch (e) {
-          console.error('Could not parse error response')
+          // If not JSON, try to get text
+          try {
+            const textError = await response.text()
+            if (textError && textError.length < 200) {
+              errorText = textError
+            }
+            console.error('Error text:', textError)
+          } catch (textError) {
+            console.error('Could not parse error response as text')
+          }
         }
         throw new Error(errorText)
       }
 
-      // Get the PDF blob
-      const blob = await response.blob()
+      // Get the response content
+      const contentType = response.headers.get('Content-Type') || ''
       
-      if (!blob || blob.size === 0) {
-        throw new Error('Received empty PDF')
+      // Handle PDF
+      if (contentType.includes('application/pdf')) {
+        const blob = await response.blob()
+        
+        if (!blob || blob.size === 0) {
+          throw new Error('Received empty PDF')
+        }
+        
+        console.log('PDF received, size:', blob.size)
+        
+        // Create object URL
+        const url = window.URL.createObjectURL(blob)
+        
+        // Create temporary link and trigger download
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `invoice-${orderNumber}.pdf`
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        
+        // Trigger download
+        link.click()
+        
+        // Cleanup
+        setTimeout(() => {
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+          console.log('PDF download triggered')
+        }, 100)
+      } 
+      // Handle text fallback
+      else if (contentType.includes('text/plain')) {
+        const text = await response.text()
+        
+        // Create a blob with the text
+        const blob = new Blob([text], { type: 'text/plain' })
+        const url = window.URL.createObjectURL(blob)
+        
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `invoice-${orderNumber}.txt`
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        
+        link.click()
+        
+        setTimeout(() => {
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+          console.log('Text invoice download triggered')
+        }, 100)
+        
+        setError('Could not generate PDF invoice. A text version has been downloaded instead.')
       }
-      
-      console.log('PDF received, size:', blob.size)
-      
-      // Create object URL
-      const url = window.URL.createObjectURL(blob)
-      
-      // Create temporary link and trigger download
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `invoice-${orderNumber}.pdf`
-      link.style.display = 'none'
-      document.body.appendChild(link)
-      
-      // Trigger download
-      link.click()
-      
-      // Cleanup
-      setTimeout(() => {
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-        console.log('PDF download triggered')
-      }, 100)
-
+      else {
+        throw new Error(`Unexpected response type: ${contentType}`)
+      }
     } catch (error: any) {
       console.error('Download error:', error)
       setError(`Failed to generate invoice PDF: ${error.message || 'Please try again.'}`)
-      alert('Failed to generate invoice PDF. Please try again.')
+      alert('Failed to generate invoice PDF. Please save this page as reference or try again later.')
     } finally {
       setIsDownloading(false)
     }
