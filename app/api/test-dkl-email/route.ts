@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 
 // Function to send a test email using DKL Email Service
 async function sendTestEmailWithDKL() {
@@ -44,7 +45,7 @@ async function sendTestEmailWithDKL() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.DKL_EMAIL_API_KEY || 'dkl_metrics_api_key_2025'}`,
+          'X-API-Key': process.env.DKL_EMAIL_API_KEY || 'dkl_metrics_api_key_2025',
         },
         body: JSON.stringify(testData),
         signal: controller.signal
@@ -86,16 +87,35 @@ async function sendTestEmailWithDKL() {
   }
 }
 
-export async function GET() {
-  // Skip API calls during build time in Vercel
-  const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
+export async function GET(request: Request) {
+  // Get Headers
+  const headersList = headers();
+  const referer = headersList.get('referer') || '';
+  const userAgent = headersList.get('user-agent') || '';
   
-  if (isBuildTime) {
-    console.log('Skipping DKL email test during build time')
+  // Strikte controle voor Vercel build/prefetching
+  const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
+  const isVercelBot = userAgent.includes('Vercel') || userAgent.includes('bot') || userAgent.includes('crawler');
+  const isPrefetch = referer === '' || !referer;
+  
+  // Alleen uitvoeren als het een echte gebruiker betreft
+  if (isBuildTime || isVercelBot || isPrefetch) {
+    console.log('Skipping DKL email test during automated process:', { isBuildTime, isVercelBot, isPrefetch, userAgent });
     return NextResponse.json({
-      message: 'DKL Email test skipped during build',
+      message: 'DKL Email test skipped during automated process',
       skipped: true
-    })
+    });
+  }
+  
+  // Controleer op query parameter om handmatige test te forceren
+  const { searchParams } = new URL(request.url);
+  const forceTest = searchParams.get('force') === 'true';
+  
+  if (!forceTest) {
+    return NextResponse.json({
+      message: 'Use ?force=true query parameter to trigger a test email',
+      skipped: true
+    });
   }
   
   try {

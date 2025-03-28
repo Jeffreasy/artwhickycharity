@@ -1,16 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 
 // This function skips actual email sending during build time
-export async function GET() {
-  // Detect if we're in a build environment (Vercel)
-  const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
+export async function GET(request: Request) {
+  // Get Headers
+  const headersList = headers();
+  const referer = headersList.get('referer') || '';
+  const userAgent = headersList.get('user-agent') || '';
   
-  if (isBuildTime) {
-    console.log('Skipping email test during build time')
+  // Strikte controle voor Vercel build/prefetching
+  const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
+  const isVercelBot = userAgent.includes('Vercel') || userAgent.includes('bot') || userAgent.includes('crawler');
+  const isPrefetch = referer === '' || !referer;
+  
+  // Alleen uitvoeren als het een echte gebruiker betreft
+  if (isBuildTime || isVercelBot || isPrefetch) {
+    console.log('Skipping email test during automated process:', { isBuildTime, isVercelBot, isPrefetch, userAgent });
     return NextResponse.json({
-      message: 'Email test skipped during build',
+      message: 'Email test skipped during automated process',
       skipped: true
-    })
+    });
+  }
+  
+  // Controleer op query parameter om handmatige test te forceren
+  const { searchParams } = new URL(request.url);
+  const forceTest = searchParams.get('force') === 'true';
+  
+  if (!forceTest) {
+    return NextResponse.json({
+      message: 'Use ?force=true query parameter to trigger a test email',
+      skipped: true
+    });
   }
   
   try {
@@ -53,22 +73,29 @@ export async function GET() {
       }, { status: 500 })
     }
     
-    // Try to send a test email
+    // Attempt to send a test email with timeout protection
     try {
-      console.log('Sending test email...')
-      const info = await transporter.sendMail({
-        from: 'info@whiskyforcharity.com',
-        to: 'laventejeffrey@gmail.com',
-        subject: 'Test Email from Whisky For Charity',
-        text: 'This is a test email from the Whisky For Charity website.',
-        html: '<p>This is a test email from the <b>Whisky For Charity</b> website.</p>'
+      console.log('Attempting to send test email...')
+      
+      const sendPromise = transporter.sendMail({
+        from: '"Whisky For Charity Test" <info@whiskyforcharity.com>',
+        to: "laventejeffrey@gmail.com",
+        subject: "Test Email - Direct SMTP",
+        text: "This is a test email from the Whisky For Charity website via direct SMTP connection to Argeweb.",
+        html: "<b>This is a test email from the Whisky For Charity website via direct SMTP connection to Argeweb.</b>"
       })
       
-      console.log('Email sent successfully:', info.messageId)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Email sending timed out')), 10000)
+      )
+      
+      const info = await Promise.race([sendPromise, timeoutPromise])
+      console.log('Test email sent successfully:', info)
       
       return NextResponse.json({
+        success: true,
         message: 'Test email sent successfully',
-        messageId: info.messageId
+        details: info
       })
     } catch (error) {
       console.error('Failed to send test email:', error)
@@ -80,7 +107,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error in test-email API route:', error)
     return NextResponse.json({
-      error: 'An unexpected error occurred',
+      error: 'Email test failed',
       details: (error as Error).message
     }, { status: 500 })
   }
