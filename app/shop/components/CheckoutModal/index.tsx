@@ -78,6 +78,7 @@ export function CheckoutModal({
   const handleDownloadPDF = async () => {
     try {
       setIsDownloading(true)
+      setError(null)
       
       // Get the invoice HTML content
       const invoiceElement = document.querySelector('.invoice-content')
@@ -85,6 +86,8 @@ export function CheckoutModal({
         throw new Error('Invoice content not found')
       }
 
+      console.log('Sending request to generate PDF...')
+      
       // Send to our API and get PDF blob
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
@@ -97,12 +100,28 @@ export function CheckoutModal({
         }),
       })
 
+      console.log('Response status:', response.status)
+      
       if (!response.ok) {
-        throw new Error('Failed to generate PDF')
+        let errorText = 'Failed to generate PDF'
+        try {
+          const errorData = await response.json()
+          errorText = errorData.error || errorText
+          console.error('Error details:', errorData)
+        } catch (e) {
+          console.error('Could not parse error response')
+        }
+        throw new Error(errorText)
       }
 
       // Get the PDF blob
       const blob = await response.blob()
+      
+      if (!blob || blob.size === 0) {
+        throw new Error('Received empty PDF')
+      }
+      
+      console.log('PDF received, size:', blob.size)
       
       // Create object URL
       const url = window.URL.createObjectURL(blob)
@@ -111,15 +130,22 @@ export function CheckoutModal({
       const link = document.createElement('a')
       link.href = url
       link.download = `invoice-${orderNumber}.pdf`
+      link.style.display = 'none'
       document.body.appendChild(link)
+      
+      // Trigger download
       link.click()
       
       // Cleanup
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      setTimeout(() => {
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        console.log('PDF download triggered')
+      }, 100)
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Download error:', error)
+      setError(`Failed to generate invoice PDF: ${error.message || 'Please try again.'}`)
       alert('Failed to generate invoice PDF. Please try again.')
     } finally {
       setIsDownloading(false)
@@ -139,7 +165,7 @@ export function CheckoutModal({
           <div className="mb-8 text-center">
             <div className="w-20 h-20 mx-auto mb-4">
               <CldImage
-                src="logo_w4c_white_ql0tqp"
+                src="66fbc7d32c54ed89b3c8945b_test_pgrla9"
                 alt="Whisky4Charity Logo"
                 width={80}
                 height={80}
@@ -261,7 +287,7 @@ export function CheckoutModal({
         <div className="mb-8 text-center">
           <div className="w-32 h-32 mx-auto mb-4">
             <CldImage
-              src="logo_w4c_white_ql0tqp"
+              src="66fbc7d32c54ed89b3c8945b_test_pgrla9"
               alt="Whisky4Charity Logo"
               width={128}
               height={128}
