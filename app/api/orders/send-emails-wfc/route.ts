@@ -26,7 +26,7 @@ async function sendOrderEmailWithWFC(orderData: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.WFC_API_KEY || 'dkl_metrics_api_key_2025'}`,
+          'Authorization': `Bearer ${process.env.WFC_API_KEY || 'wfc_email_api_key_2025'}`,
         },
         body: JSON.stringify(orderData),
         signal: controller.signal
