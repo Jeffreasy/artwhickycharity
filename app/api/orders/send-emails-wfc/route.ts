@@ -146,24 +146,30 @@ export async function POST(request: Request) {
     })
     
     // Prepare data for WFC email service
-    const emailData = {
-      order: {
-        id: order.id,
-        orderNumber: order.order_number,
-        date: new Date(order.created_at).toISOString(),
-        totalAmount: order.total_amount,
-        items: items
-      },
-      customer: {
-        name: `${customer.name}`,
-        email: customer.email,
-        address: customer.address,
-        city: customer.city,
-        postalCode: customer.postalCode,
-        country: customer.country
-      },
+    const backendRequestData = {
+      orderID: order.id,                     // Exact deze naam (hoofdlettergevoelig!)
+      orderNumber: order.order_number,
+      customerName: customer.name,           // Exact deze naam
+      customerEmail: customer.email,         // Exact deze naam
+      customerAddress: customer.address,
+      customerCity: customer.city,
+      customerPostalCode: customer.postalCode,
+      customerCountry: customer.country,
+      totalAmount: order.total_amount,
+      items: orderItems.map((item: any) => {
+        const product = products.find((p: any) => p.id === item.product_id)
+        return {
+          id: item.id || `item_${Math.random().toString(36).substr(2, 9)}`,
+          order_id: order.id,
+          product_id: item.product_id || '',
+          product_name: product?.name || 'Unknown Product',
+          quantity: item.quantity,
+          price: item.price
+        }
+      }),
+      notifyAdmin: true,
       adminEmail: process.env.WFC_ADMIN_EMAIL || 'laventejeffrey@gmail.com',
-      siteUrl: process.env.WFC_SITE_URL || 'https://whiskyforcharity.com'
+      siteURL: process.env.WFC_SITE_URL || 'https://whiskyforcharity.com'
     }
     
     // Send email using WFC Email Service
@@ -171,7 +177,7 @@ export async function POST(request: Request) {
     let emailSent = false
     
     try {
-      const result = await sendOrderEmailWithWFC(emailData)
+      const result = await sendOrderEmailWithWFC(backendRequestData)
       console.log('Email sent result:', result)
       emailSent = true
       
