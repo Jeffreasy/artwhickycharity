@@ -11,14 +11,20 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true, // true voor 465, false voor andere poorten
   auth: {
-    user: noreplyEmail,
-    pass: process.env.SMTP_PASSWORD || 'Oprotten@12'
-  }
+    user: noreplyEmail, // volledige e-mailadres
+    pass: 'Oprotten@12',
+  },
+  tls: {
+    // Niet controleren op geldige certificaten - soms nodig bij bepaalde hostingproviders
+    rejectUnauthorized: false
+  },
+  debug: true // voor ontwikkelomgeving
 })
 
 // Controleer of de email is geconfigureerd en werkt
 export async function verifyEmailConfig() {
   try {
+    console.log('Verifying email configuration...')
     const result = await transporter.verify()
     console.log('Email service is ready to take messages')
     return true
