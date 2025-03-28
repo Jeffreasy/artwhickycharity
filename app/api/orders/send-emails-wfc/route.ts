@@ -95,13 +95,10 @@ export async function POST(request: Request) {
     const { data: orderItems, error: itemsError } = await supabase
       .from('order_items')
       .select(`
-        quantity, 
-        products (
-          id,
-          name,
-          price,
-          image_url
-        )
+        id,
+        quantity,
+        price,
+        product_id
       `)
       .eq('order_id', orderId)
     
@@ -109,14 +106,42 @@ export async function POST(request: Request) {
       console.error('Error fetching order items:', itemsError)
       return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
     }
+
+    // Fetch products for the order items
+    if (orderItems.length === 0) {
+      console.warn('No order items found for order:', orderId)
+      return NextResponse.json({ error: 'No order items found' }, { status: 404 })
+    }
+
+    // Get all product IDs
+    const productIds = orderItems.map((item: any) => item.product_id)
     
-    // Format items for email
-    const items = orderItems.map((item: any) => ({
-      name: item.products.name,
-      quantity: item.quantity,
-      price: item.products.price,
-      image: item.products.image_url
-    }))
+    // Fetch products
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        price,
+        image
+      `)
+      .in('id', productIds)
+      
+    if (productsError) {
+      console.error('Error fetching products:', productsError)
+      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
+    }
+    
+    // Match order items with products and create final items array
+    const items = orderItems.map((item: any) => {
+      const product = products.find((p: any) => p.id === item.product_id)
+      return {
+        name: product?.name || 'Unknown Product',
+        quantity: item.quantity,
+        price: item.price,
+        image: product?.image || ''
+      }
+    })
     
     // Prepare data for WFC email service
     const emailData = {
