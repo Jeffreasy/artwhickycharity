@@ -50,11 +50,11 @@ export function TextSection({ initialSections }: TextSectionProps) {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
     
-    // Zet alle tekst eerst op opacity 0
-    gsap.set(['.main-letter', '.impact-letter', '.purpose-letter', '.sip-letter'], {
+    // Zet alle woorden eerst op opacity 0
+    gsap.set(['.main-word', '.impact-word', '.purpose-word', '.sip-word'], {
       opacity: 0,
       y: 15,
-      rotateX: 20
+      rotateX: 10
     })
 
     setIsAnimationInitialized(true)
@@ -76,8 +76,8 @@ export function TextSection({ initialSections }: TextSectionProps) {
         opacity: 1,
         y: 0,
         rotateX: 0,
-        duration: 1,
-        stagger: 0.01,
+        duration: 0.8,
+        stagger: 0.03,
         ease: "power3.out",
         delay,
         scrollTrigger: {
@@ -88,13 +88,13 @@ export function TextSection({ initialSections }: TextSectionProps) {
       })
     }
 
-    // Verfijnde scroll animaties
-    const addLetterHoverEffects = (element: HTMLDivElement, isLargeText: boolean) => {
-      const letters = element.querySelectorAll('span')
+    // Woord hover effecten
+    const addWordHoverEffects = (element: HTMLDivElement, isLargeText: boolean) => {
+      const words = element.querySelectorAll('span.word-span')
       
-      letters.forEach((letter) => {
-        letter.addEventListener('mouseenter', () => {
-          gsap.to(letter, {
+      words.forEach((word) => {
+        word.addEventListener('mouseenter', () => {
+          gsap.to(word, {
             scale: isLargeText ? 1.05 : 1.08,
             textShadow: isLargeText 
               ? '0 0 15px rgba(255,255,255,0.3)'
@@ -102,74 +102,31 @@ export function TextSection({ initialSections }: TextSectionProps) {
             duration: 0.2,
             ease: "power2.out"
           })
-
-          // Subtiel effect op direct aangrenzende letters
-          const prev = letter.previousElementSibling
-          const next = letter.nextElementSibling
-          
-          if (prev) {
-            gsap.to(prev, {
-              scale: isLargeText ? 1.02 : 1.04,
-              textShadow: isLargeText 
-                ? '0 0 10px rgba(255,255,255,0.15)'
-                : '0 0 5px rgba(255,255,255,0.1)',
-              duration: 0.2
-            })
-          }
-          
-          if (next) {
-            gsap.to(next, {
-              scale: isLargeText ? 1.02 : 1.04,
-              textShadow: isLargeText 
-                ? '0 0 10px rgba(255,255,255,0.15)'
-                : '0 0 5px rgba(255,255,255,0.1)',
-              duration: 0.2
-            })
-          }
         })
 
-        letter.addEventListener('mouseleave', () => {
-          gsap.to(letter, {
+        word.addEventListener('mouseleave', () => {
+          gsap.to(word, {
             scale: 1,
             textShadow: 'none',
             duration: 0.2,
             ease: "power2.inOut"
           })
-
-          const prev = letter.previousElementSibling
-          const next = letter.nextElementSibling
-          
-          if (prev) {
-            gsap.to(prev, {
-              scale: 1,
-              textShadow: 'none',
-              duration: 0.15
-            })
-          }
-          
-          if (next) {
-            gsap.to(next, {
-              scale: 1,
-              textShadow: 'none',
-              duration: 0.15
-            })
-          }
         })
       })
     }
 
-    const letters = {
-      main: container.querySelectorAll('.main-letter'),
-      impact: container.querySelectorAll('.impact-letter'),
-      purpose: container.querySelectorAll('.purpose-letter'),
-      sip: container.querySelectorAll('.sip-letter')
+    const words = {
+      main: container.querySelectorAll('.main-word'),
+      impact: container.querySelectorAll('.impact-word'),
+      purpose: container.querySelectorAll('.purpose-word'),
+      sip: container.querySelectorAll('.sip-word')
     }
 
     const animations = [
-      animateTextIn(letters.main, 0),
-      animateTextIn(letters.impact, 0.3),
-      animateTextIn(letters.purpose, 0.6),
-      animateTextIn(letters.sip, 0.9)
+      animateTextIn(words.main, 0),
+      animateTextIn(words.impact, 0.2),
+      animateTextIn(words.purpose, 0.4),
+      animateTextIn(words.sip, 0.6)
     ]
 
     // Hover effecten
@@ -180,15 +137,100 @@ export function TextSection({ initialSections }: TextSectionProps) {
       sip: textRefs.current['sip_text']
     }
 
-    if (elements.main) addLetterHoverEffects(elements.main, true)
-    if (elements.impact) addLetterHoverEffects(elements.impact, false)
-    if (elements.purpose) addLetterHoverEffects(elements.purpose, true)
-    if (elements.sip) addLetterHoverEffects(elements.sip, false)
+    if (elements.main) addWordHoverEffects(elements.main, true)
+    if (elements.impact) addWordHoverEffects(elements.impact, false)
+    if (elements.purpose) addWordHoverEffects(elements.purpose, true)
+    if (elements.sip) addWordHoverEffects(elements.sip, false)
 
     return () => {
       animations.forEach(anim => anim.kill())
     }
   }, [sections, isAnimationInitialized])
+
+  // Helper om tekst op te splitsen in woorden met behoud van formatting
+  const processContent = (content: string, styleType: string) => {
+    // Split de content op newlines
+    const lines = content.split('\n')
+    
+    return lines.map((line, lineIndex) => {
+      // Als de lijn leeg is of alleen whitespace bevat, voeg een regelovergang toe
+      if (!line.trim()) {
+        return (
+          <div 
+            key={`line-${lineIndex}`} 
+            className={`h-8 sm:h-10 md:h-12 w-full`}
+          />
+        )
+      }
+      
+      // Split de lijn in woorden
+      const words = line.split(' ')
+      
+      // Bepaal de lijnhoogtes per type
+      const lineHeightClass = styleType === 'main' || styleType === 'purpose'
+        ? 'leading-tight'  // Strakker voor grote tekst
+        : 'leading-relaxed'  // Ruimer voor kleine tekst
+      
+      return (
+        <div 
+          key={`line-${lineIndex}`} 
+          className={`flex flex-wrap ${lineHeightClass} mb-1 sm:mb-2 md:mb-3`}
+        >
+          {words.map((word, wordIndex) => {
+            // Skip lege woorden
+            if (!word) return null
+            
+            // Check voor speciale karakters
+            if (word === '-') {
+              return (
+                <span 
+                  key={`word-${lineIndex}-${wordIndex}`}
+                  className="text-gray-500 block h-4 sm:h-5 md:h-6 w-full my-3 sm:my-4 md:my-5"
+                >
+                  -
+                </span>
+              )
+            }
+            
+            // Regular word
+            return (
+              <React.Fragment key={`word-${lineIndex}-${wordIndex}`}>
+                <span 
+                  className={`
+                    ${styleType}-word 
+                    word-span
+                    inline-block 
+                    ${styleType === 'main' || styleType === 'purpose'
+                      ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
+                      : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
+                    } 
+                    tracking-wide
+                    cursor-default
+                    align-baseline
+                  `}
+                >
+                  {word}
+                </span>
+                {/* Voeg spatie toe tussen woorden, maar niet na het laatste woord */}
+                {wordIndex < words.length - 1 && (
+                  <span 
+                    className={`
+                      inline-block 
+                      align-baseline
+                      ${styleType === 'main' || styleType === 'purpose'
+                        ? 'w-2 sm:w-2.5 md:w-3 text-xl sm:text-2xl md:text-[2.75rem]'
+                        : 'w-1.5 sm:w-2 md:w-2.5 text-base sm:text-lg md:text-xl'
+                      }
+                    `}
+                  >&nbsp;</span>
+                )}
+              </React.Fragment>
+            )
+          })}
+        </div>
+      )
+    })
+  }
 
   return (
     <section ref={containerRef} className="min-h-screen bg-black relative py-12 sm:py-16 md:py-24">
@@ -196,7 +238,7 @@ export function TextSection({ initialSections }: TextSectionProps) {
         {sections?.map((section) => (
           <div 
             key={section.id}
-            className={`mb-16 sm:mb-24 md:mb-32 ${
+            className={`mb-20 sm:mb-28 md:mb-36 ${
               section.style_type === 'impact' || section.style_type === 'sip' 
                 ? 'flex justify-end' 
                 : ''
@@ -208,31 +250,12 @@ export function TextSection({ initialSections }: TextSectionProps) {
               }}
               className={`
                 ${section.style_type === 'main' || section.style_type === 'purpose'
-                  ? 'max-w-[280px] sm:max-w-md md:max-w-xl mx-4 sm:ml-12 md:ml-24'
-                  : 'max-w-[240px] sm:max-w-sm md:max-w-md mx-4 sm:mr-12 md:mr-24 text-right'
-                } cursor-default
+                  ? 'max-w-[300px] sm:max-w-md md:max-w-2xl mx-4 sm:ml-12 md:ml-24'
+                  : 'max-w-[260px] sm:max-w-sm md:max-w-lg mx-4 sm:mr-12 md:mr-24 text-right'
+                }
               `}
             >
-              {section.content.split('').map((char, index) => (
-                <span 
-                  key={index} 
-                  className={`
-                    ${section.style_type}-letter 
-                    inline-block 
-                    ${section.style_type === 'main' || section.style_type === 'purpose'
-                      ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
-                      : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
-                    } 
-                    tracking-wide
-                    ${char === '\n' ? 'block h-6 sm:h-8 md:h-10' : ''}
-                    ${char === ' ' ? 'w-2 sm:w-2.5 md:w-3' : ''}
-                    ${char === '-' ? 'text-gray-500 block h-4 sm:h-5 md:h-6' : ''}
-                    ${char === ':' ? 'block h-4 sm:h-5 md:h-6' : ''}
-                  `}
-                >
-                  {char}
-                </span>
-              ))}
+              {processContent(section.content, section.style_type)}
             </div>
           </div>
         ))}
