@@ -152,6 +152,11 @@ export function TextSection({ initialSections }: TextSectionProps) {
     // Split de content op newlines
     const lines = content.split('\n')
     
+    // Bepaal de basis lettertypes voor dit type
+    const textClasses = styleType === 'main' || styleType === 'purpose'
+      ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
+      : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
+    
     return lines.map((line, lineIndex) => {
       // Als de lijn leeg is of alleen whitespace bevat, voeg een regelovergang toe
       if (!line.trim()) {
@@ -160,91 +165,64 @@ export function TextSection({ initialSections }: TextSectionProps) {
             key={`line-${lineIndex}`} 
             className={`w-full ${
               styleType === 'main' || styleType === 'purpose'
-                ? 'h-10 sm:h-12 md:h-16'
-                : 'h-6 sm:h-8 md:h-10'
+                ? 'h-8 sm:h-10 md:h-14'
+                : 'h-5 sm:h-7 md:h-9'
             }`}
           />
         )
       }
       
-      // Split de lijn in woorden
-      const words = line.split(' ')
-      
+      // Markeer de volledige regel als een paragraaf
       return (
-        <div 
+        <p 
           key={`line-${lineIndex}`} 
           className={`
-            w-full
-            flex flex-wrap 
-            ${styleType === 'main' || styleType === 'purpose'
-              ? 'mb-3 sm:mb-4 md:mb-6 leading-[1.2] sm:leading-[1.25] md:leading-[1.3]'
-              : 'mb-2 sm:mb-3 md:mb-4 leading-[1.4] sm:leading-[1.5] md:leading-[1.6]'
-            }
+            mb-2 sm:mb-3 md:mb-4
+            ${textClasses}
+            ${styleType === 'impact' || styleType === 'sip' ? 'text-right' : ''}
+            tracking-wide
           `}
           style={{
-            hyphens: 'auto',
-            overflowWrap: 'break-word',
-            wordWrap: 'break-word'
+            lineHeight: styleType === 'main' || styleType === 'purpose' ? 1.2 : 1.4,
+            wordSpacing: styleType === 'main' || styleType === 'purpose' ? '0.05em' : '0.03em',
           }}
         >
-          {words.map((word, wordIndex) => {
-            // Skip lege woorden
-            if (!word) return null
-            
-            // Check voor speciale karakters
-            if (word === '-') {
-              return (
-                <span 
-                  key={`word-${lineIndex}-${wordIndex}`}
-                  className={`
-                    text-gray-500 block w-full 
-                    ${styleType === 'main' || styleType === 'purpose'
-                      ? 'my-6 sm:my-7 md:my-8 h-[2px] sm:h-[3px] md:h-[4px]'
-                      : 'my-4 sm:my-5 md:my-6 h-[1px] sm:h-[2px] md:h-[3px]'
-                    }
-                  `}
-                >
-                  <div className="w-full h-full bg-gray-500 opacity-40"></div>
-                </span>
-              )
-            }
-            
-            // Regular word
-            return (
-              <React.Fragment key={`word-${lineIndex}-${wordIndex}`}>
-                <span 
-                  className={`
-                    ${styleType}-word 
-                    word-span
-                    inline-flex 
-                    items-center
-                    break-words
-                    ${styleType === 'main' || styleType === 'purpose'
-                      ? 'text-white text-xl sm:text-2xl md:text-[2.75rem] font-bold'
-                      : 'text-white/80 text-base sm:text-lg md:text-xl font-serif'
-                    } 
-                    tracking-wide
-                    cursor-default
-                  `}
-                >
-                  {word}
-                </span>
-                {/* Voeg spatie toe tussen woorden, maar niet na het laatste woord */}
-                {wordIndex < words.length - 1 && (
+          {line === '-' ? (
+            <span 
+              className={`
+                block w-full 
+                ${styleType === 'main' || styleType === 'purpose'
+                  ? 'my-5 sm:my-6 md:my-8'
+                  : 'my-3 sm:my-4 md:my-6'
+                }
+              `}
+            >
+              <hr className="border-gray-500 opacity-30" />
+            </span>
+          ) : (
+            line.split(' ').map((word, wordIndex, arr) => (
+              <span 
+                key={`word-${lineIndex}-${wordIndex}`}
+                className={`
+                  ${styleType}-word 
+                  word-span
+                  inline-block
+                  cursor-default
+                  whitespace-normal
+                `}
+              >
+                {word}
+                {wordIndex < arr.length - 1 && (
                   <span 
-                    className={`
-                      ${styleType === 'main' || styleType === 'purpose'
-                        ? 'w-2 sm:w-2.5 md:w-3'
-                        : 'w-1.5 sm:w-2 md:w-2.5'
-                      }
-                    `}
+                    className="inline-block" 
                     aria-hidden="true"
-                  ></span>
+                    style={{ width: '0.25em' }}
+                  >&nbsp;</span>
                 )}
-              </React.Fragment>
-            )
-          })}
-        </div>
+              </span>
+            ))
+          )}
+        </p>
       )
     })
   }
@@ -266,10 +244,10 @@ export function TextSection({ initialSections }: TextSectionProps) {
                 textRefs.current[section.section_key] = el
               }}
               className={`
-                overflow-hidden
+                overflow-hidden whitespace-normal
                 ${section.style_type === 'main' || section.style_type === 'purpose'
-                  ? 'max-w-[280px] sm:max-w-md md:max-w-xl mx-4 sm:ml-12 md:ml-24'
-                  : 'max-w-[240px] sm:max-w-sm md:max-w-md mx-4 sm:mr-12 md:mr-24 text-right'
+                  ? 'w-full max-w-[300px] sm:max-w-[420px] md:max-w-[600px] mx-4 sm:ml-12 md:ml-24'
+                  : 'w-full max-w-[260px] sm:max-w-[340px] md:max-w-[480px] mx-4 sm:mr-12 md:mr-24'
                 }
               `}
             >
