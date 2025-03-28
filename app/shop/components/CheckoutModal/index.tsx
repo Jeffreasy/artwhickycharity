@@ -88,8 +88,8 @@ export function CheckoutModal({
     try {
       setIsSendingEmails(true)
       
-      // Using the DKL Email Service instead of our previous email approach
-      const response = await fetch('/api/orders/send-emails-dkl', {
+      // Using the WFC Email Service
+      const response = await fetch('/api/orders/send-emails-wfc', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,12 +116,12 @@ export function CheckoutModal({
       
       const result = await response.json()
       setEmailStatus({
-        sent: true,
-        customerEmailSent: result.customerEmailSent,
-        adminEmailSent: result.adminEmailSent
+        sent: result.emailSent,
+        customerEmailSent: result.emailSent, // WFC service sends both in one call
+        adminEmailSent: result.emailSent
       })
       
-      console.log('Emails sent via DKL Email Service:', result)
+      console.log('Emails sent via WFC Email Service:', result)
       
     } catch (error) {
       console.error('Failed to send confirmation emails:', error)
