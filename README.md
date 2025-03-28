@@ -65,6 +65,7 @@ Configureer de omgevingsvariabelen in `.env.local`:
 # Supabase configuratie
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Cloudinary configuratie
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
@@ -406,6 +407,41 @@ Copyright © 2025 Art Whisky Charity. Alle rechten voorbehouden.
 
 - Jeffrey - Frontend Developer en Project Lead
 - [Toevoegen van andere teamleden indien van toepassing]
+
+## 🔒 Admin Dashboard
+
+De applicatie bevat een beveiligde admin dashboard die toegankelijk is via een login-systeem. De admin sectie is gebouwd met Supabase Auth voor veilige authenticatie.
+
+### Admin Architectuur
+- **Supabase Auth**: Veilige authenticatie met email/wachtwoord
+- **Middleware Protection**: Beveiligde routes via Next.js middleware
+- **AuthProvider Context**: React context voor authenticatiestatus
+- **Dashboard Interface**: Overzicht van orders, producten en statistieken
+
+### Admin Routes
+- `/admin/login`: Login pagina voor administrators
+- `/admin/dashboard`: Hoofddashboard met overzichten
+- `/admin/*`: Alle admin routes zijn beveiligd
+
+### Admin Setup
+1. Maak een gebruiker aan in Supabase Authentication
+2. Ken admin rechten toe aan de gebruiker
+3. Gebruik de login pagina om toegang te krijgen tot het dashboard
+
+### Admin Features
+- **Orders Beheer**: Bekijk en beheer bestellingen
+- **Product Management**: Producten toevoegen en bewerken
+- **Statistieken**: Dashboard met belangrijke statistieken
+- **Beveiligde Toegang**: Alleen voor geautoriseerde gebruikers
+
+### Admin Configuratie
+Om de admin functionaliteit te configureren, voeg de volgende omgevingsvariabelen toe:
+```
+# Supabase Auth configuratie
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
 
 ---
 
