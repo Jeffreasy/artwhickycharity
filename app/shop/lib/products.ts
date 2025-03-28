@@ -2,69 +2,82 @@
 import { Product } from '@/types/product';
 import { supabase } from '@/lib/supabase';
 
-// Tijdelijke dummy data
-const DUMMY_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    name: 'Limited Edition Whisky 2024',
-    description: 'Single Malt Scotch Whisky, Annandale Distillery, Unpeated, Ex-Sherry Cask, Distilled 2019',
-    price: 299,
-    image: '66fbdbc67df6e09ea5001030_HOPEnecklabelDEF2HiRes_kl7pnt',
-    cloudinary_id: '66fbdbc67df6e09ea5001030_HOPEnecklabelDEF2HiRes_kl7pnt',
-    stock: 50,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Art Print - Hope',
-    description: 'Limited edition art print, signed and numbered by the artist',
-    price: 149,
-    image: '66fbc7d32c54ed89b3c8945b_test_pgrla9',
-    cloudinary_id: '66fbc7d32c54ed89b3c8945b_test_pgrla9',
-    stock: 100,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-]
-
 export async function getProducts(): Promise<Product[]> {
-  // TODO: Uncomment when Supabase table is ready
-  // const { data: products, error } = await supabase
-  //   .from('products')
-  //   .select('*')
-  //   .eq('is_active', true)
-  //   .order('created_at', { ascending: false })
+  const { data: products, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
 
-  // if (error) {
-  //   console.error('Error fetching products:', error)
-  //   throw new Error('Failed to fetch products')
-  // }
+  if (error) {
+    console.error('Error fetching products:', error)
+    throw new Error('Failed to fetch products')
+  }
 
-  // return products as Product[]
-
-  // Temporarily return dummy data
-  return DUMMY_PRODUCTS
+  return products as Product[]
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  // TODO: Uncomment when Supabase table is ready
-  // const { data: product, error } = await supabase
-  //   .from('products')
-  //   .select('*')
-  //   .eq('id', id)
-  //   .single()
+  const { data: product, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .single()
 
-  // if (error) {
-  //   if (error.code === 'PGRST116') return null
-  //   console.error('Error fetching product:', error)
-  //   throw new Error('Failed to fetch product')
-  // }
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    console.error('Error fetching product:', error)
+    throw new Error('Failed to fetch product')
+  }
 
-  // return product as Product
+  return product as Product
+}
 
-  // Temporarily return dummy data
-  return DUMMY_PRODUCTS.find(p => p.id === id) || null
+export async function updateProductStock(id: string, newStock: number): Promise<void> {
+  const { error } = await supabase
+    .from('products')
+    .update({ 
+      stock: newStock,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating product stock:', error)
+    throw new Error('Failed to update product stock')
+  }
+}
+
+export async function createProduct(product: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<Product> {
+  const { data, error } = await supabase
+    .from('products')
+    .insert(product)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating product:', error)
+    throw new Error('Failed to create product')
+  }
+
+  return data as Product
+}
+
+export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
+  const { data, error } = await supabase
+    .from('products')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating product:', error)
+    throw new Error('Failed to update product')
+  }
+
+  return data as Product
 }

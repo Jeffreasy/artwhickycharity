@@ -16,6 +16,25 @@ export function ProductCard({ product }: ProductCardProps) {
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const { addToCart } = useCart()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [modalImageIndex, setModalImageIndex] = useState(0)
+
+  // Auto-rotate images in card view
+  useEffect(() => {
+    if (!product.images?.length) return
+    
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % product.images.length)
+    }, 3000) // Rotate every 3 seconds
+
+    return () => clearInterval(interval)
+  }, [product.images])
+
+  // Reset indices when product changes
+  useEffect(() => {
+    setCurrentImageIndex(0)
+    setModalImageIndex(0)
+  }, [product.id])
 
   useEffect(() => {
     const card = cardRef.current
@@ -49,15 +68,19 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   }, [])
 
+  // Get the current images to display
+  const cardImage = product.images?.[currentImageIndex] || product.image
+  const modalImage = product.images?.[modalImageIndex] || product.image
+
   return (
     <>
-      <div className="bg-black/50 rounded-lg overflow-hidden border border-white/10 flex flex-col">
-        <div className="relative aspect-square w-full">
+      <div ref={cardRef} className="bg-black/50 rounded-lg overflow-hidden border border-white/10 flex flex-col h-full">
+        <div ref={imageContainerRef} className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden" onClick={() => setIsModalOpen(true)}>
           <CldImage
-            src={product.image}
+            src={cardImage}
             alt={product.name}
             fill
-            className="object-cover"
+            className="object-contain p-4"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
@@ -86,16 +109,38 @@ export function ProductCard({ product }: ProductCardProps) {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <div className="text-white max-h-[90vh] overflow-y-auto px-4 py-6 w-full max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Image */}
-            <div className="relative aspect-square w-full rounded-lg overflow-hidden">
-              <CldImage
-                src={product.image}
-                alt={product.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-              />
+            {/* Image Gallery */}
+            <div className="space-y-4">
+              <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-black/50">
+                <CldImage
+                  src={modalImage}
+                  alt={product.name}
+                  fill
+                  className="object-contain p-4"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                />
+              </div>
+              {/* Thumbnail Gallery - Only show if there are multiple images */}
+              {product.images && product.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {product.images.map((image, index) => (
+                    <button
+                      key={image}
+                      onClick={() => setModalImageIndex(index)}
+                      className={`relative w-20 h-24 flex-shrink-0 rounded-md overflow-hidden bg-black/50
+                               ${modalImageIndex === index ? 'ring-2 ring-white' : 'opacity-70'}`}
+                    >
+                      <CldImage
+                        src={image}
+                        alt={`${product.name} view ${index + 1}`}
+                        fill
+                        className="object-contain p-2"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Content */}

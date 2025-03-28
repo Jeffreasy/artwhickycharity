@@ -1,0 +1,136 @@
+/* Reset PDF styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Basic page setup */
+@page {
+  size: A4;
+  margin: 20px;
+}
+
+body {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.5;
+  color: #000000;
+  background: #ffffff;
+}
+
+/* Invoice container */
+.invoice-content {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  background: #ffffff;
+  color: #000000 !important;
+}
+
+/* Header styling */
+.invoice-content h2,
+.invoice-content h3,
+.invoice-content h4 {
+  color: #000000 !important;
+  margin-bottom: 10px;
+}
+
+/* Logo container */
+.invoice-content .w-20 {
+  width: 80px !important;
+  height: 80px !important;
+  margin: 0 auto 20px;
+}
+
+/* Grid layouts */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #dddddd;
+  color: #000000 !important;
+}
+
+th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+/* Fix any Tailwind opacity classes */
+.text-white,
+[class*="text-white"] {
+  color: #000000 !important;
+}
+
+[class*="border-white"] {
+  border-color: #dddddd !important;
+}
+
+[class*="bg-white"] {
+  background-color: #f5f5f5 !important;
+}
+
+/* Payment info box */
+.rounded-lg {
+  border-radius: 8px;
+}
+
+.border {
+  border: 1px solid #dddddd;
+}
+
+/* Specific text styles */
+.font-bold {
+  font-weight: bold !important;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+/* Remove any buttons from PDF */
+button {
+  display: none !important;
+}
+
+/* List styling */
+ul.list-disc {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+/* Spacing utilities */
+.mb-2 { margin-bottom: 8px !important; }
+.mb-4 { margin-bottom: 16px !important; }
+.mb-6 { margin-bottom: 24px !important; }
+.mb-8 { margin-bottom: 32px !important; }
+
+/* Force black text everywhere */
+* {
+  color: #000000 !important;
+}
+
+/* Hide scrollbars and overflow controls */
+.overflow-y-auto {
+  overflow: visible !important;
+}
+
+.max-h-\[90vh\] {
+  max-height: none !important;
+} 

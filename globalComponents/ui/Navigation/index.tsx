@@ -74,6 +74,11 @@ export function Navigation() {
                       height={900}
                       className="object-cover w-full h-full scale-150"
                       priority
+                      onError={(e) => {
+                        console.error(`Failed to load image with ID: 66fbc7d32c54ed89b3c8945b_test_pgrla9`);
+                        // Optioneel: toon fallback image
+                        e.currentTarget.src = '/fallback-logo.jpg';
+                      }}
                     />
                   </div>
                 </div>

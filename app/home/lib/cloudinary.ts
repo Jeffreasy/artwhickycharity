@@ -1,7 +1,8 @@
 import { Cloudinary } from '@cloudinary/url-gen'
 
+// Gebruik environment variable voor cloud name
 export const cloudinaryConfig = {
-  cloudName: 'dgfuv7wif',
+  cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dgfuv7wif',
   folder: ''
 }
 
@@ -15,7 +16,17 @@ export const cloudinary = new Cloudinary({
 })
 
 export const getCloudinaryImageUrl = (publicId: string) => {
-  return publicId
+  if (!publicId) return '';
+  
+  // Log voor debugging
+  console.log('Processing Cloudinary URL for:', publicId);
+  
+  const cleanedId = publicId
     .replace('artwhickycharity/', '')
-    .replace('HeroCircle/', '')
-} 
+    .replace('HeroCircle/', '');
+    
+  // Log cleaned ID
+  console.log('Cleaned Cloudinary ID:', cleanedId);
+  
+  return cleanedId;
+}

@@ -6,7 +6,7 @@ export interface Product {
     description: string;
     price: number;
     image: string;
-    cloudinary_id: string;
+    images: string[];
     stock: number;
     is_active: boolean;
     created_at: string;

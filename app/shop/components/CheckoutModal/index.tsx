@@ -4,7 +4,8 @@ import React, { useState, FormEvent } from 'react'
 import { Modal } from '@/globalComponents/ui/Modal'
 import { useCart } from '@/contexts/CartContext'
 import { CldImage } from 'next-cloudinary'
-import { supabase } from '@/lib/supabase'
+import { format } from 'date-fns'
+import { createOrder } from '../../lib/orders'
 
 interface CheckoutFormData {
   firstName: string
@@ -35,46 +36,36 @@ export function CheckoutModal({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<{ message: string; orderNumber: string } | null>(null)
+  const [success, setSuccess] = useState<boolean>(false)
+  const [orderNumber, setOrderNumber] = useState<string>('')
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError(null)
-    setSuccess(null)
 
     try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Create order in Supabase
+      const order = await createOrder(
+        {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          country: formData.country
         },
-        body: JSON.stringify({
-          formData,
-          items,
-          totalPrice
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to process order')
-      }
-
-      // Toon succes bericht
-      setSuccess({
-        message: data.message,
-        orderNumber: data.orderNumber
-      })
+        items,
+        totalPrice
+      )
       
-      // Clear cart
-      clearCart()
+      // Set the order number from Supabase
+      setOrderNumber(order.order_number)
       
-      // Sluit modal na 3 seconden
-      setTimeout(() => {
-        onClose()
-      }, 3000)
+      // Show success message
+      setSuccess(true)
 
     } catch (err) {
       console.error('Checkout error:', err)
@@ -84,18 +75,197 @@ export function CheckoutModal({
     }
   }
 
+  const handleDownloadPDF = async () => {
+    try {
+      setIsDownloading(true)
+      
+      // Get the invoice HTML content
+      const invoiceElement = document.querySelector('.invoice-content')
+      if (!invoiceElement) {
+        throw new Error('Invoice content not found')
+      }
+
+      // Send to our API and get PDF blob
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          html: invoiceElement.outerHTML,
+          orderNumber: orderNumber,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF')
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob()
+      
+      // Create object URL
+      const url = window.URL.createObjectURL(blob)
+      
+      // Create temporary link and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `invoice-${orderNumber}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+    } catch (error) {
+      console.error('Download error:', error)
+      alert('Failed to generate invoice PDF. Please try again.')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  // Render de betalingsbevestiging en factuurinformatie
+  if (success) {
+    const currentDate = format(new Date(), 'dd/MM/yyyy')
+    
+    return (
+      <Modal isOpen={isOpen} onClose={() => {
+        clearCart()
+        onClose()
+      }}>
+        <div className="invoice-content text-white max-h-[90vh] overflow-y-auto p-6 max-w-3xl mx-auto">
+          <div className="mb-8 text-center">
+            <div className="w-20 h-20 mx-auto mb-4">
+              <CldImage
+                src="logo_w4c_white_ql0tqp"
+                alt="Whisky4Charity Logo"
+                width={80}
+                height={80}
+                className="object-contain rounded-full"
+              />
+            </div>
+            <h2 className="text-2xl font-bold uppercase">Whisky For Charity</h2>
+            <h3 className="text-xl mt-2">INVOICE</h3>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div>
+              <p>Lauri Albers</p>
+              <p>van Kinsbergenstraat 3</p>
+              <p>8081CL Elburg</p>
+              <p>Info@whiskyforcharity.com</p>
+            </div>
+            <div className="text-right">
+              <p>Invoice</p>
+              <p>Invoicenumber: {orderNumber}</p>
+              <p>Date: {currentDate}</p>
+            </div>
+          </div>
+          
+          <div className="mb-6">
+            <h4 className="font-medium mb-2">Buyer:</h4>
+            <p>Name: {formData.firstName} {formData.lastName}</p>
+            <p>Address: {formData.address}</p>
+            <p>Zip code, City: {formData.postalCode}, {formData.city}</p>
+            <p>Country: {formData.country}</p>
+            <p>Email: {formData.email}</p>
+          </div>
+          
+          <div className="mb-6">
+            <h4 className="font-medium mb-2">Product Description:</h4>
+            <ul className="list-disc list-inside mb-4">
+              {items.map(item => (
+                <li key={item.id}>
+                  {item.name} - Quantity: {item.quantity}
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <div className="mb-6">
+            <h4 className="font-medium mb-2">Price:</h4>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-white/20">
+                  <th className="text-left py-2">Description</th>
+                  <th className="text-center py-2">Quantity</th>
+                  <th className="text-center py-2">Price per piece</th>
+                  <th className="text-right py-2">Total price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map(item => (
+                  <tr key={item.id} className="border-b border-white/10">
+                    <td className="py-2">{item.name}</td>
+                    <td className="text-center py-2">{item.quantity}</td>
+                    <td className="text-center py-2">€ {item.price.toFixed(2)}</td>
+                    <td className="text-right py-2">€ {(item.price * item.quantity).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={3} className="text-right pt-4 font-bold">Total amount:</td>
+                  <td className="text-right pt-4 font-bold">€ {totalPrice.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td colSpan={4} className="text-sm pt-1">(No VAT applicable inclusive shipping)</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          
+          <div className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
+            <h4 className="font-medium mb-2">Payment Information:</h4>
+            <p>Please transfer the amount to account number <span className="font-bold">NL10RABO0131123505</span> in the name of L. Albers.</p>
+            <p>Mentioning: HOPE edition.</p>
+          </div>
+          
+          <div className="mb-8">
+            <h4 className="font-medium mb-2">Remark:</h4>
+            <p>The entire proceeds from the sale of the 'HOPE' edition will be donated to the Refugee Foundation (www.vluchteling.nl).</p>
+          </div>
+          
+          <div className="flex justify-between gap-4">
+            <button
+              onClick={handleDownloadPDF}
+              disabled={isDownloading}
+              className="flex-1 bg-white/10 text-white py-3 rounded font-medium 
+                      hover:bg-white/20 transition-colors disabled:opacity-50 
+                      disabled:cursor-not-allowed"
+            >
+              {isDownloading ? 'Generating PDF...' : 'Download Invoice'}
+            </button>
+            <button
+              onClick={() => {
+                clearCart()
+                onClose()
+              }}
+              className="flex-1 bg-white text-black py-3 rounded font-medium 
+                      hover:bg-white/90 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="text-white max-h-[90vh] overflow-y-auto">
+      <div className="text-white max-h-[90vh] overflow-y-auto p-6">
         {/* Header met logo */}
         <div className="mb-8 text-center">
           <div className="w-32 h-32 mx-auto mb-4">
             <CldImage
-              src="66fbc7d32c54ed89b3c8945b_test_pgrla9"
+              src="logo_w4c_white_ql0tqp"
               alt="Whisky4Charity Logo"
               width={128}
               height={128}
-              className="object-cover rounded-full"
+              className="object-contain rounded-full"
             />
           </div>
           <h2 className="text-2xl font-bold">Complete Your Order</h2>
@@ -114,7 +284,7 @@ export function CheckoutModal({
                       alt={item.name}
                       width={48}
                       height={48}
-                      className="object-cover rounded"
+                      className="object-contain rounded"
                     />
                   </div>
                   <div>
@@ -131,17 +301,6 @@ export function CheckoutModal({
             </div>
           </div>
         </div>
-
-        {success && (
-          <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded">
-            <h3 className="text-green-400 font-bold text-lg mb-2">Order Successful!</h3>
-            <p className="text-green-300">Thank you for your order.</p>
-            <p className="text-green-300">Order Number: #{success.orderNumber}</p>
-            <p className="text-sm mt-2 text-green-400/80">
-              You will receive a confirmation email shortly.
-            </p>
-          </div>
-        )}
 
         {error && (
           <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded text-red-400">
@@ -230,18 +389,18 @@ export function CheckoutModal({
             />
           </div>
 
+          <p className="text-sm text-white/60 mt-4 mb-2">
+            By completing your order, you'll receive an invoice with payment instructions via bank transfer.
+          </p>
+
           <button
             type="submit"
-            disabled={isSubmitting || success !== null}
+            disabled={isSubmitting}
             className="w-full mt-6 bg-white text-black py-3 rounded font-medium 
                      hover:bg-white/90 transition-colors disabled:opacity-50 
                      disabled:cursor-not-allowed"
           >
-            {isSubmitting 
-              ? 'Processing...' 
-              : success 
-                ? 'Order Complete!' 
-                : `Complete Order (€${totalPrice.toFixed(2)})`}
+            {isSubmitting ? 'Processing...' : `Complete Order (€${totalPrice.toFixed(2)})`}
           </button>
         </form>
       </div>

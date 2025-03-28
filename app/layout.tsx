@@ -5,7 +5,6 @@ import './globals.css'
 import { MenuProvider } from '@/contexts/MenuContext'
 import { CartProvider } from '@/contexts/CartContext'
 import { Footer } from '@/globalComponents/ui/Footer/footer'
-import { Suspense } from 'react'
 import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
 
