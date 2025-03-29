@@ -69,7 +69,7 @@ export default function ProductEdit({ params }: { params: { id: string } }) {
         setStock(data.stock ? data.stock.toString() : '')
         setIsActive(!!data.is_active)
         setImage(data.image || '')
-        setAdditionalImages(Array.isArray(data.images) ? data.images.filter(img => img !== data.image) : [])
+        setAdditionalImages(Array.isArray(data.images) ? data.images.filter((img: string) => img !== data.image) : [])
       } catch (err: any) {
         console.error('Error fetching product details:', err)
         setError(err.message || 'Failed to load product details')
