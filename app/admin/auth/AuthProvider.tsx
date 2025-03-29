@@ -48,17 +48,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [supabase, router])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (error) {
+        throw error
+      }
+      
+      // Wait for auth state to update before navigation
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        router.push('/admin/dashboard')
+      }
+    } catch (error) {
+      console.error('Sign in error:', error)
       throw error
     }
-    
-    router.push('/admin/dashboard')
-    router.refresh()
   }
 
   const signOut = async () => {

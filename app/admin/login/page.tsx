@@ -29,7 +29,11 @@ export default function AdminLogin() {
     if (!isHydrated) return // Skip animations until hydrated
     
     if (user) {
-      router.push('/admin/dashboard')
+      // Add a small delay to ensure smooth transition
+      const timer = setTimeout(() => {
+        router.push('/admin/dashboard')
+      }, 100)
+      return () => clearTimeout(timer)
     } else {
       // Animaties voor login pagina
       const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
@@ -86,11 +90,7 @@ export default function AdminLogin() {
         })
       }
       
-      // Aanroepen van signIn zonder verwachting van een return waarde (void)
-      // De redirect wordt afgehandeld in de AuthProvider
       await signIn(email, password)
-      
-      // Navigatie gebeurt automatisch in useEffect als gebruiker is ingelogd
       
     } catch (err: any) {
       console.error('Login error:', err)
