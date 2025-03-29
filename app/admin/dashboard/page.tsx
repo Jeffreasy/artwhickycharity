@@ -24,7 +24,9 @@ interface Product {
   name: string
   price: number
   stock: number
-  is_active: boolean | string
+  is_active: boolean | 'true' | 'false' | null
+  created_at?: string
+  updated_at?: string
 }
 
 export default function AdminDashboard() {
@@ -42,6 +44,25 @@ export default function AdminDashboard() {
   const welcomeRef = useRef<HTMLDivElement>(null)
   const ordersTableRef = useRef<HTMLDivElement>(null)
   const productsTableRef = useRef<HTMLDivElement>(null)
+
+  // Verbeterde functie voor het bepalen van actieve producten
+  const isProductActive = (product: Product): boolean => {
+    // Controleer verschillende mogelijke representaties
+    if (typeof product.is_active === 'boolean') {
+      return product.is_active;
+    }
+    if (typeof product.is_active === 'string') {
+      const value = product.is_active.toLowerCase();
+      return value === 'true' || value === '1' || value === 'yes';
+    }
+    if (product.is_active === null || product.is_active === undefined) {
+      console.log('Null/undefined is_active value:', product.id, product.name);
+      return false;
+    }
+    // Als het een andere waarde is, log deze voor debugging
+    console.log('Onbekend is_active type:', product.id, product.name, product.is_active, typeof product.is_active);
+    return false;
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -66,7 +87,19 @@ export default function AdminDashboard() {
         
         // Debug logging
         console.log('Product data from Supabase:', productsData);
-        console.log('Product is_active values:', productsData.map(p => ({ id: p.id, name: p.name, is_active: p.is_active, type: typeof p.is_active })));
+        console.log('Product is_active values:', productsData.map(p => ({ 
+          id: p.id, 
+          name: p.name, 
+          is_active: p.is_active, 
+          type: typeof p.is_active,
+          isActiveResult: isProductActive(p),
+          rawValue: p.is_active
+        })));
+        
+        // Log active products count
+        const activeCount = productsData.filter(isProductActive).length;
+        console.log('Active products count:', activeCount);
+        console.log('Total products:', productsData.length);
         
         setOrders(ordersData)
         setProducts(productsData)
@@ -123,9 +156,15 @@ export default function AdminDashboard() {
       // Statistiek nummers tellen animatie
       const statValueElements = document.querySelectorAll('.stat-value');
       statValueElements.forEach(element => {
-        const finalValue = parseFloat(element.textContent?.replace(/[^0-9.-]+/g, '') || '0');
+        const dataValue = element.getAttribute('data-value');
+        if (!dataValue) return;
+
+        const [active, total] = dataValue.split('/').map(Number);
         const prefix = element.textContent?.includes('€') ? '€' : '';
-        const suffix = element.textContent?.includes('/') ? `/${element.textContent?.split('/')[1]}` : '';
+        const suffix = element.textContent?.includes('/') ? `/${total}` : '';
+        
+        // Reset the text content before animation
+        element.textContent = '0';
         
         gsap.fromTo(
           element, 
@@ -133,7 +172,7 @@ export default function AdminDashboard() {
           {
             duration: 1.5,
             delay: 0.3,
-            textContent: finalValue,
+            textContent: active,
             snap: { textContent: 1 },
             onUpdate: function() {
               if (this.targets()[0]) {
@@ -168,23 +207,16 @@ export default function AdminDashboard() {
   // Calculate dashboard stats
   const totalOrders = orders.length
   const totalProducts = products.length
-
-  // Verbeterde functie voor het bepalen van actieve producten
-  const isProductActive = (product: Product): boolean => {
-    // Controleer verschillende mogelijke representaties
-    if (typeof product.is_active === 'boolean') {
-      return product.is_active;
-    }
-    if (typeof product.is_active === 'string') {
-      return product.is_active.toLowerCase() === 'true';
-    }
-    // Als het een andere waarde is, log deze voor debugging
-    console.log('Onbekend is_active type:', product.id, product.name, product.is_active, typeof product.is_active);
-    return false;
-  };
-
   const activeProducts = products.filter(isProductActive).length;
   const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total_amount), 0)
+
+  // Debug logging voor statistieken
+  console.log('Dashboard stats:', {
+    totalOrders,
+    totalProducts,
+    activeProducts,
+    totalRevenue
+  });
 
   return (
     <div className="space-y-6">
@@ -246,7 +278,9 @@ export default function AdminDashboard() {
               </svg>
             </span>
           </div>
-          <p className="stat-value text-3xl font-bold mb-2">{activeProducts}/{totalProducts}</p>
+          <p className="stat-value text-3xl font-bold mb-2" data-value={`${activeProducts}/${totalProducts}`}>
+            {activeProducts}/{totalProducts}
+          </p>
           <div className="flex items-center text-gray-400 text-sm">
             <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
             <span>Active products</span>
@@ -426,11 +460,11 @@ export default function AdminDashboard() {
                     </td>
                     <td className="py-3 px-2 bg-gray-800/30 last:rounded-r-lg">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        product.is_active 
+                        isProductActive(product)
                           ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                           : 'bg-red-500/20 text-red-400 border border-red-500/30'
                       }`}>
-                        {product.is_active ? 'Active' : 'Inactive'}
+                        {isProductActive(product) ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                   </tr>
