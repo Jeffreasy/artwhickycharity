@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -57,6 +57,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) {
         throw error
       }
+      
+      // Update user state immediately
+      setUser(data.user)
       
       // Wait for auth state to update before navigation
       const { data: { session } } = await supabase.auth.getSession()

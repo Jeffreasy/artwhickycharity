@@ -34,38 +34,43 @@ export default function AdminLogin() {
         router.push('/admin/dashboard')
       }, 100)
       return () => clearTimeout(timer)
-    } else {
-      // Animaties voor login pagina
-      const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
-      
-      if (logoRef.current && titleRef.current) {
-        timeline
-          .fromTo(
-            logoRef.current,
-            { scale: 0, opacity: 0 },
-            { scale: 1, opacity: 1, duration: 0.8 }
-          )
-          .fromTo(
-            titleRef.current,
-            { y: -20, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.6 },
-            '-=0.4'
-          )
-          .fromTo(
-            '.form-field',
-            { y: 20, opacity: 0 },
-            { y: 0, opacity: 1, stagger: 0.15, duration: 0.6 },
-            '-=0.3'
-          )
-          .fromTo(
-            '.login-btn',
-            { y: 20, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.6 },
-            '-=0.2'
-          )
-      }
     }
   }, [isHydrated, user, router])
+
+  // Separate useEffect for animations
+  useEffect(() => {
+    if (!isHydrated || user) return // Skip animations if hydrated and user exists
+    
+    // Animaties voor login pagina
+    const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
+    
+    if (logoRef.current && titleRef.current) {
+      timeline
+        .fromTo(
+          logoRef.current,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.8 }
+        )
+        .fromTo(
+          titleRef.current,
+          { y: -20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6 },
+          '-=0.4'
+        )
+        .fromTo(
+          '.form-field',
+          { y: 20, opacity: 0 },
+          { y: 0, opacity: 1, stagger: 0.15, duration: 0.6 },
+          '-=0.3'
+        )
+        .fromTo(
+          '.login-btn',
+          { y: 20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6 },
+          '-=0.2'
+        )
+    }
+  }, [isHydrated, user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,6 +96,9 @@ export default function AdminLogin() {
       }
       
       await signIn(email, password)
+      
+      // Als we hier komen, is de login succesvol
+      // De redirect wordt afgehandeld door de useEffect
       
     } catch (err: any) {
       console.error('Login error:', err)
