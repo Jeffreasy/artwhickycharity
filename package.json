@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@cloudinary/url-gen": "^1.21.0",
+    "@heroicons/react": "^2.2.0",
     "@react-pdf/renderer": "^4.3.0",
     "@sendgrid/mail": "^8.1.4",
     "@sentry/nextjs": "^8.55.0",

@@ -8,6 +8,7 @@ import { Footer } from '@/globalComponents/ui/Footer/footer'
 import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
 import { Analytics } from '@vercel/analytics/react'
+import { AdminButton } from '@/globalComponents/ui/Adminbutton'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -50,6 +51,7 @@ export default function RootLayout({
             <CartButton />
           </CartProvider>
         </MenuProvider>
+        <AdminButton />
         <Analytics />
       </body>
     </html>
