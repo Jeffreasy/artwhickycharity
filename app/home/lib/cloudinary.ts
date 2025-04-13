@@ -18,15 +18,8 @@ export const cloudinary = new Cloudinary({
 export const getCloudinaryImageUrl = (publicId: string) => {
   if (!publicId) return '';
   
-  // Log voor debugging
-  console.log('Processing Cloudinary URL for:', publicId);
-  
-  const cleanedId = publicId
-    .replace('artwhickycharity/', '')
-    .replace('HeroCircle/', '');
-    
-  // Log cleaned ID
-  console.log('Cleaned Cloudinary ID:', cleanedId);
+  // Verwijder extensies en potentiele "versie" prefix (vXXXXXXXXXX/)
+  const cleanedId = publicId.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
   
   return cleanedId;
 }

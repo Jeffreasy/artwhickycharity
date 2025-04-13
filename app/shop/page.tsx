@@ -7,6 +7,7 @@ import { ShopSkeleton } from './components/ShopSkeleton'
 import * as Sentry from "@sentry/nextjs"
 import { redirect } from 'next/navigation'
 import { SHOP_CONFIG } from '../config/shopConfig'
+import { Product } from '@/types/product'; // Import Product type
 
 export const revalidate = 3600 // revalidate elke uur
 
@@ -16,27 +17,28 @@ export const metadata = {
 }
 
 export default async function ShopPage() {
-  try {
-    const products = await getProducts()
+  let products: Product[] = []
+  let hopeProduct: Product | null = null
 
-    return (
-      <main className="min-h-screen">
-        <ShopHero />
-        <Suspense fallback={<ShopSkeleton />}>
-          <ProductList products={products} />
-        </Suspense>
-      </main>
-    )
+  try {
+    products = await getProducts()
+    
+    // Find the specific HOPE product
+    const hopeProductName = "Limited Edition Whisky HOPE"; 
+    hopeProduct = products.find(p => p.name === hopeProductName) || null;
+
   } catch (error) {
     Sentry.captureException(error)
     console.error('Error loading shop content:', error)
-    return (
-      <main className="min-h-screen">
-        <ShopHero />
-        <Suspense fallback={<ShopSkeleton />}>
-          <ProductList products={[]} />
-        </Suspense>
-      </main>
-    )
+    // Keep products as [] and hopeProduct as null
   }
+
+  return (
+    <main className="min-h-screen">
+      <ShopHero hopeProduct={hopeProduct} />
+      <Suspense fallback={<ShopSkeleton />}>
+        <ProductList products={products} />
+      </Suspense>
+    </main>
+  )
 }

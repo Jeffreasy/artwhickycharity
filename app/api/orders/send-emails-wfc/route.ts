@@ -8,7 +8,6 @@ async function sendOrderEmailWithWFC(orderData: any) {
   const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
   
   if (isBuildTime) {
-    console.log('Skipping WFC email during build time')
     return { success: true, skipped: true }
   }
   
@@ -21,7 +20,6 @@ async function sendOrderEmailWithWFC(orderData: any) {
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
     
     try {
-      console.log('Sending email through WFC email service:', `${backendUrl}${endpoint}`)
       const apiKey = process.env.WFC_API_KEY || 'dkl_metrics_api_key_2025'
       
       const response = await fetch(`${backendUrl}${endpoint}`, {
@@ -44,28 +42,24 @@ async function sendOrderEmailWithWFC(orderData: any) {
       return await response.json()
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.error('WFC Email Service request timed out')
         throw new Error('Request to WFC Email Service timed out after 10 seconds')
       }
       throw error
     }
   } catch (error) {
-    console.error('Error sending email with WFC:', error)
     throw error
   }
 }
+
+// Export the function so it can be imported elsewhere
+export { sendOrderEmailWithWFC };
 
 export async function POST(request: Request) {
   // Skip API calls during build time in Vercel
   const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
   
   if (isBuildTime) {
-    console.log('Skipping order email processing during build time')
-    return NextResponse.json({
-      success: true,
-      emailSent: true,
-      skippedDuringBuild: true
-    })
+    return NextResponse.json({ message: 'Skipping email processing during build time' }, { status: 200 })
   }
   
   try {
@@ -89,8 +83,7 @@ export async function POST(request: Request) {
       .single()
     
     if (orderError || !order) {
-      console.error('Error fetching order:', orderError)
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+      throw new Error('Order not found')
     }
     
     // Fetch order items with product details
@@ -105,14 +98,12 @@ export async function POST(request: Request) {
       .eq('order_id', orderId)
     
     if (itemsError) {
-      console.error('Error fetching order items:', itemsError)
-      return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
+      throw new Error('Failed to fetch order items')
     }
 
     // Fetch products for the order items
     if (orderItems.length === 0) {
-      console.warn('No order items found for order:', orderId)
-      return NextResponse.json({ error: 'No order items found' }, { status: 404 })
+      throw new Error('No order items found')
     }
 
     // Get all product IDs
@@ -130,8 +121,7 @@ export async function POST(request: Request) {
       .in('id', productIds)
       
     if (productsError) {
-      console.error('Error fetching products:', productsError)
-      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
+      throw new Error('Failed to fetch products')
     }
     
     // Match order items with products and create final items array
@@ -172,16 +162,11 @@ export async function POST(request: Request) {
       template_type: "wfc_order_confirmation"
     }
     
-    // Log de aanvraag body voor debugging
-    console.log('DEBUG - WFC Email Request Data:', JSON.stringify(backendRequestData))
-    
     // Send email using WFC Email Service
-    console.log('Sending order email via WFC Email Service...')
     let emailSent = false
     
     try {
       const result = await sendOrderEmailWithWFC(backendRequestData)
-      console.log('Email sent result:', result)
       emailSent = true
       
       // Update order to mark email as sent
@@ -192,7 +177,7 @@ export async function POST(request: Request) {
           .eq('id', orderId)
         
         if (updateError) {
-          console.error('Error updating order emails_sent status:', updateError)
+          throw new Error('Error updating order emails_sent status')
         }
       }
       
@@ -203,19 +188,10 @@ export async function POST(request: Request) {
       })
       
     } catch (error) {
-      console.error('Failed to send order email:', error)
-      return NextResponse.json({
-        success: false,
-        emailSent: false,
-        error: (error as Error).message
-      }, { status: 500 })
+      throw error
     }
     
   } catch (error) {
-    console.error('Error in send-emails-wfc API route:', error)
-    return NextResponse.json(
-      { error: 'Failed to send email', details: (error as Error).message },
-      { status: 500 }
-    )
+    throw error
   }
 } 

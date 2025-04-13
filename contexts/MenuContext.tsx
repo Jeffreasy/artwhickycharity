@@ -1,16 +1,30 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 
 interface MenuContextType {
   isMenuOpen: boolean
-  setIsMenuOpen: (open: boolean) => void
+  setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>
+  toggleMenu: () => void
+  closeMenu: () => void
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined)
 
-export function MenuProvider({ children }: { children: React.ReactNode }) {
+interface MenuProviderProps {
+  children: ReactNode
+}
+
+export const MenuProvider: React.FC<MenuProviderProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen(prev => !prev)
+  }, [])
+
+  const closeMenu = useCallback(() => {
+    setIsMenuOpen(false)
+  }, [])
 
   // Voorkom scrollen wanneer menu open is
   useEffect(() => {
@@ -24,8 +38,15 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isMenuOpen])
 
+  const value = {
+    isMenuOpen,
+    setIsMenuOpen,
+    toggleMenu,
+    closeMenu,
+  }
+
   return (
-    <MenuContext.Provider value={{ isMenuOpen, setIsMenuOpen }}>
+    <MenuContext.Provider value={value}>
       {children}
     </MenuContext.Provider>
   )

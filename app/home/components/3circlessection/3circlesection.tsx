@@ -203,7 +203,6 @@ export function ThreeCirclesSection({ initialSections }: ThreeCirclesSectionProp
 
   useEffect(() => {
     void fetchSections()
-    console.log('Setting up ThreeCircles realtime subscription...')
 
     const channel = supabase.channel('circle_sections_changes')
       .on(
@@ -214,16 +213,13 @@ export function ThreeCirclesSection({ initialSections }: ThreeCirclesSectionProp
           table: 'circle_sections',
         },
         async (payload) => {
-          console.log('ThreeCircles change received:', payload)
           await fetchSections()
         }
       )
       .subscribe((status) => {
-        console.log('ThreeCircles subscription status:', status)
       })
 
     return () => {
-      console.log('Cleaning up ThreeCircles subscription')
       void channel.unsubscribe()
     }
   }, []) // Leeg dependency array

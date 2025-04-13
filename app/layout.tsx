@@ -9,6 +9,7 @@ import { CartButton } from '@/globalComponents/ui/CartButton'
 import { HomeButton } from '@/globalComponents/ui/Homebutton'
 import { Analytics } from '@vercel/analytics/react'
 import { AdminButton } from '@/globalComponents/ui/Adminbutton'
+import { PageLoader } from '@/globalComponents/ui/PageLoader'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -38,6 +39,7 @@ export default function RootLayout({
           'font-sans'
         )}
       >
+        <PageLoader />
         <MenuProvider>
           <CartProvider>
             <Navigation />

@@ -2,8 +2,6 @@ import { LanguagePhrase } from '@/types/language-bar'
 import { supabase } from '@/lib/supabase'
 
 export async function getLanguagePhrases(): Promise<LanguagePhrase[]> {
-  console.log('Fetching language phrases...')
-  
   const { data, error } = await supabase
     .from('language_phrases')
     .select('*')
@@ -15,7 +13,6 @@ export async function getLanguagePhrases(): Promise<LanguagePhrase[]> {
     throw error
   }
 
-  console.log('Fetched phrases:', data)
   return data || []
 }
 
@@ -55,8 +52,8 @@ export async function deleteLanguagePhrase(id: string) {
 }
 
 // Helper functie om te controleren of realtime werkt
-export async function testRealtimeConnection() {
-  const channel = supabase.channel('test-channel')
+export async function testRealtimeConnection(callback: (payload: LanguagePhrase) => void) {
+  const channel = supabase.channel('language_phrase_changes')
     .on(
       'postgres_changes',
       {
@@ -65,11 +62,10 @@ export async function testRealtimeConnection() {
         table: 'language_phrases',
       },
       (payload) => {
-        console.log('Realtime event received:', payload)
+        callback(payload.new as LanguagePhrase)
       }
     )
     .subscribe((status) => {
-      console.log('Channel status:', status)
     })
 
   return channel

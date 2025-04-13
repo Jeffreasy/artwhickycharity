@@ -32,33 +32,29 @@ export function CircleHero({ initialItems }: { initialItems: CircleHeroItem[] })
 
   useEffect(() => {
     void fetchItems()
-    console.log('Setting up CircleHero realtime subscription...')
-
-    const channel = supabase.channel('circle_hero_changes')
+    const channel = supabase
+      .channel('circle_hero_items_changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'circle_hero_items',
-          // Verwijder de filter om alle changes te zien
-          // filter: 'is_active=eq.true'
         },
         async (payload) => {
-          console.log('CircleHero change received:', payload)
           await fetchItems()
         }
       )
       .subscribe((status) => {
-        console.log('CircleHero subscription status:', status)
       })
 
     return () => {
-      console.log('Cleaning up CircleHero subscription')
       if (rotationTimeoutRef.current) {
         clearTimeout(rotationTimeoutRef.current)
       }
-      void channel.unsubscribe()
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, []) // Leeg dependency array
 

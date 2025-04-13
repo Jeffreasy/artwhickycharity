@@ -4,7 +4,7 @@ import { testSendgrid } from '@/lib/email-sendgrid'
 // API route om SendGrid e-mail te testen
 export async function GET(request: NextRequest) {
   try {
-    console.log('Testing SendGrid email service...')
+    //console.log('Testing SendGrid email service...')
     
     const success = await testSendgrid()
     

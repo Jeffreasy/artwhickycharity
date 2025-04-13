@@ -7,9 +7,10 @@ import { supabase } from '@/lib/supabase'
 
 export function CircleHeroWrapper() {
   const [items, setItems] = useState<CircleHeroItem[]>([])
+  const [loading, setLoading] = useState(false)
 
   const fetchItems = async () => {
-    console.log('Fetching circle hero items...')
+    setLoading(true)
     const { data, error } = await supabase
       .from('circle_hero_items')
       .select('*')
@@ -22,16 +23,15 @@ export function CircleHeroWrapper() {
     }
     
     if (data) {
-      console.log('Received new items:', data)
-      setItems(data)
+      setItems(data as CircleHeroItem[])
     }
   }
 
   useEffect(() => {
-    console.log('Setting up circle hero subscription...')
     void fetchItems()
 
-    const channel = supabase.channel('circle_hero_changes')
+    const channel = supabase
+      .channel('realtime-circle-hero-items')
       .on(
         'postgres_changes',
         { 
@@ -39,19 +39,22 @@ export function CircleHeroWrapper() {
           schema: 'public',
           table: 'circle_hero_items'
         },
-        (payload) => {
-          console.log('Received change event:', payload)
-          void fetchItems()
+        (payload: any) => {
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT' || payload.eventType === 'DELETE') {
+            void fetchItems()
+          }
         }
       )
-      .subscribe((status, err) => {
-        console.log('Subscription status:', status)
-        if (err) console.error('Subscription error:', err)
+      .subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          setLoading(false)
+        }
       })
 
     return () => {
-      console.log('Cleaning up circle hero subscription')
-      channel.unsubscribe()
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [])
 

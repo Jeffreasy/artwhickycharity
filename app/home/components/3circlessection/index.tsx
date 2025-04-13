@@ -7,9 +7,10 @@ import { supabase } from '@/lib/supabase'
 
 export function ThreeCirclesWrapper() {
   const [sections, setSections] = useState<CircleSection[]>([])
+  const [loading, setLoading] = useState(false)
 
   const fetchSections = async () => {
-    console.log('Fetching circle sections...')
+    setLoading(true)
     const { data, error } = await supabase
       .from('circle_sections')
       .select('*')
@@ -22,16 +23,14 @@ export function ThreeCirclesWrapper() {
     }
 
     if (data) {
-      console.log('Received new sections:', data)
       setSections(data)
     }
   }
 
   useEffect(() => {
-    console.log('Setting up circle sections subscription...')
     void fetchSections()
 
-    const channel = supabase.channel('circle_sections_changes')
+    const channel = supabase.channel('realtime-circle-sections')
       .on(
         'postgres_changes',
         {
@@ -39,19 +38,26 @@ export function ThreeCirclesWrapper() {
           schema: 'public',
           table: 'circle_sections'
         },
-        (payload) => {
-          console.log('Received change event:', payload)
-          void fetchSections()
+        (payload: any) => {
+          if (payload.eventType === 'UPDATE') {
+            setSections((prevSections) =>
+              prevSections.map((section) =>
+                payload.new.id === section.id ? payload.new : section
+              )
+            )
+          }
         }
       )
-      .subscribe((status, err) => {
-        console.log('Subscription status:', status)
-        if (err) console.error('Subscription error:', err)
+      .subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          setLoading(false)
+        }
       })
 
     return () => {
-      console.log('Cleaning up circle sections subscription')
-      channel.unsubscribe()
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [])
 

@@ -121,8 +121,6 @@ export function CheckoutModal({
         adminEmailSent: result.emailSent
       })
       
-      console.log('Emails sent via WFC Email Service:', result)
-      
     } catch (error) {
       console.error('Failed to send confirmation emails:', error)
       setEmailStatus({ sent: false })
@@ -142,8 +140,6 @@ export function CheckoutModal({
         throw new Error('Invoice content not found')
       }
 
-      console.log('Sending request to generate PDF...')
-      
       // Send to our API and get PDF blob
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
@@ -156,8 +152,6 @@ export function CheckoutModal({
         }),
       })
 
-      console.log('Response status:', response.status)
-      
       if (!response.ok) {
         let errorText = 'Failed to generate PDF'
         try {
@@ -191,8 +185,6 @@ export function CheckoutModal({
           throw new Error('Received empty PDF')
         }
         
-        console.log('PDF received, size:', blob.size)
-        
         // Create object URL
         const url = window.URL.createObjectURL(blob)
         
@@ -210,7 +202,6 @@ export function CheckoutModal({
         setTimeout(() => {
           document.body.removeChild(link)
           window.URL.revokeObjectURL(url)
-          console.log('PDF download triggered')
         }, 100)
       } 
       // Handle text fallback
@@ -232,7 +223,6 @@ export function CheckoutModal({
         setTimeout(() => {
           document.body.removeChild(link)
           window.URL.revokeObjectURL(url)
-          console.log('Text invoice download triggered')
         }, 100)
         
         setError('Could not generate PDF invoice. A text version has been downloaded instead.')

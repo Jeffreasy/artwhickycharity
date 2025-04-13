@@ -26,8 +26,5 @@ export async function getWhiskyImages(): Promise<WhiskyImage[]> {
     throw new Error('Failed to fetch whisky images')
   }
 
-  // Log de IDs voor debugging
-  console.log('Fetched image IDs:', images?.map(img => img.cloudinary_id))
-
   return images as WhiskyImage[]
 } 

@@ -7,12 +7,7 @@ async function sendTestEmailWithWFC() {
   const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
   
   if (isBuildTime) {
-    console.log('Skipping WFC email test during build time')
-    return {
-      success: true,
-      skipped: true,
-      message: 'Test skipped during build'
-    }
+    return NextResponse.json({ message: 'Skipping test during build' }, { status: 200 });
   }
   
   try {
@@ -26,9 +21,6 @@ async function sendTestEmailWithWFC() {
       subject: "Test Email from Whisky For Charity",
       message: "This is a test email from the Whisky For Charity website via the WFC Email Service."
     }
-    
-    console.log(`Sending test email to WFC Email Service: ${backendUrl}${endpoint}`)
-    console.log('Test data:', JSON.stringify(testData, null, 2))
     
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
@@ -48,16 +40,12 @@ async function sendTestEmailWithWFC() {
       
       clearTimeout(timeoutId)
       
-      console.log('WFC Email Service response status:', response.status)
-      
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('WFC Email Service error response:', errorText)
-        throw new Error(`WFC Email Service error (${response.status}): ${errorText}`)
+        throw new Error(`API call failed with status: ${response.status}`)
       }
       
       const result = await response.json()
-      console.log('WFC Email Service success response:', result)
       
       return {
         success: true,
@@ -65,7 +53,6 @@ async function sendTestEmailWithWFC() {
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.error('WFC Email Service request timed out')
         return {
           success: false,
           error: 'Request to WFC Email Service timed out after 5 seconds'
@@ -74,7 +61,6 @@ async function sendTestEmailWithWFC() {
       throw error
     }
   } catch (error) {
-    console.error('Error sending test email with WFC:', error)
     return {
       success: false,
       error: (error as Error).message
@@ -93,13 +79,9 @@ export async function GET(request: Request) {
   const isVercelBot = userAgent.includes('Vercel') || userAgent.includes('bot') || userAgent.includes('crawler');
   const isPrefetch = referer === '' || !referer;
   
-  // Alleen uitvoeren als het een echte gebruiker betreft
+  // Prevent running during automated processes
   if (isBuildTime || isVercelBot || isPrefetch) {
-    console.log('Skipping WFC email test during automated process:', { isBuildTime, isVercelBot, isPrefetch, userAgent });
-    return NextResponse.json({
-      message: 'WFC Email test skipped during automated process',
-      skipped: true
-    });
+    return NextResponse.json({ message: 'Skipping test during automated process' }, { status: 200 });
   }
   
   // Controleer op query parameter om handmatige test te forceren
@@ -116,25 +98,24 @@ export async function GET(request: Request) {
   try {
     const result = await sendTestEmailWithWFC()
     
-    if (result.skipped) {
-      return NextResponse.json({
-        message: 'WFC Email test skipped during build',
-        skipped: true
-      })
+    // Check if it's a NextResponse object (meaning it was skipped)
+    if (result instanceof NextResponse) {
+        return result; // Return the skip response directly
     }
     
+    // Otherwise, it should be the result object with success/error properties
     if (!result.success) {
+      console.error('WFC Email Test Failed:', result.error);
       return NextResponse.json(
-        { error: 'Failed to send test email', details: result.error },
+        { message: 'WFC Email Test Failed', error: result.error },
         { status: 500 }
-      )
+      );
     }
     
     return NextResponse.json({
-      message: 'Test email sent successfully via WFC Email Service',
-      result: result.result
-    })
-    
+      message: 'WFC Email Test Successful',
+      result: result.result,
+    });
   } catch (error) {
     console.error('Error in test-wfc-email API route:', error)
     return NextResponse.json(

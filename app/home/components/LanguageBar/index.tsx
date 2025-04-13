@@ -16,17 +16,10 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [phrases, setPhrases] = useState<LanguagePhrase[]>(initialPhrases)
 
-  // Debug log voor initial render
   useEffect(() => {
-    console.log('LanguageBar mounted with phrases:', initialPhrases)
-  }, [initialPhrases])
+    setPhrases(initialPhrases)
 
-  // Realtime subscription setup
-  useEffect(() => {
-    console.log('Setting up realtime subscription...')
-
-    const handleDatabaseChange = async () => {
-      console.log('Fetching fresh data...')
+    const fetchFreshData = async () => {
       const { data, error } = await supabase
         .from('language_phrases')
         .select('*')
@@ -34,12 +27,10 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
         .order('order_number', { ascending: true })
 
       if (error) {
-        console.error('Error fetching updated data:', error)
         return
       }
 
       if (data) {
-        console.log('Received fresh data:', data)
         setPhrases(data)
       }
     }
@@ -52,36 +43,31 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
           schema: 'public',
           table: 'language_phrases',
         },
-        async (payload: RealtimePostgresChangesPayload<LanguagePhrase>) => {
-          console.log('Change detected:', payload)
-          await handleDatabaseChange()
+        async (payload) => {
+          await fetchFreshData()
         }
       )
       .subscribe((status) => {
-        console.log('Subscription status:', status)
         if (status === 'SUBSCRIBED') {
-          // Haal direct verse data op bij succesvolle subscription
-          void handleDatabaseChange()
+          void fetchFreshData()
         }
       })
 
     return () => {
-      console.log('Cleaning up subscription')
-      channel.unsubscribe()
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
-  }, []) // Empty dependency array
+  }, [])
 
-  // Carousel animatie setup
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
 
-    // Bereken hoeveel keer we de phrases moeten herhalen om de hele breedte te vullen
     const screenWidth = window.innerWidth
     const repeats = Math.ceil((screenWidth * 2) / (screenWidth / phrases.length)) + 2
     const allPhrases = Array(repeats).fill(phrases).flat()
     
-    // Maak de track leeg en voeg nieuwe items toe
     track.innerHTML = ''
     allPhrases.forEach((phrase, index) => {
       const item = document.createElement('div')
@@ -94,7 +80,6 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
       item.textContent = `${phrase.emoji} ${phrase.phrase}`
       item.setAttribute('lang', phrase.language_code)
 
-      // Fade-in animatie voor elk item
       gsap.fromTo(item, 
         { opacity: 0, y: 10 },
         { 
@@ -106,7 +91,6 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
         }
       )
 
-      // Hover effecten
       item.addEventListener('mouseenter', () => {
         gsap.to(item, {
           scale: 1.05,
@@ -126,17 +110,15 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
       track.appendChild(item)
     })
 
-    // Start de oneindige scroll animatie
     const startAnimation = () => {
       const trackWidth = track.scrollWidth
       const singleLoopWidth = trackWidth / repeats
 
-      // Reset positie en start animatie
       gsap.fromTo(track,
         { x: 0 },
         {
           x: -singleLoopWidth,
-          duration: 20, // Langzamere snelheid
+          duration: 20,
           ease: "none",
           repeat: -1,
           onRepeat: () => {
@@ -146,10 +128,8 @@ export function LanguageBar({ initialPhrases }: LanguageBarProps) {
       )
     }
 
-    // Start de animatie na een korte delay
     setTimeout(startAnimation, 500)
 
-    // Cleanup
     return () => {
       gsap.killTweensOf(track)
     }

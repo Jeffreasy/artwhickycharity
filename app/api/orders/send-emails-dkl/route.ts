@@ -8,7 +8,6 @@ async function sendEmailWithDKL(templateType: string, data: any) {
   const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
   
   if (isBuildTime) {
-    console.log(`Skipping DKL email (${templateType}) during build time`)
     return { success: true, skipped: true }
   }
   
@@ -35,10 +34,10 @@ async function sendEmailWithDKL(templateType: string, data: any) {
       
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`DKL Email Service error (${response.status}): ${errorText}`)
+        return { success: false, error: `DKL Email Service error (${response.status}): ${errorText}` }
       }
       
-      return await response.json()
+      return { success: true, result: await response.json() }
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.error('DKL Email Service request timed out')
@@ -51,6 +50,9 @@ async function sendEmailWithDKL(templateType: string, data: any) {
     throw error
   }
 }
+
+// Export the helper function
+export { sendEmailWithDKL };
 
 export async function POST(request: Request) {
   // Skip API calls during build time in Vercel
