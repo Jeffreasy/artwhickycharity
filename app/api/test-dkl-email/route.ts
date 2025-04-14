@@ -3,9 +3,14 @@ import { headers } from 'next/headers'
 
 // Function to send a test email using DKL Email Service
 async function sendTestEmailWithDKL() {
-  // Only proceed with the actual API call if not in build
-  const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build'
+  // Skip during production build/runtime
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[test-dkl-email] Skipping DKL test in production environment');
+    return { success: true, skipped: true }; // Return skipped status
+  }
   
+  // Skip API calls during build time in Vercel (redundant but safe)
+  const isBuildTime = process.env.VERCEL_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
   if (isBuildTime) {
     return NextResponse.json({ message: 'Skipping test during build' }, { status: 200 });
   }

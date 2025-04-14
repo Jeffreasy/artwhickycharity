@@ -11,6 +11,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { AdminButton } from '@/globalComponents/ui/Adminbutton'
 import { PageLoader } from '@/globalComponents/ui/PageLoader'
 import Script from 'next/script'
+import React, { Suspense } from 'react'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -42,7 +43,9 @@ export default function RootLayout({
           'font-sans'
         )}
       >
-        <PageLoader />
+        <Suspense fallback={null}>
+          <PageLoader />
+        </Suspense>
         <MenuProvider>
           <CartProvider>
             <Navigation />

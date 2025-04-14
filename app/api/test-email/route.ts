@@ -3,6 +3,11 @@ import { headers } from 'next/headers'
 
 // This function skips actual email sending during build time
 export async function GET(request: Request) {
+  // Skip during production build/runtime
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ message: 'Test skipped in production environment' }, { status: 200 });
+  }
+  
   // Get Headers
   const headersList = headers();
   const referer = headersList.get('referer') || '';

@@ -3,6 +3,12 @@ import { testSendgrid } from '@/lib/email-sendgrid'
 
 // API route om SendGrid e-mail te testen
 export async function GET(request: NextRequest) {
+  // Skip during production build/runtime
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[test-sendgrid] Skipping SendGrid test in production environment');
+    return NextResponse.json({ message: 'Test skipped in production environment', success: true });
+  }
+  
   try {
     //console.log('Testing SendGrid email service...')
     
