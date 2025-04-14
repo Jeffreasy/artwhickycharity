@@ -10,6 +10,7 @@ import { HomeButton } from '@/globalComponents/ui/Homebutton'
 import { Analytics } from '@vercel/analytics/react'
 import { AdminButton } from '@/globalComponents/ui/Adminbutton'
 import { PageLoader } from '@/globalComponents/ui/PageLoader'
+import Script from 'next/script'
 
 const robotoSlab = Roboto_Slab({ 
   subsets: ['latin'],
@@ -27,6 +28,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+
   return (
     <html lang="nl" className="h-full">
       <body 
@@ -55,6 +58,29 @@ export default function RootLayout({
         </MenuProvider>
         <AdminButton />
         <Analytics />
+
+        {/* Google Analytics Scripts - Only render if GA_ID is set */}
+        {gaId && (
+          <>
+            <Script
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+            />
+            <Script
+              id="google-analytics-config"
+              strategy="afterInteractive"
+            >
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}', {
+                  page_path: window.location.pathname,
+                });
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   )
