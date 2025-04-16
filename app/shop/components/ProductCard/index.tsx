@@ -115,10 +115,12 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
+        {/* Remove the div containing name and description */}
+        {/* 
         <div className="p-5 flex flex-col justify-between flex-grow">
           <div>
             <h3 className="text-lg font-semibold mb-2 line-clamp-2">{product.name}</h3>
-            <p className="text-sm text-white/70 mb-4 line-clamp-3">{product.description}</p>
+            <p className="text-sm text-white/70 mb-4">{product.description}</p>
           </div>
 
           <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/5">
@@ -136,6 +138,24 @@ export function ProductCard({ product }: ProductCardProps) {
             </button>
           </div>
         </div>
+        */}
+
+        {/* Keep only the price and button section, adjusting padding/margin as needed */}
+        <div className="p-5 mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+          <span className="text-xl font-bold">€{product.price.toFixed(2)}</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              addToCart(product)
+            }}
+            disabled={product.stock <= 0}
+            className="bg-white text-black px-4 py-2 rounded-lg hover:bg-white/90 transition-colors
+                     disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {product.stock > 0 ? 'Add to Cart' : 'Sold Out'}
+          </button>
+        </div>
+
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
