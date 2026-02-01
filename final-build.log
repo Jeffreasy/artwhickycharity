@@ -1,0 +1,122 @@
+
+> artwhickycharity@0.1.0 build
+> next build
+
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env
+  - Experiments (use with caution):
+    ┬À instrumentationHook
+
+   Creating an optimized production build ...
+[@sentry/nextjs] The Sentry SDK has enabled source map generation for your Next.js app. If you don't want to serve Source Maps to your users, either set the `sourcemaps.deleteSourcemapsAfterUpload` option to true, or manually delete the source maps after the build. In future Sentry SDK versions `sourcemaps.deleteSourcemapsAfterUpload` will default to `true`. If you do not want to generate and upload sourcemaps, set the `sourcemaps.disable` option in `withSentryConfig()`.
+Browserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+ Ô¿» ESLint must be installed in order to run during builds: npm install --save-dev eslint
+Failed to compile.
+
+.next/types/app/api/orders/send-emails-dkl/route.ts:8:13
+Type error: Type 'OmitWithTag<typeof import("C:/Users/JJALa/Desktop/2026Developer/Astro Projects/artwhickycharity/app/api/orders/send-emails-dkl/route"), "POST" | "DELETE" | "GET" | "config" | "generateStaticParams" | ... 10 more ... | "PATCH", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+  Property 'sendEmailWithDKL' is incompatible with index signature.
+    Type '(templateType: string, data: any) => Promise<{ success: boolean; skipped: boolean; error?: undefined; result?: undefined; } | { success: boolean; error: string; skipped?: undefined; result?: undefined; } | { ...; }>' is not assignable to type 'never'.
+
+   6 |
+   7 | // Check that the entry is a valid entry
+>  8 | checkFields<Diff<{
+     |             ^
+   9 |   GET?: Function
+  10 |   HEAD?: Function
+  11 |   OPTIONS?: Function
+Next.js build worker exited with code: 1 and signal: null
+
+> artwhickycharity@0.1.0 build
+> next build
+
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env
+  - Experiments (use with caution):
+    ┬À instrumentationHook
+
+   Creating an optimized production build ...
+[@sentry/nextjs] The Sentry SDK has enabled source map generation for your Next.js app. If you don't want to serve Source Maps to your users, either set the `sourcemaps.deleteSourcemapsAfterUpload` option to true, or manually delete the source maps after the build. In future Sentry SDK versions `sourcemaps.deleteSourcemapsAfterUpload` will default to `true`. If you do not want to generate and upload sourcemaps, set the `sourcemaps.disable` option in `withSentryConfig()`.
+Browserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+ Ô¿» ESLint must be installed in order to run during builds: npm install --save-dev eslint
+   Collecting page data ...
+SMTP Verification failed: Error: Greeting never received
+    at h._formatError (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\checkout\route.js:1:171223)
+    at h._onError (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\checkout\route.js:1:171014)
+    at Timeout.<anonymous> (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\checkout\route.js:1:170138)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7) {
+  code: 'ETIMEDOUT',
+  command: 'CONN'
+}
+   Generating static pages (0/23) ...
+Cloudinary error: Error: Must supply api_secret
+    at C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\test-cloudinary\route.js:9:10352
+    at t.exports (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\test-cloudinary\route.js:1:17894)
+    at e.resources (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\test-cloudinary\route.js:1:6498)
+    at t.<computed> [as resources] (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\test-cloudinary\route.js:11:289)
+    at p (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\test-cloudinary\route.js:1:3444)
+    at C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38417
+    at C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\node_modules\next\dist\server\lib\trace\tracer.js:140:36
+    at NoopContextManager.with (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\node_modules\@opentelemetry\api\build\src\context\NoopContextManager.js:25:19)
+    at ContextAPI.with (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\node_modules\@opentelemetry\api\build\src\api\context.js:60:46)
+    at NoopTracer.startActiveSpan (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\node_modules\@opentelemetry\api\build\src\trace\NoopTracer.js:65:31)
+   Generating static pages (5/23) 
+[test-sendgrid] Skipping SendGrid test in production environment
+   Generating static pages (11/23) 
+   Generating static pages (17/23) 
+SMTP Verification failed: Error: Greeting never received
+    at h._formatError (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\checkout\route.js:1:171223)
+    at h._onError (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\checkout\route.js:1:171014)
+    at Timeout.<anonymous> (C:\Users\JJALa\Desktop\2026Developer\Astro Projects\artwhickycharity\.next\server\app\api\checkout\route.js:1:170138)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7) {
+  code: 'ETIMEDOUT',
+  command: 'CONN'
+}
+ Ô£ô Generating static pages (23/23)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Ôöî Ôùï /                                    325 B           293 kB
+Ôö£ Ôùï /_not-found                          1.02 kB         193 kB
+Ôö£ ãÆ /about                               3.33 kB         278 kB
+Ôö£ ãÆ /api/analytics                       0 B                0 B
+Ôö£ ãÆ /api/checkout                        0 B                0 B
+Ôö£ Ôùï /api/circle-hero                     0 B                0 B
+Ôö£ ãÆ /api/generate-pdf.disabled           0 B                0 B
+Ôö£ ãÆ /api/orders/send-emails              0 B                0 B
+Ôö£ ãÆ /api/test-cloudinary                 0 B                0 B
+Ôö£ ãÆ /api/test-dkl-email                  0 B                0 B
+Ôö£ Ôùï /api/test-email                      0 B                0 B
+Ôö£ Ôùï /api/test-sendgrid                   0 B                0 B
+Ôö£ ãÆ /api/test-wfc-email                  0 B                0 B
+Ôö£ ãÆ /art                                 28.4 kB         292 kB
+Ôö£ ãÆ /charity                             2.13 kB         311 kB
+Ôö£ Ôùï /gegevenspage                        1.46 kB         272 kB
+Ôö£ Ôùï /home                                326 B           293 kB
+Ôö£ Ôùï /shop                                4.84 kB         286 kB
+Ôö£ Ôùï /shop/cart                           12.5 kB         307 kB
+Ôöö ãÆ /whisky                              2.12 kB         311 kB
++ First Load JS shared by all            192 kB
+  Ôö£ chunks/326-162c371542f0207b.js       98.3 kB
+  Ôö£ chunks/52774a7f-f7dc76454a22c777.js  37 kB
+  Ôö£ chunks/fd9d1056-90d21911001723fa.js  53.8 kB
+  Ôöö other shared chunks (total)          2.58 kB
+
+
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+

@@ -20,19 +20,35 @@ export const supabase = createClient(
   }
 )
 
-// Create a channel for testing realtime connection
-const channel = supabase.channel('system')
-  .subscribe((status) => {
-    if (status === 'SUBSCRIBED') {
-      console.log('Realtime connection established')
-    }
-    if (status === 'CLOSED') {
-      console.log('Realtime connection closed')
-    }
-    if (status === 'CHANNEL_ERROR') {
-      console.error('Realtime connection error')
-    }
-  })
+/**
+ * Create a realtime channel for specific features
+ * Call cleanup() when done to prevent memory leaks
+ * 
+ * @example
+ * const { channel, cleanup } = createRealtimeChannel('my-channel')
+ * // ... use channel
+ * cleanup() // Always cleanup when done
+ */
+export function createRealtimeChannel(channelName: string) {
+  const channel = supabase.channel(channelName)
 
-// Export channel for cleanup if needed
-export { channel as realtimeChannel } 
+  const subscribe = (callback?: (status: string) => void) => {
+    return channel.subscribe((status) => {
+      if (callback) callback(status)
+
+      if (status === 'SUBSCRIBED') {
+        console.log(`Realtime channel '${channelName}' connected`)
+      }
+      if (status === 'CHANNEL_ERROR') {
+        console.error(`Realtime channel '${channelName}' error`)
+      }
+    })
+  }
+
+  const cleanup = () => {
+    channel.unsubscribe()
+    console.log(`Realtime channel '${channelName}' cleaned up`)
+  }
+
+  return { channel, subscribe, cleanup }
+} 

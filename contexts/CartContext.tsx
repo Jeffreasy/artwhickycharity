@@ -18,24 +18,42 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [isHydrated, setIsHydrated] = useState(false)
 
-  // Load cart from localStorage on mount
+  // Load cart from localStorage on mount (SSR-safe)
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart')
-    if (savedCart) {
-      setItems(JSON.parse(savedCart))
+    if (typeof window === 'undefined') return
+
+    try {
+      const savedCart = localStorage.getItem('cart')
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart)
+        setItems(parsedCart)
+      }
+    } catch (error) {
+      console.error('Failed to load cart from localStorage:', error)
+      // Clear corrupted data
+      localStorage.removeItem('cart')
+    } finally {
+      setIsHydrated(true)
     }
   }, [])
 
-  // Save cart to localStorage when it changes
+  // Save cart to localStorage when it changes (only after hydration)
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items))
-  }, [items])
+    if (!isHydrated || typeof window === 'undefined') return
+
+    try {
+      localStorage.setItem('cart', JSON.stringify(items))
+    } catch (error) {
+      console.error('Failed to save cart to localStorage:', error)
+    }
+  }, [items, isHydrated])
 
   const addToCart = (product: Product) => {
     setItems(currentItems => {
       const existingItem = currentItems.find(item => item.id === product.id)
-      
+
       if (existingItem) {
         return currentItems.map(item =>
           item.id === product.id
@@ -49,7 +67,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   const removeFromCart = (productId: string) => {
-    setItems(currentItems => 
+    setItems(currentItems =>
       currentItems.filter(item => item.id !== productId)
     )
   }

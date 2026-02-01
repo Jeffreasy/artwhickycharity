@@ -2,18 +2,21 @@
 const { withSentryConfig } = require("@sentry/nextjs")
 
 const nextConfig = {
+  experimental: {
+    // instrumentationHook: true, // Disabled - causes build to hang
+  },
   images: {
     domains: [
       'res.cloudinary.com',
       'cdn.prod.website-files.com'
     ],
   },
-  // Voeg deze toe om build errors te voorkomen voor ongebruikte routes
+  // Type checking and linting enabled for better code quality
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   }
 }
 
